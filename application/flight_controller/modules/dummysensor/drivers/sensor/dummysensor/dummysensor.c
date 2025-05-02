@@ -11,17 +11,25 @@
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
 
-#ifdef CONFIG_DUMMYSENSOR_SKYWARD
-#include "data/skyward/skyward.h"
+#ifdef CONFIG_DUMMYSENSOR_AESIR
+#include "data/aesir.h"
+#endif
+#ifdef CONFIG_DUMMYSENSOR_ASAT
+#include "data/asat.h"
+#endif
+#ifdef CONFIG_DUMMYSENSOR_ASTG
+#include "data/astg.h"
+#endif
+#ifdef CONFIG_DUMMYSENSOR_BRISTOL
+#include "data/bristol.h"
+#endif
+#ifdef CONFIG_DUMMYSENSOR_FARADAY
+#include "data/faraday.h"
+#endif
+#ifdef CONFIG_DUMMYSENSOR_RED
+#include "data/red.h"
 #endif
 
-#ifdef CONFIG_DUMMYSENSOR_ICLR
-#include "data/iclr/iclr.h"
-#endif
-
-#ifdef CONFIG_DUMMYSENSOR_PICCARD
-#include "data/piccard/piccard.h"
-#endif
 LOG_MODULE_REGISTER(dummysensor, CONFIG_SENSOR_LOG_LEVEL);
 
 struct dummysensor_data {

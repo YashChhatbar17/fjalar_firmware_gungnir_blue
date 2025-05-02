@@ -6,10 +6,16 @@ config DUMMYSENSOR
 
 choice
 	prompt "select data source for the dummy sensor"
-	config DUMMYSENSOR_SKYWARD
-		bool "skyward data"
-	config DUMMYSENSOR_PICCARD
-		bool "piccard data"
-	config DUMMYSENSOR_ICLR
-		bool "iclr data"
+	config DUMMYSENSOR_AESIR
+		bool "aesir data"
+	config DUMMYSENSOR_ASAT
+		bool "asat data"
+	config DUMMYSENSOR_ASTG
+		bool "astg data"
+	config DUMMYSENSOR_BRISTOL
+		bool "bristol data"
+	config DUMMYSENSOR_FARADAY
+		bool "faraday data"
+	config DUMMYSENSOR_RED
+		bool "red data"
 endchoice
