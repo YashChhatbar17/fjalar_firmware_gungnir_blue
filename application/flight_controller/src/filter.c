@@ -6,376 +6,681 @@
 #include <stdint.h>
 #include <zephyr/logging/log.h>
 #include "filter.h"
+#include <zsl/statistics.h>
 
 LOG_MODULE_REGISTER(filter, CONFIG_APP_FILTER_LOG_LEVEL);
 
-void window_init(window_t *window, float *values, int size) {
-    window->values = values;
-    window->size = size;
-    window->index = -1;
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+/*
+TODO:
+- Add theta0 and phi0 instead of placeholders (original coordinates)
+*/
+void position_filter_init(position_filter_t *pos_kf) {
+    float process_variance = 0.01;
+    float accel_variance = 0.01;
+    float barometer_variance = 10;
+    float gps_variance = 0.0001;
+
+
+    float P_init[81] = {
+        process_variance, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, process_variance, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, process_variance, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, process_variance, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, process_variance, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, process_variance, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, process_variance, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, process_variance, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, process_variance
+    };
+    pos_kf->P.data = pos_kf->P_data;
+    pos_kf->P.sz_rows = 9;
+    pos_kf->P.sz_cols = 9;
+    memcpy(pos_kf->P_data, P_init, sizeof(P_init));
+
+    float X_init[9] = {
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+    };
+    pos_kf->X.data = pos_kf->X_data;
+    pos_kf->X.sz_rows = 9;
+    pos_kf->X.sz_cols = 1;
+    memcpy(pos_kf->X_data, X_init, sizeof(X_init));
+
+    // IMU noise matrix
+    float Q_init[81] = {
+        accel_variance, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, accel_variance, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, accel_variance, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, accel_variance, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, accel_variance, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, accel_variance, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, accel_variance, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, accel_variance, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, accel_variance
+    };
+    pos_kf->Q.data = pos_kf->Q_data;
+    pos_kf->Q.sz_rows = 9;
+    pos_kf->Q.sz_cols = 9;
+    memcpy(pos_kf->Q_data, Q_init, sizeof(Q_init));
+
+    // Barometer noise matrix
+    float R_init[1] = {
+        barometer_variance
+    };
+    pos_kf->R.data = pos_kf->R_data;
+    pos_kf->R.sz_rows = 1;
+    pos_kf->R.sz_cols = 1;
+    memcpy(pos_kf->R_data, R_init, sizeof(R_init));
+
+    // GPS noise matrix
+    float T_init[9] = {
+        gps_variance, 0, 0,
+        0, gps_variance, 0,
+        0, 0, gps_variance
+    };
+    pos_kf->T.data = pos_kf->T_data;
+    pos_kf->T.sz_rows = 3;
+    pos_kf->T.sz_cols = 3;
+    memcpy(pos_kf->T_data, T_init, sizeof(T_init));
+
+    pos_kf->seeded = false;
+
+    // 2*standard_deviation (sigma) matrix derived from P matrix.
+    float Ptwosigma_init[9] = {
+        0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+    pos_kf->Ptwosigma.data = pos_kf->Ptwosigma_data;
+    pos_kf->Ptwosigma.sz_rows = 9;
+    pos_kf->Ptwosigma.sz_cols = 1;
+    memcpy(pos_kf->Ptwosigma_data, Ptwosigma_init, sizeof(Ptwosigma_init));
 }
 
-void window_insert(window_t *filter, float value) {
-    if (filter->index == -1) {
-        for (int i = 0; i < filter->size; i++) {
-            filter->values[i] = value;
-        }
-        filter->index = 0;
+// Correction with accelerometer | TODO: need to rotate accel vector
+void position_filter_accelerometer(position_filter_t *pos_kf, attitude_filter_t *att_kf, float ax, float ay, float az, uint32_t time){
+    if (!pos_kf->seeded) {
+        pos_kf->previous_update = time;
+        pos_kf->seeded = true;
+        return;
     }
-    filter->values[filter->index] = value;
-    filter->index = (filter->index + 1) % filter->size;
-}
 
-float window_get_median(window_t *filter) {
-    // float *tmp = alloca(sizeof(float) * filter->size);
-    float tmp[filter->size];
-    memcpy(tmp, filter->values, sizeof(float) * filter->size);
-    for (int i = 1; i < filter->size; i++) {
-        float x = tmp[i];
-        int j;
-        for (j = i - 1; j >= 0 && tmp[j] > x; j--) {
-            tmp[j + 1] = tmp[j];
-        }
-        tmp[j + 1] = x;
+    float dt = (time - pos_kf->previous_update) / 1000.0;
+    pos_kf->previous_update = time;
+
+    // A matrix
+    zsl_real_t A_data[81] = {
+        1, 0, 0, dt, 0, 0, 0.5*dt*dt, 0, 0,
+        0, 1, 0, 0, dt, 0, 0, 0.5*dt*dt, 0,
+        0, 0, 1, 0, 0, dt, 0, 0, 0.5*dt*dt,
+        0, 0, 0, 1, 0, 0, dt, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, dt, 0,
+        0, 0, 0, 0, 0, 1, 0, 0, dt,
+        0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+    struct zsl_mtx A = {
+        .sz_rows = 9,
+        .sz_cols = 9,
+        .data = A_data
+    };
+
+    // A transpose
+    float AT_data[81];
+
+    struct zsl_mtx AT = {
+        .sz_rows = 9,
+        .sz_cols = 9,
+        .data = AT_data
+    };
+
+    zsl_mtx_trans(&A, &AT);
+
+    // B matrix
+    zsl_real_t B_data[27] = {
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+        0, 0, 0,
+        1, 0, 0,
+        0, 1, 0,
+        0, 0, 1
+    };
+
+    struct zsl_mtx B = {
+        .sz_rows = 9,
+        .sz_cols = 3,
+        .data = B_data
+    };
+
+    // u matrix vector
+    zsl_real_t u_data[3] = {
+        ax,
+        ay,
+        az
+    };
+    struct zsl_mtx u = {
+        .sz_rows = 3,
+        .sz_cols = 1,
+        .data = u_data
+    };
+
+
+    // rotational matrix
+    float phi = att_kf->X_data[0];
+    float theta = att_kf->X_data[1];
+    float psi = att_kf->X_data[2];
+
+    float sp = sinf(phi), cp = cosf(phi);
+    float st = sinf(theta), ct = cosf(theta);
+    float ss = sinf(psi),  cs = cosf(psi);
+
+    float rotation_data[9] = {
+        ct*cs, sp*st*cs - cp*ss, cp*st*cs + sp*ss,
+        ct*ss, sp*st*ss + cp*cs, cp*st*ss - sp*cs,
+        -st, sp*ct, cp*ct
+    };
+    struct zsl_mtx rotation = {
+        .sz_rows = 3,
+        .sz_cols = 3,
+        .data = rotation_data
+    };
+
+    // prediction calculations
+    // rotate u given an attitude
+    ZSL_MATRIX_DEF(u_rot, 3, 1);
+    zsl_mtx_mult(&rotation, &u, &u_rot);
+    u_rot.data[2] = u_rot.data[2] - pos_kf->g; // correct for gravity
+    // X
+    ZSL_MATRIX_DEF(AX, 9, 1);
+    ZSL_MATRIX_DEF(BU, 9, 1);
+    zsl_mtx_mult(&A, &pos_kf->X, &AX);
+    zsl_mtx_mult(&B, &u_rot, &BU);
+    zsl_mtx_add(&AX, &BU, &pos_kf->X);
+
+    // P
+    ZSL_MATRIX_DEF(AP, 9, 9);
+    ZSL_MATRIX_DEF(APAT, 9, 9);
+    zsl_mtx_mult(&A, &pos_kf->P, &AP);
+    zsl_mtx_mult(&AP, &AT, &APAT);
+    zsl_mtx_add(&APAT, &pos_kf->Q, &pos_kf->P);
+
+
+    //LOG_INF("z:  %f", pos_kf->X_data[2]);
+};
+
+
+// Correction with barometer
+void position_filter_barometer(position_filter_t *pos_kf, float pressure_kpa, uint32_t time){
+    // z matrix
+    zsl_real_t z_data[1] = {
+        pressure_kpa * 1000 // kPa to Pa
+    };
+    struct zsl_mtx z = {
+        .sz_rows = 1,
+        .sz_cols = 1,
+        .data = z_data
+    };
+
+    // Identity matrix 9x9
+    zsl_real_t I9_data[81] = {
+        1, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 1, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 1, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 1,
+    };
+    struct zsl_mtx I9 = {
+        .sz_rows = 9,
+        .sz_cols = 9,
+        .data = I9_data,
+    };
+
+    /*EKF STEPS*/
+    // create h(x)
+    const float P0 = pos_kf->pressure_ground;
+    const float T0 = 288.15f;
+    const float L  = 0.0065f;
+    const float g = 9.81f;
+    const float R = 287.05f;
+
+    float base_h = 1 - (L * pos_kf->X_data[2] / T0);
+    float pressure_h = P0 * powf(base_h, g / (R * L));
+    ZSL_MATRIX_DEF(hx, 1, 1);
+    hx.data[0] = pressure_h;
+
+    // create H (jacobian of h(x))
+    float dpdh;
+
+    float base_H = 1 - (L * pos_kf->X_data[2] / T0);
+    float exponent_H = (g / (R * L)) - 1.0f;
+
+    dpdh = -P0 * (g / (R * T0)) * powf(base_H, exponent_H);
+    ZSL_MATRIX_DEF(H, 1, 9);
+    for (int i = 0; i<9; i++){
+        H.data[i] = 0;
     }
+    H.data[2] = dpdh;
 
-    return tmp[filter->size / 2];
-}
+    ZSL_MATRIX_DEF(HT, 9, 1);
+    zsl_mtx_trans(&H, &HT);
 
-void window_get_min_max(window_t *filter, float *min, float *max) {
-    *min = 1e99;
-    *max = -1e99;
-    for (int i = 1; i < filter->size; i++) {
-        float val = filter->values[i];
-        *min = val < *min ? val : *min;
-        *max = val > *max ? val : *max;
+    // correction calculation
+    // y
+    ZSL_MATRIX_DEF(y, 1, 1);
+    zsl_mtx_sub(&z, &hx, &y);
+
+    // S
+    ZSL_MATRIX_DEF(HP, 1, 9);
+    ZSL_MATRIX_DEF(HPHT, 1, 1);
+    ZSL_MATRIX_DEF(S, 1, 1);
+    zsl_mtx_mult(&H, &pos_kf->P, &HP);
+    zsl_mtx_mult(&HP, &HT, &HPHT);
+    zsl_mtx_add(&HPHT, &pos_kf->R, &S);
+
+    // K
+    ZSL_MATRIX_DEF(PHT, 9, 1);
+    ZSL_MATRIX_DEF(S_inv, 1, 1);
+    ZSL_MATRIX_DEF(K, 9, 1);
+    zsl_mtx_mult(&pos_kf->P, &HT, &PHT);
+    zsl_mtx_inv(&S, &S_inv);
+    zsl_mtx_mult(&PHT, &S_inv, &K);
+
+    // X
+    ZSL_MATRIX_DEF(Ky, 9, 1);
+    zsl_mtx_mult(&K, &y, &Ky);
+    zsl_mtx_add(&pos_kf->X, &Ky, &pos_kf->X);
+
+    // P
+    ZSL_MATRIX_DEF(KH, 9, 9);
+    ZSL_MATRIX_DEF(I9KH, 9, 9);
+    zsl_mtx_mult(&K, &H, &KH);
+    zsl_mtx_sub(&I9, &KH, &I9KH);
+    zsl_mtx_mult(&I9KH, &pos_kf->P, &pos_kf->P);
+    //LOG_INF("altitude: %f", pos_kf->X_data[2]);
+
+};
+
+// Correction with gps
+void position_filter_gps(position_filter_t *pos_kf, float lat, float lon, float alt, uint32_t time){
+    float phi0 = pos_kf->lon0; // longitude of launchpad
+    float theta0 = pos_kf->lat0; // Latitude of launchpad
+    float R = 6370000; // Radius earth placeholder
+
+    // H matrix
+    float deg_per_rad = 180.0f / M_PI;
+    float lon_scale = deg_per_rad / (R * cosf(theta0 * (M_PI / 180.0f)));
+    float lat_scale = deg_per_rad / R;
+    zsl_real_t H_data[27] = {
+        lon_scale, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, lat_scale, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 1, 0, 0, 0, 0, 0, 0
+    };
+    struct zsl_mtx H = {
+        .sz_rows = 3,
+        .sz_cols = 9,
+        .data = H_data
+    };
+
+    // H offset
+    zsl_real_t Hoffset_data[3] = {
+        phi0, // lon
+        theta0, // lat
+        0 // potential ASL to AGL difference here
+    };
+
+    struct zsl_mtx Hoffset = {
+        .sz_rows = 3,
+        .sz_cols = 1,
+        .data = Hoffset_data
+    };
+
+    // H matrix transponate
+    float HT_data[27];
+    struct zsl_mtx HT = {
+        .sz_rows = 9,
+        .sz_cols = 3,
+        .data = HT_data
+    };
+    zsl_mtx_trans(&H, &HT);
+
+    // z matrix
+    zsl_real_t z_data[3] = {
+        lon,
+        lat,
+        alt
+    };
+    struct zsl_mtx z = {
+        .sz_rows = 3,
+        .sz_cols = 1,
+        .data = z_data
+    };
+
+    // Identity matrix 9x9
+    zsl_real_t I9_data[81] = {
+        1, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 1, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 1, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 1, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 1
+    };
+    struct zsl_mtx I9 = {
+        .sz_rows = 9,
+        .sz_cols = 9,
+        .data = I9_data,
+    };
+
+    // correction calculation
+    // y
+    ZSL_MATRIX_DEF(HX, 3, 1);
+    ZSL_MATRIX_DEF(HXHo, 3, 1);
+    ZSL_MATRIX_DEF(y, 3, 1);
+    zsl_mtx_mult(&H, &pos_kf->X, &HX);
+    zsl_mtx_add(&HX, &Hoffset, &HXHo);
+    zsl_mtx_sub(&z, &HXHo, &y);
+
+    // S
+    ZSL_MATRIX_DEF(HP, 3, 9);
+    ZSL_MATRIX_DEF(HPHT, 3, 3);
+    ZSL_MATRIX_DEF(S, 3, 3);
+    zsl_mtx_mult(&H, &pos_kf->P, &HP);
+    zsl_mtx_mult(&HP, &HT, &HPHT);
+    zsl_mtx_add(&HPHT, &pos_kf->T, &S);
+
+    // K
+    ZSL_MATRIX_DEF(PHT, 9, 3);
+    ZSL_MATRIX_DEF(S_inv, 3, 3);
+    ZSL_MATRIX_DEF(K, 9, 3);
+    zsl_mtx_mult(&pos_kf->P, &HT, &PHT);
+    zsl_mtx_inv(&S, &S_inv);
+    zsl_mtx_mult(&PHT, &S_inv, &K);
+
+    // X
+    ZSL_MATRIX_DEF(Ky, 9, 1);
+    zsl_mtx_mult(&K, &y, &Ky);
+    zsl_mtx_add(&pos_kf->X, &Ky, &pos_kf->X);
+
+    // P
+    ZSL_MATRIX_DEF(KH, 9, 9);
+    ZSL_MATRIX_DEF(I9KH, 9, 9);
+    zsl_mtx_mult(&K, &H, &KH);
+    zsl_mtx_sub(&I9, &KH, &I9KH);
+    zsl_mtx_mult(&I9KH, &pos_kf->P, &pos_kf->P);
+};
+
+void Pmtx_analysis(position_filter_t *pos_kf){
+    for (int i = 0; i < 9; i++) {
+        pos_kf->Ptwosigma_data[i] = 2*sqrtf(pos_kf->P_data[9*i+i]);
     }
 }
 
-float window_get_oldest(window_t *filter) {
-    return filter->values[filter->index];
-}
 
-float window_get_newest(window_t *filter) {
-    int index = filter->index - 1 >= 0 ? filter->index - 1 : filter->size - 1;
-    return filter->values[index];
-}
 
-void altitude_filter_init(altitude_filter_t *kf) {
-    float process_noise = 0.001;
-    float baro_noise = 10;
-    float accel_noise = 0.01;
+
+
+
+
+
+// Attitude Filter
+void attitude_filter_init(attitude_filter_t *att_kf) {
+    float process_variance = 0.01;
+    float accel_variance = 0.01;
+    float gyro_variance = 0.01;
 
     float P_init[9] = {
-        process_noise, 0, 0,
-        0, process_noise, 0,
-        0, 0, process_noise
+        process_variance, 0, 0,
+        0, process_variance, 0,
+        0, 0, process_variance
+
     };
-    kf->P.data = kf->P_data;
-    kf->P.sz_rows = 3;
-    kf->P.sz_cols = 3;
-    memcpy(kf->P_data, P_init, sizeof(P_init));
+    att_kf->P.data = att_kf->P_data;
+    att_kf->P.sz_rows = 3;
+    att_kf->P.sz_cols = 3;
+    memcpy(att_kf->P_data, P_init, sizeof(P_init));
 
     float X_init[3] = {
         0,
         0,
         0
     };
-    kf->X.data = kf->X_data;
-    kf->X.sz_rows = 3;
-    kf->X.sz_cols = 1;
-    memcpy(kf->X_data, X_init, sizeof(X_init));
+    att_kf->X.data = att_kf->X_data;
+    att_kf->X.sz_rows = 3;
+    att_kf->X.sz_cols = 1;
+    memcpy(att_kf->X_data, X_init, sizeof(X_init));
 
+    //  gyroscope variance matrix
     float Q_init[9] = {
-        1, 0, 0,
-        0, 1, 0,
-        0, 0, 1
+        gyro_variance, 0, 0,
+        0, gyro_variance, 0,
+        0, 0, gyro_variance
     };
-    kf->Q.data = kf->Q_data;
-    kf->Q.sz_rows = 3;
-    kf->Q.sz_cols = 3;
-    memcpy(kf->Q_data, Q_init, sizeof(Q_init));
+    att_kf->Q.data = att_kf->Q_data;
+    att_kf->Q.sz_rows = 3;
+    att_kf->Q.sz_cols = 3;
+    memcpy(att_kf->Q_data, Q_init, sizeof(Q_init));
 
-    float K_init[9] = {
-        1, 0, 0,
-        0, 1, 0,
-        0, 0, 1
-    };
-    kf->K.data = kf->K_data;
-    kf->K.sz_rows = 3;
-    kf->K.sz_cols = 3;
-    memcpy(kf->K_data, K_init, sizeof(K_init));
-
+    // accelerometer variance matrix
     float R_init[9] = {
-        baro_noise, 0, 0,
-        0, 0, 0,
-        0, 0, accel_noise
+        accel_variance, 0, 0,
+        0, accel_variance, 0,
+        0, 0, accel_variance
     };
-    kf->R.data = kf->R_data;
-    kf->R.sz_rows = 3;
-    kf->R.sz_cols = 3;
-    memcpy(kf->R_data, R_init, sizeof(R_init));
-    kf->seeded = false;
+    att_kf->R.data = att_kf->R_data;
+    att_kf->R.sz_rows = 3;
+    att_kf->R.sz_cols = 3;
+    memcpy(att_kf->R_data, R_init, sizeof(R_init));
+
+    att_kf->seeded = false;
 }
 
-void altitude_filter_update_accel(altitude_filter_t *kf, float value, float acceleration, uint32_t time) {
-    if (!kf->seeded) {
-        kf->X_data[0] = value;
-        kf->previous_update = time;
-        kf->seeded = true;
+
+// prediction with gyroscope
+void attitude_filter_gyroscope(attitude_filter_t *att_kf, float gx, float gy, float gz, uint32_t time){
+    if (!att_kf->seeded) {
+        att_kf->previous_update = time;
+        att_kf->seeded = true;
         return;
     }
+    float dt = (time - att_kf->previous_update) / 1000.0;
+    att_kf->previous_update = time;
 
-    float dt = (time - kf->previous_update) / 1000.0;
-    kf->previous_update = time;
-
-    zsl_real_t A_data[9] = {
-        1, dt, dt * dt / 2,
-        0, 1, dt,
-        0, 0, 1
-    };
-    struct zsl_mtx A = {
-        .sz_rows = 3,
-        .sz_cols = 3,
-        .data = A_data,
-    };
-
-    zsl_real_t At_data[9] = {
-        1, 0, 0,
-        dt, 1, 0,
-        dt * dt / 2, dt, 1
-    };
-    struct zsl_mtx At = {
-        .sz_rows = 3,
-        .sz_cols = 3,
-        .data = At_data,
-    };
-
-    zsl_real_t Z_data[3] = {
-        value, 0, acceleration,
-    };
-    struct zsl_mtx Z = {
-        .sz_rows = 3,
-        .sz_cols = 1,
-        .data = Z_data
-    };
-
-    zsl_real_t H_data[9] = {
-        1, 0, 0,
-        0, 0, 0,
-        0, 0, 1
-    };
-    struct zsl_mtx H = {
-        .sz_rows = 3,
-        .sz_cols = 3,
-        .data = H_data,
-    };
-    struct zsl_mtx Ht = H;
-
-    zsl_real_t Pp_data[9] = {
-        0, 0, 0,
-        0, 0, 0,
-        0, 0, 0
-    };
-    struct zsl_mtx Pp = {
-        .sz_rows = 3,
-        .sz_cols = 3,
-        .data = Pp_data,
-    };
-
-    zsl_real_t Xp_data[3];
-    struct zsl_mtx Xp = {
-        .sz_rows = 3,
-        .sz_cols = 1,
-        .data = Xp_data,
-    };
-
-    zsl_real_t I_data[9] = {
+    // Identity matrix 3x3
+    zsl_real_t I3_data[9] = {
         1, 0, 0,
         0, 1, 0,
         0, 0, 1
     };
-    struct zsl_mtx I = {
+    struct zsl_mtx I3 = {
         .sz_rows = 3,
         .sz_cols = 3,
-        .data = I_data,
+        .data = I3_data,
     };
 
-    // predict state
-    zsl_mtx_mult(&A, &kf->X, &Xp);
+    /*EKF STEPS*/
+    // create f(x)
+    float phi = att_kf->X_data[0];
+    float theta = att_kf->X_data[1];
+    float sp = sin(phi);
+    float cp = cos(phi);
+    float ct = cos(theta);
+    float tt = tan(theta);
+    ZSL_MATRIX_DEF(fx, 3, 1);
+    fx.data[0] = (gx + gy*sp*tt + gz*cp*tt)*dt;
+    fx.data[1] = (gy*cp - gz*sp)*dt;
+    fx.data[2] = ((gy*sp / ct) + (gz*cp / ct))*dt;
 
-    // predict covariance
-    ZSL_MATRIX_DEF(P_At, 3, 3);
-    zsl_mtx_mult(&kf->P, &At, &P_At);
-    ZSL_MATRIX_DEF(A_P_At, 3, 3);
-    zsl_mtx_mult(&A, &P_At, &A_P_At);
-    zsl_mtx_add(&A_P_At, &kf->Q, &Pp);
+    // create F(x)
+    float sect  = 1.0 / ct;
+    float sec2t = sect*sect;
 
-    // update kalman gain (should be constant so can move to init)
-    ZSL_MATRIX_DEF(Pp_Ht, 3, 3);
-    zsl_mtx_mult(&Pp, &Ht, &Pp_Ht);
-    ZSL_MATRIX_DEF(H_Pp_Ht, 3, 3);
-    zsl_mtx_mult(&H, &Pp_Ht, &H_Pp_Ht);
-    ZSL_MATRIX_DEF(H_Pp_Ht_ADD_R, 3, 3);
-    zsl_mtx_add(&H_Pp_Ht, &kf->R, &H_Pp_Ht_ADD_R);
-    ZSL_MATRIX_DEF(H_Pp_Ht_ADD_R_INV, 3, 3);
+    ZSL_MATRIX_DEF(Mdt, 3, 3);
+    Mdt.data[0] = (gy*cp*tt - gz*sp*tt)*dt;
+    Mdt.data[1] = (gy*sp*sec2t + gz*cp*sec2t)*dt;
+    Mdt.data[2] = 0;
 
-    for (int i = 0; i < 9; i++) {
-        LOG_WRN("bajs %f", H_Pp_Ht_ADD_R.data[i]);
+    Mdt.data[3] = (-gy*sp - gz*cp)*dt;
+    Mdt.data[4] = 0;
+    Mdt.data[5] = 0;
+    Mdt.data[6] = (gy*cp*sect - gz*sp*sect)*dt;
+    Mdt.data[7] = (gy*sp*tt*sect + gz*cp*tt*sect)*dt;
+    Mdt.data[8] = 0;
+
+    ZSL_MATRIX_DEF(F, 3, 3);
+    ZSL_MATRIX_DEF(FT, 3, 3);
+    zsl_mtx_add(&I3, &Mdt, &F);
+    zsl_mtx_trans(&F, &FT);
+
+    // prediction calculations
+    // X
+    zsl_mtx_add(&att_kf->X, &fx, &att_kf->X);
+
+    // P
+    ZSL_MATRIX_DEF(FP, 3, 3);
+    ZSL_MATRIX_DEF(FPFT, 3, 3);
+    zsl_mtx_mult(&F, &att_kf->P, &FP);
+    zsl_mtx_mult(&FP, &FT, &FPFT);
+    zsl_mtx_add(&FPFT, &att_kf->Q, &att_kf->P);
+
+    // Normalize radians to[-pi, pi] range
+    for (int i=0; i<3; i++){
+        if (att_kf->X_data[i]>M_PI){
+            att_kf->X_data[i] = att_kf->X_data[i]-2*M_PI;
+        }
+        if (att_kf->X_data[i]<-M_PI){
+            att_kf->X_data[i] = att_kf->X_data[i]+2*M_PI;
+        }
     }
-    int e = zsl_mtx_inv_3x3(&H_Pp_Ht_ADD_R, &H_Pp_Ht_ADD_R_INV);
-    LOG_WRN("mtx_inv ret %d", e);
+};
 
-    ZSL_MATRIX_DEF(Ht_H_Pp_Ht_ADD_R_INV, 3, 3);
-    zsl_mtx_mult(&Ht, &H_Pp_Ht_ADD_R_INV, &Ht_H_Pp_Ht_ADD_R_INV);
-    zsl_mtx_mult(&Pp, &Ht_H_Pp_Ht_ADD_R_INV, &kf->K);
-    // LOG_INF("K %f %f %f %f %f %f %f %f %f", kf->K_data[0],kf->K_data[1],kf->K_data[2],kf->K_data[3],kf->K_data[4],kf->K_data[5],kf->K_data[6],kf->K_data[7],kf->K_data[8]);
 
-    // update state
-    ZSL_MATRIX_DEF(H_Xp, 3, 1);
-    zsl_mtx_mult(&H, &Xp, &H_Xp);
-    ZSL_MATRIX_DEF(Z_SUB_H_Xp, 3, 1);
-    zsl_mtx_sub(&Z, &H_Xp, &Z_SUB_H_Xp);
-    ZSL_MATRIX_DEF(K_Z_SUB_H_Xp, 3, 1);
-    zsl_mtx_mult(&kf->K, &Z_SUB_H_Xp, &K_Z_SUB_H_Xp);
-    zsl_mtx_add(&Xp, &K_Z_SUB_H_Xp, &kf->X);
-
-    // update covariance
-    ZSL_MATRIX_DEF(K_H, 3, 3);
-    zsl_mtx_mult(&kf->K, &H, &K_H);
-    ZSL_MATRIX_DEF(I_SUB_K_H, 3, 3);
-    zsl_mtx_sub(&I, &K_H, &I_SUB_K_H);
-    zsl_mtx_mult(&I_SUB_K_H, &Pp, &kf->P);
-}
-
-void altitude_filter_update(altitude_filter_t *kf, float value, uint32_t time) {
-    if (!kf->seeded) {
-        kf->X_data[0] = value;
-        kf->previous_update = time;
-        kf->seeded = true;
-        return;
-    }
-
-    float dt = (time - kf->previous_update) / 1000.0;
-    kf->previous_update = time;
-
-    zsl_real_t A_data[9] = {
-        1, dt, dt * dt / 2,
-        0, 1, dt,
-        0, 0, 1
+void attitude_filter_accelerometer(attitude_filter_t *att_kf, float ax, float ay, float az, uint32_t time){
+    // z matrix
+    zsl_real_t z_data[3] = {
+        ax,
+        ay,
+        az
     };
-    struct zsl_mtx A = {
-        .sz_rows = 3,
-        .sz_cols = 3,
-        .data = A_data,
-    };
-
-    zsl_real_t At_data[9] = {
-        1, 0, 0,
-        dt, 1, 0,
-        dt * dt / 2, dt, 1
-    };
-    struct zsl_mtx At = {
-        .sz_rows = 3,
-        .sz_cols = 3,
-        .data = At_data,
-    };
-
-    zsl_real_t Z_data[3] = {
-        value, 0, 0,
-    };
-    struct zsl_mtx Z = {
+    struct zsl_mtx z = {
         .sz_rows = 3,
         .sz_cols = 1,
-        .data = Z_data
+        .data = z_data
     };
 
-    zsl_real_t H_data[9] = {
-        1, 0, 0,
-        0, 0, 0,
-        0, 0, 0
-    };
-    struct zsl_mtx H = {
-        .sz_rows = 3,
-        .sz_cols = 3,
-        .data = H_data,
-    };
-    struct zsl_mtx Ht = H;
-
-    zsl_real_t Pp_data[9] = {
-        0, 0, 0,
-        0, 0, 0,
-        0, 0, 0
-    };
-    struct zsl_mtx Pp = {
-        .sz_rows = 3,
-        .sz_cols = 3,
-        .data = Pp_data,
-    };
-
-    zsl_real_t Xp_data[3];
-    struct zsl_mtx Xp = {
-        .sz_rows = 3,
-        .sz_cols = 1,
-        .data = Xp_data,
-    };
-
-    zsl_real_t I_data[9] = {
+    // Identity matrix 3x3
+    zsl_real_t I3_data[9] = {
         1, 0, 0,
         0, 1, 0,
         0, 0, 1
     };
-    struct zsl_mtx I = {
+    struct zsl_mtx I3 = {
         .sz_rows = 3,
         .sz_cols = 3,
-        .data = I_data,
+        .data = I3_data
     };
 
+    // EKF STEPS
+    // create h(x)
+    float g = 9.81;
 
-    // predict state
-    zsl_mtx_mult(&A, &kf->X, &Xp);
+    float phi = att_kf->X_data[0];
+    float theta = att_kf->X_data[1];
 
-    // predict covariance
-    ZSL_MATRIX_DEF(P_At, 3, 3);
-    zsl_mtx_mult(&kf->P, &At, &P_At);
-    ZSL_MATRIX_DEF(A_P_At, 3, 3);
-    zsl_mtx_mult(&A, &P_At, &A_P_At);
-    zsl_mtx_add(&A_P_At, &kf->Q, &Pp);
+    float sp = sin(phi);
+    float cp = cos(phi);
+    float st = sin(theta);
+    float ct = cos(theta);
 
-    // update kalman gain (should be constant so can move to init)
-    ZSL_MATRIX_DEF(Pp_Ht, 3, 3);
-    zsl_mtx_mult(&Pp, &Ht, &Pp_Ht);
-    ZSL_MATRIX_DEF(H_Pp_Ht, 3, 3);
-    zsl_mtx_mult(&H, &Pp_Ht, &H_Pp_Ht);
-    ZSL_MATRIX_DEF(H_Pp_Ht_ADD_R, 3, 3);
-    zsl_mtx_add(&H_Pp_Ht, &kf->R, &H_Pp_Ht_ADD_R);
-    ZSL_MATRIX_DEF(H_Pp_Ht_ADD_R_INV, 3, 3);
-    zsl_mtx_inv_3x3(&H_Pp_Ht_ADD_R, &H_Pp_Ht_ADD_R_INV);
-    ZSL_MATRIX_DEF(Ht_H_Pp_Ht_ADD_R_INV, 3, 3);
-    zsl_mtx_mult(&Ht, &H_Pp_Ht_ADD_R_INV, &Ht_H_Pp_Ht_ADD_R_INV);
-    zsl_mtx_mult(&Pp, &Ht_H_Pp_Ht_ADD_R_INV, &kf->K);
-    // LOG_INF("K %f %f %f %f %f %f %f %f %f", kf->K_data[0],kf->K_data[1],kf->K_data[2],kf->K_data[3],kf->K_data[4],kf->K_data[5],kf->K_data[6],kf->K_data[7],kf->K_data[8]);
-    // update state
-    ZSL_MATRIX_DEF(H_Xp, 3, 1);
-    zsl_mtx_mult(&H, &Xp, &H_Xp);
-    ZSL_MATRIX_DEF(Z_SUB_H_Xp, 3, 1);
-    zsl_mtx_sub(&Z, &H_Xp, &Z_SUB_H_Xp);
-    ZSL_MATRIX_DEF(K_Z_SUB_H_Xp, 3, 1);
-    zsl_mtx_mult(&kf->K, &Z_SUB_H_Xp, &K_Z_SUB_H_Xp);
-    zsl_mtx_add(&Xp, &K_Z_SUB_H_Xp, &kf->X);
 
-    // update covariance
-    ZSL_MATRIX_DEF(K_H, 3, 3);
-    zsl_mtx_mult(&kf->K, &H, &K_H);
-    ZSL_MATRIX_DEF(I_SUB_K_H, 3, 3);
-    zsl_mtx_sub(&I, &K_H, &I_SUB_K_H);
-    zsl_mtx_mult(&I_SUB_K_H, &Pp, &kf->P);
+    ZSL_MATRIX_DEF(hx, 3, 1); // Projection of gravity
+    hx.data[0] = -g*st;
+    hx.data[1] = g*sp*ct;
+    hx.data[2] = g*cp*ct;
+
+    // create H (jacobian of h(x))
+    ZSL_MATRIX_DEF(H, 3, 3);
+    H.data[0] = 0;
+    H.data[1] = -g*ct;
+    H.data[2] = 0;
+
+    H.data[3] = g*cp*ct;
+    H.data[4] = -g*st*sp;
+    H.data[5] = 0;
+
+    H.data[6] = -g*sp*ct;
+    H.data[7] = -g*st*cp;
+    H.data[8] = 0;
+
+    ZSL_MATRIX_DEF(HT, 3, 3);
+    zsl_mtx_trans(&H, &HT);
+
+
+    // correction calculation
+    // y
+    ZSL_MATRIX_DEF(y, 3, 1);
+    zsl_mtx_sub(&z, &hx, &y);
+
+    // S
+    ZSL_MATRIX_DEF(HP, 3, 3);
+    ZSL_MATRIX_DEF(HPHT, 3, 3);
+    ZSL_MATRIX_DEF(S, 3, 3);
+    zsl_mtx_mult(&H, &att_kf->P, &HP);
+    zsl_mtx_mult(&HP, &HT, &HPHT);
+    zsl_mtx_add(&HPHT, &att_kf->R, &S);
+
+    // K
+    ZSL_MATRIX_DEF(PHT, 3, 3);
+    ZSL_MATRIX_DEF(S_inv, 3, 3);
+    ZSL_MATRIX_DEF(K, 3, 3);
+    zsl_mtx_mult(&att_kf->P, &HT, &PHT);
+    zsl_mtx_inv(&S, &S_inv);
+    zsl_mtx_mult(&PHT, &S_inv, &K);
+
+    // X
+    ZSL_MATRIX_DEF(Ky, 3, 1);
+    zsl_mtx_mult(&K, &y, &Ky);
+    zsl_mtx_add(&att_kf->X, &Ky, &att_kf->X);
+
+    // P
+    ZSL_MATRIX_DEF(KH, 3, 3);
+    ZSL_MATRIX_DEF(I3KH, 3, 3);
+    zsl_mtx_mult(&K, &H, &KH);
+    zsl_mtx_sub(&I3, &KH, &I3KH);
+    zsl_mtx_mult(&I3KH, &att_kf->P, &att_kf->P);
+    //LOG_INF("Roll: %f π", (att_kf->X_data[0])/M_PI);
+};
+
+
+
+
+
+float filter_get_altitude(position_filter_t *pos_kf) {
+    return pos_kf->X_data[2];
 }
 
-float altitude_filter_get_altitude(altitude_filter_t *kf) {
-    return kf->X_data[0];
-}
-
-float altitude_filter_get_velocity(altitude_filter_t *kf) {
-    return kf->X_data[1];
+float filter_get_velocity(position_filter_t *pos_kf) {
+    float vx = pos_kf->X_data[3];
+    float vy = pos_kf->X_data[4];
+    float vz = pos_kf->X_data[5];
+    float v_resultant = sqrtf(vx*vx + vy*vy + vz*vz);
+    return v_resultant;
 }

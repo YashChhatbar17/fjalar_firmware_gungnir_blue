@@ -31,7 +31,7 @@ void gps_thread(fjalar_t *fjalar, void *p2, void *p3);
 void vbat_thread(fjalar_t *fjalar, void *p2, void *p3);
 
 ZBUS_CHAN_DEFINE(pressure_zchan, /* Name */
-		struct pressure_zbus_msg, /* Message type */
+		struct pressure_queue_entry, /* Message type */
 		NULL, /* Validator */
 		NULL, /* User Data */
 		ZBUS_OBSERVERS_EMPTY, /* observers */
@@ -39,12 +39,16 @@ ZBUS_CHAN_DEFINE(pressure_zchan, /* Name */
 );
 
 ZBUS_CHAN_DEFINE(imu_zchan, /* Name */
-		struct imu_zbus_msg, /* Message type */
+		struct imu_queue_entry, /* Message type */
 		NULL, /* Validator */
 		NULL, /* User Data */
 		ZBUS_OBSERVERS_EMPTY, /* observers */
 		ZBUS_MSG_INIT() /* Initial value */
 );
+
+K_MSGQ_DEFINE(pressure_msgq, sizeof(struct pressure_queue_entry), 3, 4);
+K_MSGQ_DEFINE(imu_msgq, sizeof(struct imu_queue_entry), 3, 4);
+K_MSGQ_DEFINE(gps_msgq, sizeof(struct gps_queue_entry), 3, 4);
 
 K_THREAD_STACK_DEFINE(barometer_thread_stack, BAROMETER_THREAD_STACK_SIZE);
 struct k_thread barometer_thread_data;
@@ -151,7 +155,7 @@ void imu_thread(fjalar_t *fjalar, void *p2, void *p3) {
 			sensor_value_to_float(&gx), sensor_value_to_float(&gy), sensor_value_to_float(&gz)
 		);
 
-		struct imu_zbus_msg q_entry = {
+		struct imu_queue_entry q_entry = {
 			.t = k_uptime_get_32(),
 			.ax = sensor_value_to_float(&ax),
 			.ay = sensor_value_to_float(&ay),
@@ -160,11 +164,10 @@ void imu_thread(fjalar_t *fjalar, void *p2, void *p3) {
 			.gy = sensor_value_to_float(&gy),
 			.gz = sensor_value_to_float(&gz)
 		};
-
-
-		ret = zbus_chan_pub(&imu_zchan, &q_entry, K_MSEC(10));
+		ret = k_msgq_put(&imu_msgq, &q_entry, K_NO_WAIT);
 		if (ret != 0) {
-			LOG_ERR("Could not publish pressure to zbus");
+			LOG_ERR("Could not write to imu msgq");
+			continue;
 		}
 
 		fjalar_message_t msg;
@@ -210,10 +213,14 @@ void barometer_thread(fjalar_t *fjalar, void *p2, void *p3) {
 			continue;
 		}
 		LOG_DBG("read pressure: %f", sensor_value_to_float(&pressure));
-		struct pressure_zbus_msg q_entry;
+		struct pressure_queue_entry q_entry;
 		q_entry.t = k_uptime_get_32();
 		q_entry.pressure = sensor_value_to_float(&pressure);
-		ret = zbus_chan_pub(&pressure_zchan, &q_entry, K_MSEC(10));
+		ret = k_msgq_put(&pressure_msgq, &q_entry, K_NO_WAIT);
+		if (ret != 0) {
+			LOG_ERR("Could not write to pressure msgq");
+		}
+		ret = zbus_chan_pub(&pressure_zchan, &q_entry, K_MSEC(100));
 		if (ret != 0) {
 			LOG_ERR("Could not publish pressure to zbus");
 		}
@@ -228,6 +235,8 @@ void barometer_thread(fjalar_t *fjalar, void *p2, void *p3) {
 
 #if DT_NODE_EXISTS(DT_ALIAS(gps_uart))
 void handle_nmea(fjalar_t *fjalar, char *buf, int len) {
+	int ret = 0;
+	struct gps_queue_entry q_entry;
 	LOG_DBG("Handling nmea message");
 	switch (minmea_sentence_id(buf, true)) {
 		case MINMEA_INVALID:
@@ -239,29 +248,33 @@ void handle_nmea(fjalar_t *fjalar, char *buf, int len) {
 
 		case MINMEA_SENTENCE_GSA:
 			LOG_DBG("got GSA nmea message");
-			struct minmea_sentence_gsa gsa;
-			minmea_parse_gsa(&gsa, buf);
-			break;
-		case MINMEA_SENTENCE_GSV:
-			LOG_DBG("got GSV nmea message");
-			struct minmea_sentence_gsv gsv;
-			minmea_parse_gsv(&gsv, buf);
 			break;
 
-		case MINMEA_SENTENCE_GGA:
-			LOG_DBG("got GGA nmea message");
-			struct minmea_sentence_gga gga;
-			minmea_parse_gga(&gga, buf);
-			fjalar->longitude = minmea_tocoord(&gga.longitude);
-			fjalar->latitude = minmea_tocoord(&gga.latitude);
+		case MINMEA_SENTENCE_GSV:
+			LOG_DBG("got GSV nmea message");
 			break;
 
 		case MINMEA_SENTENCE_RMC:
 			LOG_DBG("got RMC nmea message");
 			struct minmea_sentence_rmc rmc;
 			minmea_parse_rmc(&rmc, buf);
-			fjalar->longitude = minmea_tocoord(&rmc.longitude);
-			fjalar->latitude = minmea_tocoord(&rmc.latitude);
+
+			q_entry.lat = minmea_tocoord(&rmc.latitude);
+			q_entry.lon = minmea_tocoord(&rmc.longitude);
+			q_entry.t = k_uptime_get_32();
+			ret = k_msgq_put(&gps_msgq, &q_entry, K_NO_WAIT);
+			break;
+
+		case MINMEA_SENTENCE_GGA:
+			LOG_DBG("got GGA nmea message");
+			struct minmea_sentence_gga gga;
+			minmea_parse_gga(&gga, buf);
+
+			q_entry.lat = minmea_tocoord(&gga.latitude);
+			q_entry.lon = minmea_tocoord(&gga.longitude);
+			q_entry.alt = minmea_tocoord(&gga.altitude);
+			q_entry.t = k_uptime_get_32();
+			ret = k_msgq_put(&gps_msgq, &q_entry, K_NO_WAIT);
 			break;
 
 		default:

@@ -20,74 +20,38 @@ choice
 		bool "boot to launchpad"
 endchoice
 
-config APP_SENSORS_LOG_LEVEL
-    int "Application sensors log level"
-    default 0 if APP_SENSORS_LOG_LEVEL_OFF
-    default 1 if APP_SENSORS_LOG_LEVEL_ERR
-    default 2 if APP_SENSORS_LOG_LEVEL_WRN
-    default 3 if APP_SENSORS_LOG_LEVEL_INF
-    default 4 if APP_SENSORS_LOG_LEVEL_DBG
-    default 2
-    depends on LOG
+module = APP_SENSORS
+module-str = app_sensors
+source "subsys/logging/Kconfig.template.log_config"
 
-config APP_ACTUATION_LOG_LEVEL
-    int "Application filter log level"
-    default 0 if APP_ACTUATION_LOG_LEVEL_OFF
-    default 1 if APP_ACTUATION_LOG_LEVEL_ERR
-    default 2 if APP_ACTUATION_LOG_LEVEL_WRN
-    default 3 if APP_ACTUATION_LOG_LEVEL_INF
-    default 4 if APP_ACTUATION_LOG_LEVEL_DBG
-    default 2
-    depends on LOG
+module = APP_ACTUATION
+module-str = app_actuation
+source "subsys/logging/Kconfig.template.log_config"
 
-config APP_FILTER_LOG_LEVEL
-    int "Application filter log level"
-    default 0 if APP_FILTER_LOG_LEVEL_OFF
-    default 1 if APP_FILTER_LOG_LEVEL_ERR
-    default 2 if APP_FILTER_LOG_LEVEL_WRN
-    default 3 if APP_FILTER_LOG_LEVEL_INF
-    default 4 if APP_FILTER_LOG_LEVEL_DBG
-    default 2
-    depends on LOG
+module = APP_FILTER
+module-str = app_filter
+source "subsys/logging/Kconfig.template.log_config"
 
-config APP_FLIGHT_LOG_LEVEL
-    int "Application flight state log level"
-    default 0 if APP_FLIGHT_LOG_LEVEL_OFF
-    default 1 if APP_FLIGHT_LOG_LEVEL_ERR
-    default 2 if APP_FLIGHT_LOG_LEVEL_WRN
-    default 3 if APP_FLIGHT_LOG_LEVEL_INF
-    default 4 if APP_FLIGHT_LOG_LEVEL_DBG
-    default 2
-    depends on LOG
+module = APP_STATE
+module-str = app_state
+source "subsys/logging/Kconfig.template.log_config"
 
-config APP_MAIN_LOG_LEVEL
-    int "Application main log level"
-    default 0 if APP_MAIN_LOG_LEVEL_OFF
-    default 1 if APP_MAIN_LOG_LEVEL_ERR
-    default 2 if APP_MAIN_LOG_LEVEL_WRN
-    default 3 if APP_MAIN_LOG_LEVEL_INF
-    default 4 if APP_MAIN_LOG_LEVEL_DBG
-    default 2
-    depends on LOG
+module = APP_FLIGHT
+module-str = app_flight
+source "subsys/logging/Kconfig.template.log_config"
 
+module = APP_MAIN
+module-str = app_main
+source "subsys/logging/Kconfig.template.log_config"
 
-config APP_COMMANDS_LOG_LEVEL
-    int "Application commands log level"
-    default 0 if APP_COMMANDS_LOG_LEVEL_OFF
-    default 1 if APP_COMMANDS_LOG_LEVEL_ERR
-    default 2 if APP_COMMANDS_LOG_LEVEL_WRN
-    default 3 if APP_COMMANDS_LOG_LEVEL_INF
-    default 4 if APP_COMMANDS_LOG_LEVEL_DBG
-    default 2
-    depends on LOG
+module = APP_COMMANDS
+module-str = app_commands
+source "subsys/logging/Kconfig.template.log_config"
 
+module = APP_COMMUNICATION
+module-str = app_communication
+source "subsys/logging/Kconfig.template.log_config"
 
-config APP_COMMUNICATION_LOG_LEVEL
-    int "Application communication log level"
-    default 0 if APP_COMMUNICATION_LOG_LEVEL_OFF
-    default 1 if APP_COMMUNICATION_LOG_LEVEL_ERR
-    default 2 if APP_COMMUNICATION_LOG_LEVEL_WRN
-    default 3 if APP_COMMUNICATION_LOG_LEVEL_INF
-    default 4 if APP_COMMUNICATION_LOG_LEVEL_DBG
-    default 2
-    depends on LOG
+module = APP_AERODYNAMICS
+module-str = app_aerodynamics
+source "subsys/logging/Kconfig.template.log_config"

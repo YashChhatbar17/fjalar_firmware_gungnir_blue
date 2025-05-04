@@ -44,4 +44,10 @@ typedef struct {
     bool pyro3_sense;
 } fjalar_t;
 
+typedef struct {
+    float ax, ay, az, p, lat, lon, alt;
+    uint16_t n_imu, n_baro, n_gps;
+    bool position_init;
+} init_t;
+
 extern fjalar_t fjalar_god;
