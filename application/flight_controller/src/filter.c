@@ -605,10 +605,6 @@ void attitude_filter_gyroscope(position_filter_t *pos_kf, attitude_filter_t *att
             att_kf->X_data[i] = att_kf->X_data[i]+2*M_PI;
         }
     }
-    float drag_accel = adrag_get(pos_kf);
-    //LOG_INF("altitude: %f", pos_kf->X_data[2]);
-    //LOG_INF("drag a: %f", drag_accel);
-    //LOG_INF("kalman filter az: %f", pos_kf->X_data[8]);
 };
 
 

@@ -193,26 +193,17 @@ static void init_finish(fjalar_t *fjalar, position_filter_t *pos_kf, attitude_fi
     pos_kf->lon0 = init->mean_lon ;
     pos_kf->alt0 = init->mean_alt;
 
-    float ax = init->mean_ax;
-    float ay = init->mean_ay;
-    float az = init->mean_az;
-
     // identify g (to subtract it later)
-    pos_kf->g = sqrtf(ax*ax + ay*ay + az*az);
+    pos_kf->g = sqrtf(mean_ax*mean_ax + mean_ay*mean_ay + mean_az*mean_az);
     LOG_INF("g: %f", pos_kf->g);
 
     pos_kf->seeded = false;
 
     init->position_init = true;
     LOG_INF("init done: lat0 = %f, lon0 = %f", pos_kf->lat0, pos_kf->lon0);
-
-    // euler angles start
-    att_kf->X_data[0] = atan2f(mean_ay, mean_az);
-    att_kf->X_data[1] = atan2f(-mean_ax, sqrtf(mean_ay*mean_ay + mean_az*mean_az));
-    att_kf->X_data[2] = 0.0f;
     
     // flip all IMU readings to correct frame
-    float a[3] = { ax, ay, az };
+    float a[3] = {mean_ax, mean_ay, mean_az};
 
     // find index of the max‐absolute axis
     int iz = 0;
@@ -235,6 +226,15 @@ static void init_finish(fjalar_t *fjalar, position_filter_t *pos_kf, attitude_fi
     fjalar->new_x_sign = sx;
     fjalar->new_y_sign = sy;
     fjalar->new_z_sign = sz;
+
+    // euler angles start
+    float new_ax = a[ix] * sx; 
+    float new_ay = a[iy] * sy; 
+    float new_az = a[iz] * sz;
+    
+    att_kf->X_data[0] = atan2f(new_ay, new_az);
+    att_kf->X_data[1] = atan2f(-new_ax, sqrtf(new_ay*new_ay + new_az*new_az));
+    att_kf->X_data[2] = 0.0f;
 
     // add beep when init finish
 }
@@ -389,23 +389,26 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
                 float gy = g_array[fjalar->new_y_index] * fjalar->new_y_sign; 
                 float gz = g_array[fjalar->new_z_index] * fjalar->new_z_sign; 
                 
+                LOG_INF("Acceleration: %f %f %f", ax, ay, az);
+
                 // call filters
-                position_filter_accelerometer(&pos_kf, &att_kf, imu.ax, imu.ay, imu.az, imu.t); // needs magnetometer
-                attitude_filter_gyroscope(&pos_kf, &att_kf, imu.gx, imu.gy, imu.gz, imu.t);
+                position_filter_accelerometer(&pos_kf, &att_kf, ax, ay, az, imu.t); // needs magnetometer
+                attitude_filter_gyroscope(&pos_kf, &att_kf, gx, gy, gz, imu.t);
 
                 float predicted_acceleration = adrag_get(&pos_kf) + 9.81;
 
                 // differrence between predicted acceleration and acceleration --> if zero there are no unmodelled forces (thrust)
                 float az_difference = az - predicted_acceleration;
-                    LOG_INF("az_difference: %f", abs(az_difference));
+                    LOG_INF("az_difference: %f", fabsf(az_difference));
+                    LOG_INF("predicted acc: %f", predicted_acceleration);
 
-                if (pos_kf.X_data[2]<100 && abs(pos_kf.X_data[8])<1){//(pos_kf.X_data[8]<1 && pos_kf.X_data[8]>-1 && pos_kf.X_data[2]<100){
-                    attitude_filter_accelerometer(&att_kf, &pos_kf, ax, ay, az, imu.t); //only used pre launch
-                }
-                if (pos_kf.X_data[2]>100 && pos_kf.X_data[8]<0 && abs(az_difference)<7){//(pos_kf.X_data[8]<1 && pos_kf.X_data[8]>-1 && pos_kf.X_data[2]<100){
-                    //LOG_INF("yippie--------------------------------------------------");
+                    LOG_INF("raw gyro: %6.2f, %6.2f, %6.2f", imu.gx, imu.gy, imu.gz);
+                    LOG_INF("mapped gyro: %6.2f, %6.2f, %6.2f", gx,    gy,    gz);
+
+                if (pos_kf.X_data[2]<100 && fabsf(pos_kf.X_data[8])<1){//(pos_kf.X_data[8]<1 && pos_kf.X_data[8]>-1 && pos_kf.X_data[2]<100){
                     //attitude_filter_accelerometer(&att_kf, &pos_kf, ax, ay, az, imu.t); //only used pre launch
                 }
+
             }
 
             // Give an error if the acceleration in z at launchpad is not around 9.8
@@ -416,8 +419,7 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
             && (fjalar->flight_state == STATE_LAUNCHPAD)) {
                 LOG_ERR("Acceleration is negative on the launchpad");
             }
-
-            LOG_DBG("Acceleration: %f %f %f", fjalar->ax, fjalar->ay, fjalar->az);
+        }
         }
 
         if (k_msgq_get(&pressure_msgq, &pressure, K_NO_WAIT) == 0) {
