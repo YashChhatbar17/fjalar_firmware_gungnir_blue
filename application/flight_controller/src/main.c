@@ -18,10 +18,13 @@
 #include "communication.h"
 #include "actuation.h"
 #include "hello.h"
+#include "logger.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_APP_MAIN_LOG_LEVEL);
 
 fjalar_t fjalar_god;
+
+CSVLogger logger;
 
 int main(void) {
 	#ifdef CONFIG_DELAYED_START
@@ -31,6 +34,13 @@ int main(void) {
 		k_msleep(1000);
 	}
 	#endif
+
+	// LOG
+	if (!csv_init(&logger, "data_log.csv")) {
+		LOG_ERR("Failed to open data_log.csv");
+		return -1;
+	}
+
 	printk("Started\n");
 	fjalar_god.sudo = false;
 	uint8_t cpp_buf[64];

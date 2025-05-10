@@ -1,15 +1,16 @@
 #include <zsl/interp.h>   /* zsl_interp_lin_y_arr() */
 #include "filter.h"
 
+float adrag_get(position_filter_t *pos_kf);
 float cb_update(position_filter_t *pos_kf, float v_y, float v_z, float z);
 void update_apogee_estimate(position_filter_t *pos_kf);
 
 #ifndef AERODYNAMICS_H
 #define AERODYNAMICS_H
 
-#define MASS_DRY  21 // Skyward
+#define MASS_DRY  9.5 // Signy
 #define GRAVITY 9.81
-#define AREA 0.01767 // Skyward
+#define AREA 0.0087 // Signy
 
 
 static const struct zsl_interp_xy cd_tbl[] = {

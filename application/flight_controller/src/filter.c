@@ -7,6 +7,7 @@
 #include <zephyr/logging/log.h>
 #include "filter.h"
 #include <zsl/statistics.h>
+#include "aerodynamics.h"
 
 LOG_MODULE_REGISTER(filter, CONFIG_APP_FILTER_LOG_LEVEL);
 
@@ -18,11 +19,25 @@ LOG_MODULE_REGISTER(filter, CONFIG_APP_FILTER_LOG_LEVEL);
 TODO:
 - Add theta0 and phi0 instead of placeholders (original coordinates)
 */
-void position_filter_init(position_filter_t *pos_kf) {
+void position_filter_init(position_filter_t *pos_kf, init_t *init) {
     float process_variance = 0.01;
-    float accel_variance = 0.01;
-    float barometer_variance = 10;
-    float gps_variance = 0.0001;
+    float ax_variance = 0.03;
+    float ay_variance = 0.03;
+    float az_variance = 0.03;
+    float pressure_variance = 10;
+    float lon_variance = 0.001;
+    float lat_variance = 0.001;
+    float alt_variance = 0.001;
+
+    /*
+    float ax_variance = init->var_ax;
+    float ay_variance = init->var_ay;
+    float az_variance = init->var_az;
+    float pressure_variance = init->var_p;
+    float lon_variance = init->var_lon;
+    float lat_variance = init->var_lat;
+    float alt_variance = init->var_alt;
+    */
 
 
     float P_init[81] = {
@@ -59,15 +74,15 @@ void position_filter_init(position_filter_t *pos_kf) {
 
     // IMU noise matrix
     float Q_init[81] = {
-        accel_variance, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, accel_variance, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, accel_variance, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, accel_variance, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, accel_variance, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, accel_variance, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, accel_variance, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, accel_variance, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, accel_variance
+        ax_variance, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, ay_variance, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, az_variance, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, ax_variance, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, ay_variance, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, az_variance, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, ax_variance, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, ay_variance, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, az_variance
     };
     pos_kf->Q.data = pos_kf->Q_data;
     pos_kf->Q.sz_rows = 9;
@@ -76,7 +91,7 @@ void position_filter_init(position_filter_t *pos_kf) {
 
     // Barometer noise matrix
     float R_init[1] = {
-        barometer_variance
+        pressure_variance
     };
     pos_kf->R.data = pos_kf->R_data;
     pos_kf->R.sz_rows = 1;
@@ -85,9 +100,9 @@ void position_filter_init(position_filter_t *pos_kf) {
 
     // GPS noise matrix
     float T_init[9] = {
-        gps_variance, 0, 0,
-        0, gps_variance, 0,
-        0, 0, gps_variance
+        lon_variance, 0, 0,
+        0, lat_variance, 0,
+        0, 0, alt_variance
     };
     pos_kf->T.data = pos_kf->T_data;
     pos_kf->T.sz_rows = 3;
@@ -217,8 +232,8 @@ void position_filter_accelerometer(position_filter_t *pos_kf, attitude_filter_t 
     zsl_mtx_mult(&AP, &AT, &APAT);
     zsl_mtx_add(&APAT, &pos_kf->Q, &pos_kf->P);
 
-
-    //LOG_INF("z:  %f", pos_kf->X_data[2]);
+    //LOG_INF("altitude: %f", pos_kf->X_data[2]);
+    //LOG_INF("accelerations:\nax - %f\nay - %f\naz - %f", pos_kf->X_data[6], pos_kf->X_data[7], pos_kf->X_data[8]);
 };
 
 
@@ -313,7 +328,10 @@ void position_filter_barometer(position_filter_t *pos_kf, float pressure_kpa, ui
     zsl_mtx_mult(&K, &H, &KH);
     zsl_mtx_sub(&I9, &KH, &I9KH);
     zsl_mtx_mult(&I9KH, &pos_kf->P, &pos_kf->P);
-    //LOG_INF("altitude: %f", pos_kf->X_data[2]);
+
+    //LOG_INF("vxy: %f", sqrtf(pos_kf->X_data[3]*pos_kf->X_data[3] + pos_kf->X_data[4]*pos_kf->X_data[4]));
+    //LOG_INF("vz: %f", pos_kf->X_data[5]);
+    //LOG_INF("az: %f", pos_kf->X_data[8]);
 
 };
 
@@ -442,10 +460,22 @@ void Pmtx_analysis(position_filter_t *pos_kf){
 
 
 // Attitude Filter
-void attitude_filter_init(attitude_filter_t *att_kf) {
+void attitude_filter_init(attitude_filter_t *att_kf, init_t *init) {
     float process_variance = 0.01;
-    float accel_variance = 0.01;
-    float gyro_variance = 0.01;
+    float ax_variance = 0.03;
+    float ay_variance = 0.03;
+    float az_variance = 0.03;
+    float gx_variance = 0.03;
+    float gy_variance = 0.03;
+    float gz_variance = 0.03;
+    /*
+    float ax_variance = init->var_ax;
+    float ay_variance = init->var_ay;
+    float az_variance = init->var_az;
+    float gx_variance = init->var_gx;
+    float gy_variance = init->var_gy;
+    float gz_variance = init->var_gz;
+    */
 
     float P_init[9] = {
         process_variance, 0, 0,
@@ -470,9 +500,9 @@ void attitude_filter_init(attitude_filter_t *att_kf) {
 
     //  gyroscope variance matrix
     float Q_init[9] = {
-        gyro_variance, 0, 0,
-        0, gyro_variance, 0,
-        0, 0, gyro_variance
+        gx_variance, 0, 0,
+        0, gy_variance, 0,
+        0, 0, gz_variance
     };
     att_kf->Q.data = att_kf->Q_data;
     att_kf->Q.sz_rows = 3;
@@ -481,9 +511,9 @@ void attitude_filter_init(attitude_filter_t *att_kf) {
 
     // accelerometer variance matrix
     float R_init[9] = {
-        accel_variance, 0, 0,
-        0, accel_variance, 0,
-        0, 0, accel_variance
+        ax_variance, 0, 0,
+        0, ay_variance, 0,
+        0, 0, az_variance
     };
     att_kf->R.data = att_kf->R_data;
     att_kf->R.sz_rows = 3;
@@ -495,7 +525,7 @@ void attitude_filter_init(attitude_filter_t *att_kf) {
 
 
 // prediction with gyroscope
-void attitude_filter_gyroscope(attitude_filter_t *att_kf, float gx, float gy, float gz, uint32_t time){
+void attitude_filter_gyroscope(position_filter_t *pos_kf, attitude_filter_t *att_kf, float gx, float gy, float gz, uint32_t time){
     if (!att_kf->seeded) {
         att_kf->previous_update = time;
         att_kf->seeded = true;
@@ -504,6 +534,11 @@ void attitude_filter_gyroscope(attitude_filter_t *att_kf, float gx, float gy, fl
     float dt = (time - att_kf->previous_update) / 1000.0;
     att_kf->previous_update = time;
 
+    gx *= (M_PI/180);
+    gy *= (M_PI/180);
+    gz *= (M_PI/180);
+
+    //LOG_INF("gx: %f", gx);
     // Identity matrix 3x3
     zsl_real_t I3_data[9] = {
         1, 0, 0,
@@ -570,10 +605,14 @@ void attitude_filter_gyroscope(attitude_filter_t *att_kf, float gx, float gy, fl
             att_kf->X_data[i] = att_kf->X_data[i]+2*M_PI;
         }
     }
+    float drag_accel = adrag_get(pos_kf);
+    //LOG_INF("altitude: %f", pos_kf->X_data[2]);
+    //LOG_INF("drag a: %f", drag_accel);
+    //LOG_INF("kalman filter az: %f", pos_kf->X_data[8]);
 };
 
 
-void attitude_filter_accelerometer(attitude_filter_t *att_kf, float ax, float ay, float az, uint32_t time){
+void attitude_filter_accelerometer(attitude_filter_t *att_kf, position_filter_t *pos_kf, float ax, float ay, float az, uint32_t time){
     // z matrix
     zsl_real_t z_data[3] = {
         ax,
@@ -602,7 +641,7 @@ void attitude_filter_accelerometer(attitude_filter_t *att_kf, float ax, float ay
     // create h(x)
     float g = 9.81;
 
-    float phi = att_kf->X_data[0];
+    float phi = att_kf->X_data[0] + M_PI/2;
     float theta = att_kf->X_data[1];
 
     float sp = sin(phi);
@@ -610,11 +649,18 @@ void attitude_filter_accelerometer(attitude_filter_t *att_kf, float ax, float ay
     float st = sin(theta);
     float ct = cos(theta);
 
-
+    float drag_accel = adrag_get(pos_kf);
+    //LOG_INF("altitude: %f", pos_kf->X_data[2]);
+    //LOG_INF("drag a: %f", drag_accel);
+    //LOG_INF("gravity in z: %f", g*cp*ct);
+    //LOG_INF("cos(phi) %f", cp);
+    //LOG_INF("phi %f", phi);
+    //LOG_INF("Roll : %f", (att_kf->X_data[0]));
+    //LOG_INF("cos(theta) %f", ct);
     ZSL_MATRIX_DEF(hx, 3, 1); // Projection of gravity
     hx.data[0] = -g*st;
     hx.data[1] = g*sp*ct;
-    hx.data[2] = g*cp*ct;
+    hx.data[2] = g*cp*ct + drag_accel;
 
     // create H (jacobian of h(x))
     ZSL_MATRIX_DEF(H, 3, 3);
@@ -633,11 +679,27 @@ void attitude_filter_accelerometer(attitude_filter_t *att_kf, float ax, float ay
     ZSL_MATRIX_DEF(HT, 3, 3);
     zsl_mtx_trans(&H, &HT);
 
-
     // correction calculation
     // y
     ZSL_MATRIX_DEF(y, 3, 1);
     zsl_mtx_sub(&z, &hx, &y);
+
+    y.data[0] = 0;
+    y.data[1] = 0;
+
+    //LOG_INF("z[0]: %f", z_data[0]);
+    //LOG_INF("z[1]: %f", z_data[1]);
+    //LOG_INF("z[2]: %f", z_data[2]);
+
+    //LOG_INF("hx[0]: %f", hx.data[0]);
+    //LOG_INF("hx[1]: %f", hx.data[1]);
+    //LOG_INF("hx[2]: %f", hx.data[2]);
+
+    //LOG_INF("velocity: %f", filter_get_velocity(pos_kf));
+
+    //LOG_INF("y[0]: %f", y.data[0]);
+    //LOG_INF("y[1]: %f", y.data[1]);
+    //LOG_INF("y[2]: %f", y.data[2]);
 
     // S
     ZSL_MATRIX_DEF(HP, 3, 3);
@@ -666,7 +728,8 @@ void attitude_filter_accelerometer(attitude_filter_t *att_kf, float ax, float ay
     zsl_mtx_mult(&K, &H, &KH);
     zsl_mtx_sub(&I3, &KH, &I3KH);
     zsl_mtx_mult(&I3KH, &att_kf->P, &att_kf->P);
-    //LOG_INF("Roll: %f π", (att_kf->X_data[0])/M_PI);
+    //LOG_INF("Roll : %f", (att_kf->X_data[0]));
+    //LOG_INF("Pitch: %f", (att_kf->X_data[1]));
 };
 
 

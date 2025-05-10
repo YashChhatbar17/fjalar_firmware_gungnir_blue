@@ -8,6 +8,7 @@
 #include "sensors.h"
 #include "filter.h"
 #include "aerodynamics.h"
+#include "logger.h"
 
 LOG_MODULE_REGISTER(flight, CONFIG_APP_FLIGHT_LOG_LEVEL);
 
@@ -28,12 +29,11 @@ LOG_MODULE_REGISTER(flight, CONFIG_APP_FLIGHT_LOG_LEVEL);
 #define COAST_ACCEL_THRESHOLD 5.0
 #define DROGUE_DEPLOYMENT_FAILURE_DELAY 8000
 
-#define IMU_INIT_N 100
-#define BARO_INIT_N 10
-#define GPS_INIT_N 0
+
 
 position_filter_t pos_kf;
 attitude_filter_t att_kf;
+init_t init;
 
 void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1);
 void periodic_thread(void *p1, void *p2, void *p3);
@@ -76,7 +76,7 @@ void init_flight_state(fjalar_t *fjalar) {
 
 }
 
-static init_t init = {0};
+//static init_t init = {0};
 
 static inline bool init_ready(void){
     return init.n_imu  >= IMU_INIT_N  &&
@@ -84,26 +84,159 @@ static inline bool init_ready(void){
            init.n_gps  >= GPS_INIT_N;
 }
 
-/* converts sums -> means, writes them into fjalar  */
-static void init_finish(fjalar_t *fjalar, position_filter_t *pos_kf){
-    pos_kf->pressure_ground = init.p / BARO_INIT_N;
+/* converts sums -> means, writes them into fjalar  */ 
+static void init_finish(fjalar_t *fjalar, position_filter_t *pos_kf, attitude_filter_t *att_kf, init_t *init){
+    double sum_ax  = 0, sum_ay  = 0, sum_az  = 0;
+    double sum_gx  = 0, sum_gy  = 0, sum_gz  = 0;
+    double sum_lon = 0, sum_lat = 0, sum_alt = 0;
+    double sum_p   = 0;
+
+    double mean_ax, mean_ay, mean_az;
+    double mean_gx, mean_gy, mean_gz;
+    double mean_lon, mean_lat, mean_alt;
+    double mean_p;
+
+    double diff_ax  = 0, diff_ay  = 0, diff_az  = 0;
+    double diff_gx  = 0, diff_gy  = 0, diff_gz  = 0;
+    double diff_lon = 0, diff_lat = 0, diff_alt = 0;
+    double diff_p   = 0;
+
+    double var_ax, var_ay, var_az;
+    double var_gx, var_gy, var_gz;
+    double var_lon, var_lat, var_alt;
+    double var_p;
+
+    // Calculate variance: summarize deviation from mean squared, divide by N -> variance
+    // calculate mean
+    for (int i = 0; i<IMU_INIT_N; i++){
+        sum_ax += init->ax[i];
+        sum_ay += init->ay[i];
+        sum_az += init->az[i];
+        sum_gx += init->gx[i];
+        sum_gy += init->gy[i];
+        sum_gz += init->gz[i];}
+    mean_ax = sum_ax/IMU_INIT_N;
+    mean_ay = sum_ay/IMU_INIT_N;
+    mean_az = sum_az/IMU_INIT_N;
+    mean_gx = sum_gx/IMU_INIT_N;
+    mean_gy = sum_gy/IMU_INIT_N;
+    mean_gz = sum_gz/IMU_INIT_N;
+
+    for (int i = 0; i<BARO_INIT_N; i++){
+        sum_p += init->p[i];}
+    mean_p = sum_p/BARO_INIT_N;
+
+    for (int i = 0; i<GPS_INIT_N; i++){
+        sum_lon += init->lon[i];
+        sum_lat += init->lat[i];
+        sum_alt += init->alt[i];}
+    mean_lon = sum_lon/GPS_INIT_N;
+    mean_lat = sum_lat/GPS_INIT_N;
+    mean_alt = sum_alt/GPS_INIT_N;
+
+    // calculate variance
+    for (int i = 0; i<IMU_INIT_N; i++){
+        diff_ax += (init->ax[i]-mean_ax)*(init->ax[i]-mean_ax);
+        diff_ay += (init->ay[i]-mean_ay)*(init->ay[i]-mean_ay);
+        diff_az += (init->az[i]-mean_az)*(init->az[i]-mean_az);
+        diff_gx += (init->gx[i]-mean_gx)*(init->gx[i]-mean_gx);
+        diff_gy += (init->gy[i]-mean_gy)*(init->gy[i]-mean_gy);
+        diff_gz += (init->gz[i]-mean_gz)*(init->gz[i]-mean_gz);}
+    var_ax = diff_ax/IMU_INIT_N;
+    var_ay = diff_ay/IMU_INIT_N;
+    var_az = diff_az/IMU_INIT_N;
+    var_gx = diff_gx/IMU_INIT_N;
+    var_gy = diff_gy/IMU_INIT_N;
+    var_gz = diff_gz/IMU_INIT_N;
+
+    for (int i = 0; i<BARO_INIT_N; i++){
+        diff_p += (init->p[i]-mean_p)*(init->p[i]-mean_p);}
+    var_p = diff_p/BARO_INIT_N;
+
+    for (int i = 0; i<GPS_INIT_N; i++){
+        diff_lon += (init->lon[i]-mean_lon)*(init->lon[i]-mean_lon);
+        diff_lat += (init->lat[i]-mean_lat)*(init->lat[i]-mean_lat);
+        diff_alt += (init->alt[i]-mean_alt)*(init->alt[i]-mean_alt);}  
+    var_lon = diff_lon/GPS_INIT_N;
+    var_lat = diff_lat/GPS_INIT_N;
+    var_alt = diff_alt/GPS_INIT_N;
+    
+    // update fjalar struct (nice structure am I right?)
+    init->mean_ax  =  mean_ax;
+    init->mean_ay  =  mean_ay;
+    init->mean_az  =  mean_az;
+    init->mean_gx  =  mean_gx;
+    init->mean_gy  =  mean_gy;
+    init->mean_gz  =  mean_gz;
+    init->mean_p   =   mean_p;
+    init->mean_lon = mean_lon;
+    init->mean_lat = mean_lat;
+    init->mean_alt = mean_alt;
+
+    init->var_ax   =   var_ax;
+    init->var_ay   =   var_ay;
+    init->var_az   =   var_az;
+    init->var_gx   =   var_gx;
+    init->var_gy   =   var_gy;
+    init->var_gz   =   var_gz;
+    init->var_p    =    var_p;
+    init->var_lon  =  var_lon;
+    init->var_lat  =  var_lat;
+    init->var_alt  =  var_alt;
+    LOG_INF("means: \nmean_ax: %f\nmean_ay: %f\nmean_az: %f\nmean_gx: %f\nmean_gy: %f\nmean_gz: %f\nmean_p: %f\nmean_lon: %f\nmean_lat: %f\nmean_alt: %f", mean_ax, mean_ay, mean_az, mean_gx, mean_gy, mean_gz, mean_p, mean_lon, mean_lat, mean_alt);
+    LOG_INF("variances: \nvar_ax: %f\nvar_ay: %f\nvar_az: %f\nvar_gx: %f\nvar_gy: %f\nvar_gz: %f\nvar_p: %f\nvar_lon: %f\nvar_lat: %f\nvar_alt: %f", var_ax, var_ay, var_az, var_gx, var_gy, var_gz, var_p, var_lon, var_lat, var_alt);
+    
+    pos_kf->pressure_ground = init->mean_p;
     LOG_INF("ground level pressure: %f", pos_kf->pressure_ground);
 
-    pos_kf->lat0  = init.lat / GPS_INIT_N;
-    pos_kf->lon0 = init.lon  / GPS_INIT_N;
-    pos_kf->alt0 = init.alt / GPS_INIT_N;
+    pos_kf->lat0  = init->mean_lat;
+    pos_kf->lon0 = init->mean_lon ;
+    pos_kf->alt0 = init->mean_alt;
 
-    float ax = init.ax / IMU_INIT_N;
-    float ay = init.ay / IMU_INIT_N;
-    float az = init.az / IMU_INIT_N;
+    float ax = init->mean_ax;
+    float ay = init->mean_ay;
+    float az = init->mean_az;
 
+    // identify g (to subtract it later)
     pos_kf->g = sqrtf(ax*ax + ay*ay + az*az);
     LOG_INF("g: %f", pos_kf->g);
 
     pos_kf->seeded = false;
 
-    init.position_init = true;
+    init->position_init = true;
     LOG_INF("init done: lat0 = %f, lon0 = %f", pos_kf->lat0, pos_kf->lon0);
+
+    // euler angles start
+    att_kf->X_data[0] = atan2f(mean_ay, mean_az);
+    att_kf->X_data[1] = atan2f(-mean_ax, sqrtf(mean_ay*mean_ay + mean_az*mean_az));
+    att_kf->X_data[2] = 0.0f;
+    
+    // flip all IMU readings to correct frame
+    float a[3] = { ax, ay, az };
+
+    // find index of the max‐absolute axis
+    int iz = 0;
+    if ( fabsf(a[1]) > fabsf(a[iz]) ) iz = 1;
+    if ( fabsf(a[2]) > fabsf(a[iz]) ) iz = 2;
+
+    // index the other two indices, in cyclic order
+    int ix = (iz + 1) % 3;
+    int iy = (iz + 2) % 3;
+
+    // extract & flip signs so that z is “up” and (x,y,z) is right‐handed
+    int sz = (a[iz] >= 0.0f ? +1 : -1);
+    // flipping x by the same amount preserves right‐handedness when z is flipped
+    int sx = sz;  
+    int sy = 1;    
+
+    fjalar->new_x_index = ix;
+    fjalar->new_y_index = iy;
+    fjalar->new_z_index = iz;
+    fjalar->new_x_sign = sx;
+    fjalar->new_y_sign = sy;
+    fjalar->new_z_sign = sz;
+
+    // add beep when init finish
 }
 
 
@@ -169,8 +302,18 @@ void periodic_thread(void *p1, void *p2, void *p3) {
     while (true) {
         Pmtx_analysis(&pos_kf);
 
-        update_apogee_estimate(&pos_kf);
+        if (pos_kf.X_data[8]<0 && pos_kf.X_data[2]>100){
+            update_apogee_estimate(&pos_kf);
+        } 
 
+        uint32_t t_ms  = k_uptime_get_32();     // milliseconds since boot
+        double   t_sec = (double)t_ms / 1000.0; // seconds
+        csv_log(&logger,
+            t_sec,
+            pos_kf.X_data[6], pos_kf.X_data[7], pos_kf.X_data[8], // ax ay az
+            pos_kf.X_data[3], pos_kf.X_data[4], pos_kf.X_data[5], // vx vy vz
+            pos_kf.X_data[0], pos_kf.X_data[1], pos_kf.X_data[2], // dx dy dz
+            att_kf.X_data[0], att_kf.X_data[1], att_kf.X_data[3]); // roll pitch yaw
 
         k_msleep(50); // 50 ms = 20 Hz
     }
@@ -186,15 +329,15 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
                                         &imu_msgq),
     };
 
-    fjalar->ground_level = 0;
+    fjalar->ground_level = 0; // remove
     fjalar->ax = 0;
     fjalar->ay = 0;
     fjalar->az = 9.8;
     fjalar->altitude = 0;
     fjalar->velocity = 0;
 
-    position_filter_init(&pos_kf);
-    attitude_filter_init(&att_kf);
+    position_filter_init(&pos_kf, &init);
+    attitude_filter_init(&att_kf, &init);
 
     struct pressure_queue_entry pressure;
     struct imu_queue_entry imu;
@@ -223,20 +366,49 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
             events[1].state = K_POLL_STATE_NOT_READY;
 
             // init mode
-            if (!init.position_init) {
-                if (init.n_imu < IMU_INIT_N) {
-                    init.ax += imu.ax;
-                    init.ay += imu.ay;
-                    init.az += imu.az;
+            if (!init.position_init && init.n_imu < IMU_INIT_N) {
+                if (init.n_imu == 0 || imu.ax != init.ax[init.n_imu-1]){ // in order to work on native simulation
+                    init.ax[init.n_imu] = imu.ax;
+                    init.ay[init.n_imu] = imu.ay;
+                    init.az[init.n_imu] = imu.az;
+                    init.gx[init.n_imu] = imu.gx;
+                    init.gy[init.n_imu] = imu.gy;
+                    init.gz[init.n_imu] = imu.gz;
                     init.n_imu++;
-                }
+                } 
             } else {
+                // correct for IMU mounting inside of rocket - works for any number of rotations of 90 degrees.
+                float a_array[3] = {imu.ax, imu.ay, imu.az};
+                float g_array[3] = {imu.gx, imu.gy, imu.gz};
+
+                float ax = a_array[fjalar->new_x_index] * fjalar->new_x_sign; 
+                float ay = a_array[fjalar->new_y_index] * fjalar->new_y_sign; 
+                float az = a_array[fjalar->new_z_index] * fjalar->new_z_sign;
+                
+                float gx = g_array[fjalar->new_x_index] * fjalar->new_x_sign; 
+                float gy = g_array[fjalar->new_y_index] * fjalar->new_y_sign; 
+                float gz = g_array[fjalar->new_z_index] * fjalar->new_z_sign; 
+                
+                // call filters
                 position_filter_accelerometer(&pos_kf, &att_kf, imu.ax, imu.ay, imu.az, imu.t); // needs magnetometer
-                //attitude_filter_gyroscope(&att_kf, imu.gx, imu.gy, imu.gz, imu.t); // needs correction step with estimated accel
-                attitude_filter_accelerometer(&att_kf, imu.ax, imu.ay, imu.az, imu.t);
+                attitude_filter_gyroscope(&pos_kf, &att_kf, imu.gx, imu.gy, imu.gz, imu.t);
+
+                float predicted_acceleration = adrag_get(&pos_kf) + 9.81;
+
+                // differrence between predicted acceleration and acceleration --> if zero there are no unmodelled forces (thrust)
+                float az_difference = az - predicted_acceleration;
+                    LOG_INF("az_difference: %f", abs(az_difference));
+
+                if (pos_kf.X_data[2]<100 && abs(pos_kf.X_data[8])<1){//(pos_kf.X_data[8]<1 && pos_kf.X_data[8]>-1 && pos_kf.X_data[2]<100){
+                    attitude_filter_accelerometer(&att_kf, &pos_kf, ax, ay, az, imu.t); //only used pre launch
+                }
+                if (pos_kf.X_data[2]>100 && pos_kf.X_data[8]<0 && abs(az_difference)<7){//(pos_kf.X_data[8]<1 && pos_kf.X_data[8]>-1 && pos_kf.X_data[2]<100){
+                    //LOG_INF("yippie--------------------------------------------------");
+                    //attitude_filter_accelerometer(&att_kf, &pos_kf, ax, ay, az, imu.t); //only used pre launch
+                }
             }
 
-            /* Give an error if the acceleration in z at launchpad is not around 9.8
+            // Give an error if the acceleration in z at launchpad is not around 9.8
             if (fjalar->flight_state == STATE_LAUNCHPAD
             || fjalar->flight_state == STATE_IDLE
             ) {
@@ -244,14 +416,8 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
             && (fjalar->flight_state == STATE_LAUNCHPAD)) {
                 LOG_ERR("Acceleration is negative on the launchpad");
             }
-            */
 
-            // Please add EKF to make these be accurate
-            fjalar->ax = imu.ax;
-            fjalar->ay = imu.ay;
-            fjalar->az = imu.az;
-
-            //LOG_DBG("Acceleration: %f %f %f", fjalar->ax, fjalar->ay, fjalar->az);
+            LOG_DBG("Acceleration: %f %f %f", fjalar->ax, fjalar->ay, fjalar->az);
         }
 
         if (k_msgq_get(&pressure_msgq, &pressure, K_NO_WAIT) == 0) {
@@ -260,8 +426,10 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
             // init
             if (!init.position_init) {
                 if (init.n_baro < BARO_INIT_N) {
-                    init.p += pressure.pressure*1000;
+                    if (init.n_baro == 0 || pressure.pressure*1000 != init.p[init.n_baro-1]){
+                    init.p[init.n_baro] = pressure.pressure*1000;
                     init.n_baro++;
+                    } 
                 }
             } else {
                 position_filter_barometer(&pos_kf, pressure.pressure, pressure.t);
@@ -288,9 +456,9 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
                     // init position
                     if (!init.position_init) {
                         if (init.n_gps < GPS_INIT_N) {
-                            init.lat += gps.lat;
-                            init.lon += gps.lon;
-                            init.alt += gps.alt;
+                            init.lat[init.n_gps] = gps.lat;
+                            init.lon[init.n_gps] = gps.lon;
+                            init.alt[init.n_gps] = gps.alt;
                             init.n_gps++;
                         }
                     } else {
@@ -305,7 +473,7 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
         #endif
 
         if (!init.position_init && init_ready()) {
-            init_finish(fjalar, &pos_kf);
+            init_finish(fjalar, &pos_kf, &att_kf, &init);
         }
 
         evaluate_state(fjalar);

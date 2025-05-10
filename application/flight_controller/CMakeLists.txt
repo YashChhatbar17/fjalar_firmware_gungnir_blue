@@ -32,6 +32,7 @@ target_sources(app PRIVATE
     src/filter.c
     src/hello.cpp
     src/aerodynamics.c
+    src/logger.c
 )
 
 if(TEST_BUILD)

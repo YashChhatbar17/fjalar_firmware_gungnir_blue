@@ -5,18 +5,32 @@
 
 LOG_MODULE_REGISTER(aerodynamics, CONFIG_APP_AERODYNAMICS_LOG_LEVEL);
 
-float cb_update(position_filter_t *pos_kf, float v_xy, float v_z, float z){
-    float v = sqrt((v_xy*v_xy)+(v_z*v_z));
-
+float adrag_get(position_filter_t *pos_kf){
+    float vxy = sqrtf(pos_kf->X_data[3]*pos_kf->X_data[3] + pos_kf->X_data[4]*pos_kf->X_data[4]);
+    float vz = pos_kf->X_data[5];
+    float v = sqrt((vxy*vxy)+(vz*vz));
+    float z = pos_kf->X_data[2];
+    
     // drag coefficient
     float c_d;
+
     if (v>5){
         c_d = cd_at(v);
     } else{
         c_d = 0.44;
     }
 
-    float a = (air_density_at(z)*c_d*AREA*v*v) / (2*MASS_DRY);
+    float a;
+    if (v>0){a = - (air_density_at(z)*c_d*AREA*v*v) / (2*MASS_DRY);
+    } else {a = (air_density_at(z)*c_d*AREA*v*v) / (2*MASS_DRY);}
+   
+    return a;
+}
+
+float cb_update(position_filter_t *pos_kf, float v_xy, float v_z, float z){
+    float v = sqrt((v_xy*v_xy)+(v_z*v_z));
+
+    float a = adrag_get(pos_kf);
     float c_b = air_density_at(z)*v*v / (2*a);
     return c_b;
 }
@@ -39,14 +53,7 @@ void update_apogee_estimate(position_filter_t *pos_kf){
     float a_xy;
     float a_z;
 
-    //LOG_INF("xy: %f", xy);
-    //LOG_INF("v_xy: %f", v_xy);
-
-    LOG_INF("z: %f", z);
-    //LOG_INF("v_z: %f", v_z); // ERROR: Kolla så att accel, velocity och position är korrekt under data.
-
-
-    if (a_z0<0 && v_z>0 && z>100){
+    if (a_z0<0 && v_z>0 && z>100){ // fix nan
         while (v_z>0){
             //float a_z  = -GRAVITY -((air_density_at(z) * cd_at(v_xyz) * AREA) / (2 * MASS_DRY)) * v_z * sqrtf(v_xy*v_xy + v_z*v_z);
             //float a_xy = -((air_density_at(z) * cd_at(v_xyz) * AREA) / (2 * MASS_DRY)) * v_xy * sqrtf(v_xy*v_xy + v_z*v_z);
