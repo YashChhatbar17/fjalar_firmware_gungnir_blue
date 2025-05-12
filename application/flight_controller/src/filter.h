@@ -24,7 +24,9 @@ typedef struct position_filter {
     float pressure_ground;
     float expected_apogee;
 
-    uint32_t previous_update;
+    float whatever;
+
+    uint32_t previous_update_accelerometer;
     bool seeded;
 } position_filter_t;
 
@@ -42,7 +44,7 @@ typedef struct attitude_filter {
     float theta;
     float psi;
 
-    uint32_t previous_update;
+    uint32_t previous_update_gyroscope;
     bool seeded;
 } attitude_filter_t;
 

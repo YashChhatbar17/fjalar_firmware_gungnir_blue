@@ -11,10 +11,11 @@ typedef struct CSVLogger {
 bool csv_init(CSVLogger *logger, const char *path);
 void csv_log(CSVLogger *logger,
              double t,
-             double ax, double ay, double az,
-             double vx, double vy, double vz,
              double dx, double dy, double dz,
-             double rx, double ry, double rz);
+             double vx, double vy, double vz,
+             double ax, double ay, double az,
+             double rx, double ry, double rz,
+             double p);
 void csv_close(CSVLogger *logger);
 
 extern CSVLogger logger;

@@ -17,10 +17,11 @@ bool csv_init(CSVLogger *logger, const char *path) {
 
     fprintf(logger->fp,
         "time,"
-        "acceleration_x,acceleration_y,acceleration_z,"
-        "velocity_x,velocity_y,velocity_z,"
         "distance_x,distance_y,distance_z,"
-        "rotation_x,rotation_y,rotation_z\n"
+        "velocity_x,velocity_y,velocity_z,"
+        "acceleration_x,acceleration_y,acceleration_z,"
+        "rotation_x,rotation_y,rotation_z,"
+        "pressure\n"
     );
     fflush(logger->fp);
     return true;
@@ -28,22 +29,25 @@ bool csv_init(CSVLogger *logger, const char *path) {
 
 void csv_log(CSVLogger *logger,
              double    t,
-             double    ax, double ay, double az,
-             double    vx, double vy, double vz,
              double    dx, double dy, double dz,
-             double    rx, double ry, double rz)
+             double    vx, double vy, double vz,
+             double    ax, double ay, double az,
+             double    rx, double ry, double rz,
+             double p)
 {
     fprintf(logger->fp,
         "%.6f,"    /* time */
-        "%.6f,%.6f,%.6f,"  /* accel */
+        "%.6f,%.6f,%.6f,"  /* dist */
         "%.6f,%.6f,%.6f,"  /* vel   */
-        "%.6f,%.6f,%.6f,"  /* dist  */
-        "%.6f,%.6f,%.6f\n",/* rot   */
+        "%.6f,%.6f,%.6f,"  /* accel  */
+        "%.6f,%.6f,%.6f," /* rot   */
+        "%.6f\n", // pressure
         t,
-        ax, ay, az,
-        vx, vy, vz,
         dx, dy, dz,
-        rx, ry, rz
+        vx, vy, vz,
+        ax, ay, az,
+        rx, ry, rz,
+        p
     );
     fflush(logger->fp);
 }
