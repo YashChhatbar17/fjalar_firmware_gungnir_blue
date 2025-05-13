@@ -51,8 +51,8 @@ typedef struct {
     int new_z_sign;
 } fjalar_t;
 
-#define IMU_INIT_N 3
-#define BARO_INIT_N 3
+#define IMU_INIT_N 1
+#define BARO_INIT_N 1
 #define GPS_INIT_N 0
 
 typedef struct {

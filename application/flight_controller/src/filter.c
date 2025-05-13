@@ -24,7 +24,7 @@ void position_filter_init(position_filter_t *pos_kf, init_t *init) {
     float ax_variance = 0.01;
     float ay_variance = 0.01;
     float az_variance = 0.01;
-    float pressure_variance = 92;
+    float pressure_variance = 200;
     float lon_variance = 0.001;
     float lat_variance = 0.001;
     float alt_variance = 0.001;
@@ -280,6 +280,8 @@ void position_filter_barometer(position_filter_t *pos_kf, float pressure_kpa, ui
     float pressure_h = P0 * powf(base_h, g / (R * L));
     ZSL_MATRIX_DEF(hx, 1, 1);
     hx.data[0] = pressure_h;
+    LOG_INF("altitud  %f", pos_kf->X_data[2]);
+    LOG_INF("pressure %f", pressure_h);
 
     // create H (jacobian of h(x))
     float dpdh;

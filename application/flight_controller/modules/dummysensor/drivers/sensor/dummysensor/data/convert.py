@@ -54,3 +54,4 @@ for folder in folders:
         baro_length += 1
     out.write("};\n\n")
     out.write(f"uint32_t baro_length = {baro_length};\n\n")
+print("finished")

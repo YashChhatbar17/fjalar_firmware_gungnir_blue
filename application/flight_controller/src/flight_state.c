@@ -432,8 +432,8 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
                     } 
                 }
             } else {
-                if (filter_get_velocity(&pos_kf)<280){
-                    position_filter_barometer(&pos_kf, pressure.pressure, pressure.t);
+                if (filter_get_velocity(&pos_kf)<340){
+                    //position_filter_barometer(&pos_kf, pressure.pressure, pressure.t);
                 }else{LOG_INF("SONIC BOOM WARNING");}
             }
 
