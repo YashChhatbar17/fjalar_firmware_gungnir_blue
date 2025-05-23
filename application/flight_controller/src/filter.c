@@ -128,7 +128,6 @@ void position_filter_accelerometer(position_filter_t *pos_kf, attitude_filter_t 
         pos_kf->seeded = true;
         return;
     }
-    LOG_INF("velocity start z: %f", pos_kf->X_data[5]);
     float dt = (time - pos_kf->previous_update_accelerometer) / 1000.0;
     pos_kf->previous_update_accelerometer = time;
 
@@ -191,7 +190,6 @@ void position_filter_accelerometer(position_filter_t *pos_kf, attitude_filter_t 
         .sz_cols = 1,
         .data = u_data
     };
-    LOG_INF("acceleration    : %f", u_data[2]);
 
 
     // rotational matrix
@@ -234,7 +232,6 @@ void position_filter_accelerometer(position_filter_t *pos_kf, attitude_filter_t 
     zsl_mtx_mult(&AP, &AT, &APAT);
     zsl_mtx_add(&APAT, &pos_kf->Q, &pos_kf->P);
 
-    LOG_INF("velocity z end: %f", pos_kf->X_data[5]);
 };
 
 
@@ -280,8 +277,6 @@ void position_filter_barometer(position_filter_t *pos_kf, float pressure_kpa, ui
     float pressure_h = P0 * powf(base_h, g / (R * L));
     ZSL_MATRIX_DEF(hx, 1, 1);
     hx.data[0] = pressure_h;
-    LOG_INF("altitud  %f", pos_kf->X_data[2]);
-    LOG_INF("pressure %f", pressure_h);
 
     // create H (jacobian of h(x))
     float dpdh;
@@ -332,9 +327,7 @@ void position_filter_barometer(position_filter_t *pos_kf, float pressure_kpa, ui
     zsl_mtx_sub(&I9, &KH, &I9KH);
     zsl_mtx_mult(&I9KH, &pos_kf->P, &pos_kf->P);
 
-    //LOG_INF("vxy: %f", sqrtf(pos_kf->X_data[3]*pos_kf->X_data[3] + pos_kf->X_data[4]*pos_kf->X_data[4]));
-    //LOG_INF("vz: %f", pos_kf->X_data[5]);
-    //LOG_INF("az: %f", pos_kf->X_data[8]);
+
 
 };
 
@@ -541,7 +534,6 @@ void attitude_filter_gyroscope(position_filter_t *pos_kf, attitude_filter_t *att
     gy *= (M_PI/180);
     gz *= (M_PI/180);
 
-    //LOG_INF("gx: %f", gx);
     // Identity matrix 3x3
     zsl_real_t I3_data[9] = {
         1, 0, 0,
@@ -680,20 +672,6 @@ void attitude_filter_accelerometer(attitude_filter_t *att_kf, position_filter_t 
     y.data[0] = 0;
     y.data[1] = 0;
 
-    //LOG_INF("z[0]: %f", z_data[0]);
-    //LOG_INF("z[1]: %f", z_data[1]);
-    //LOG_INF("z[2]: %f", z_data[2]);
-
-    //LOG_INF("hx[0]: %f", hx.data[0]);
-    //LOG_INF("hx[1]: %f", hx.data[1]);
-    //LOG_INF("hx[2]: %f", hx.data[2]);
-
-    //LOG_INF("velocity: %f", filter_get_velocity(pos_kf));
-
-    //LOG_INF("y[0]: %f", y.data[0]);
-    //LOG_INF("y[1]: %f", y.data[1]);
-    //LOG_INF("y[2]: %f", y.data[2]);
-
     // S
     ZSL_MATRIX_DEF(HP, 3, 3);
     ZSL_MATRIX_DEF(HPHT, 3, 3);
@@ -721,13 +699,7 @@ void attitude_filter_accelerometer(attitude_filter_t *att_kf, position_filter_t 
     zsl_mtx_mult(&K, &H, &KH);
     zsl_mtx_sub(&I3, &KH, &I3KH);
     zsl_mtx_mult(&I3KH, &att_kf->P, &att_kf->P);
-    //LOG_INF("Roll : %f", (att_kf->X_data[0]));
-    //LOG_INF("Pitch: %f", (att_kf->X_data[1]));
 };
-
-
-
-
 
 float filter_get_altitude(position_filter_t *pos_kf) {
     return pos_kf->X_data[2];

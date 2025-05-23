@@ -8,7 +8,6 @@
 #include "sensors.h"
 #include "filter.h"
 #include "aerodynamics.h"
-#include "logger.h"
 
 LOG_MODULE_REGISTER(flight, CONFIG_APP_FLIGHT_LOG_LEVEL);
 
@@ -308,6 +307,7 @@ void periodic_thread(void *p1, void *p2, void *p3) {
 
         uint32_t t_ms  = k_uptime_get_32();     // milliseconds since boot
         double   t_sec = (double)t_ms / 1000.0; // seconds
+        /*
         csv_log(&logger,
             t_sec,
             pos_kf.X_data[0], pos_kf.X_data[1], pos_kf.X_data[2], // dx dy dz
@@ -315,8 +315,9 @@ void periodic_thread(void *p1, void *p2, void *p3) {
             pos_kf.X_data[6], pos_kf.X_data[7], pos_kf.X_data[8], // ax ay az
             att_kf.X_data[0], att_kf.X_data[1], att_kf.X_data[3], // roll pitch yaw
             pos_kf.whatever); // pressure
-
+        */
         k_msleep(10); // 10 ms = 100 Hz
+        
     }
 }
 
@@ -365,7 +366,6 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         if (k_msgq_get(&imu_msgq, &imu, K_NO_WAIT) == 0) {
             events[1].state = K_POLL_STATE_NOT_READY;
-            LOG_INF("raw az: %f", -imu.ay);
 
             // init mode
             if (!init.position_init && init.n_imu < IMU_INIT_N) {
@@ -419,7 +419,6 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         if (k_msgq_get(&pressure_msgq, &pressure, K_NO_WAIT) == 0) {
             events[0].state = K_POLL_STATE_NOT_READY;
-            //LOG_INF("velocity total: %f", filter_get_velocity(&pos_kf));
             pos_kf.whatever = pressure.pressure*1000;
             
 
