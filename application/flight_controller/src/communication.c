@@ -1,3 +1,11 @@
+/* 
+This is the communication script, its purpose is to:
+1) Send and recieve information to and from a telemetry modem (commonly used with our own modem, Brage), 
+it uses a protocol specified in schema.proto.
+2) Communicate with uart and usb, this is very important since it makes debugging possible and we can feed it simulated 
+sensor information via usb/uart.
+*/
+
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/flash.h>

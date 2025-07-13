@@ -1,3 +1,9 @@
+/*
+This is the sensor script, its purpose is to:
+1) Retrieve sensor data from the hardware, that is the IMU, barometer and GPS (soon magnetometer and pitot sensor) and sending these
+to a message queue which will be intercepted by the kalman filters.
+*/
+
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/sensor.h>

@@ -1,15 +1,50 @@
-// #include <alloca.h>
+/*
+This is the filter script, its purpose is to:
+1) Using state estimation and data given from the sensors, estimate the rockets position, velocity, acceleration, and orientation.
+For this we use the linear Kalman filter (KF) and the nonlinear extended Kalman filter (EKF)
+*/
+
 #include <string.h>
 #include <math.h>
 #include <zsl/matrices.h>
-// #include <pla.h>
+#include <pla.h>
 #include <stdint.h>
 #include <zephyr/logging/log.h>
-#include "filter.h"
 #include <zsl/statistics.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/sensor.h>
+
+#include "fjalar.h"
+#include "sensors.h"
+#include "init.h"
+#include "filter.h"
 #include "aerodynamics.h"
+#include "flight_state.h"
+
 
 LOG_MODULE_REGISTER(filter, CONFIG_APP_FILTER_LOG_LEVEL);
+
+#define FILTER_THREAD_PRIORITY 7
+#define FILTER_THREAD_STACK_SIZE 4096
+
+void filter_thread(fjalar_t *fjalar, void *p2, void *p1);
+
+K_THREAD_STACK_DEFINE(filter_thread_stack, FILTER_THREAD_STACK_SIZE);
+struct k_thread filter_thread_data;
+k_tid_t filter_thread_id;
+
+
+void init_filter(fjalar_t *fjalar) {
+    filter_thread_id = k_thread_create(
+		&filter_thread_data,
+		filter_thread_stack,
+		K_THREAD_STACK_SIZEOF(filter_thread_stack),
+		(k_thread_entry_t) filter_thread,
+		fjalar, NULL, NULL,
+		FILTER_THREAD_PRIORITY, 0, K_NO_WAIT
+	);
+	k_thread_name_set(filter_thread_id, "filter");
+}
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -19,15 +54,16 @@ LOG_MODULE_REGISTER(filter, CONFIG_APP_FILTER_LOG_LEVEL);
 TODO:
 - Add theta0 and phi0 instead of placeholders (original coordinates)
 */
+
 void position_filter_init(position_filter_t *pos_kf, init_t *init) {
     float process_variance = 0.01;
     float ax_variance = 0.01;
     float ay_variance = 0.01;
     float az_variance = 0.01;
-    float pressure_variance = 200;
-    float lon_variance = 0.001;
-    float lat_variance = 0.001;
-    float alt_variance = 0.001;
+    float pressure_variance = 92;
+    float lon_variance = 0.001; // measure these
+    float lat_variance = 0.001; // measure these
+    float alt_variance = 0.001; // measure these
 
     /*
     float ax_variance = init->var_ax;
@@ -121,8 +157,8 @@ void position_filter_init(position_filter_t *pos_kf, init_t *init) {
     memcpy(pos_kf->Ptwosigma_data, Ptwosigma_init, sizeof(Ptwosigma_init));
 }
 
-// Correction with accelerometer | TODO: need to rotate accel vector
-void position_filter_accelerometer(position_filter_t *pos_kf, attitude_filter_t *att_kf, float ax, float ay, float az, uint32_t time){
+
+void position_filter_accelerometer(init_t *init, position_filter_t *pos_kf, attitude_filter_t *att_kf, float ax, float ay, float az, uint32_t time){
     if (!pos_kf->seeded) {
         pos_kf->previous_update_accelerometer = time;
         pos_kf->seeded = true;
@@ -216,7 +252,7 @@ void position_filter_accelerometer(position_filter_t *pos_kf, attitude_filter_t 
     // rotate u given an attitude
     ZSL_MATRIX_DEF(u_rot, 3, 1);
     zsl_mtx_mult(&rotation, &u, &u_rot);
-    u_rot.data[2] = u_rot.data[2] - pos_kf->g; // correct for gravity
+    u_rot.data[2] = u_rot.data[2] - init->g_accelerometer; // correct for gravity (accelerometers gravity)
     // X
     ZSL_MATRIX_DEF(AX, 9, 1);
     ZSL_MATRIX_DEF(BU, 9, 1);
@@ -236,7 +272,7 @@ void position_filter_accelerometer(position_filter_t *pos_kf, attitude_filter_t 
 
 
 // Correction with barometer
-void position_filter_barometer(position_filter_t *pos_kf, float pressure_kpa, uint32_t time){
+void position_filter_barometer(init_t *init, position_filter_t *pos_kf, float pressure_kpa, uint32_t time){
     // z matrix
     zsl_real_t z_data[1] = {
         pressure_kpa * 1000 // kPa to Pa
@@ -267,7 +303,7 @@ void position_filter_barometer(position_filter_t *pos_kf, float pressure_kpa, ui
 
     /*EKF STEPS*/
     // create h(x)
-    const float P0 = pos_kf->pressure_ground;
+    const float P0 = init->pressure_ground;
     const float T0 = 288.15f;
     const float L  = 0.0065f;
     const float g = 9.81f;
@@ -326,15 +362,12 @@ void position_filter_barometer(position_filter_t *pos_kf, float pressure_kpa, ui
     zsl_mtx_mult(&K, &H, &KH);
     zsl_mtx_sub(&I9, &KH, &I9KH);
     zsl_mtx_mult(&I9KH, &pos_kf->P, &pos_kf->P);
-
-
-
 };
 
 // Correction with gps
-void position_filter_gps(position_filter_t *pos_kf, float lat, float lon, float alt, uint32_t time){
-    float phi0 = pos_kf->lon0; // longitude of launchpad
-    float theta0 = pos_kf->lat0; // Latitude of launchpad
+void position_filter_gps(init_t *init, position_filter_t *pos_kf, float lat, float lon, float alt, uint32_t time){
+    float phi0 = init->lon0; // longitude of launchpad
+    float theta0 = init->lat0; // Latitude of launchpad
     float R = 6370000; // Radius earth placeholder
 
     // H matrix
@@ -447,9 +480,6 @@ void Pmtx_analysis(position_filter_t *pos_kf){
         pos_kf->Ptwosigma_data[i] = 2*sqrtf(pos_kf->P_data[9*i+i]);
     }
 }
-
-
-
 
 
 
@@ -603,7 +633,7 @@ void attitude_filter_gyroscope(position_filter_t *pos_kf, attitude_filter_t *att
 };
 
 
-void attitude_filter_accelerometer(attitude_filter_t *att_kf, position_filter_t *pos_kf, float ax, float ay, float az, uint32_t time){
+void attitude_filter_accelerometer_ground(attitude_filter_t *att_kf, position_filter_t *pos_kf, aerodynamics_t *aerodynamics, float ax, float ay, float az, uint32_t time){
     // z matrix
     zsl_real_t z_data[3] = {
         ax,
@@ -630,22 +660,20 @@ void attitude_filter_accelerometer(attitude_filter_t *att_kf, position_filter_t 
 
     // EKF STEPS
     // create h(x)
-    float g = 9.81;
+    float g = aerodynamics->g_physics;
 
-    float phi = att_kf->X_data[0] + M_PI/2;
+    float phi = att_kf->X_data[0];
     float theta = att_kf->X_data[1];
 
     float sp = sin(phi);
     float cp = cos(phi);
     float st = sin(theta);
     float ct = cos(theta);
-
-    float drag_accel = adrag_get(pos_kf);
-
-    ZSL_MATRIX_DEF(hx, 3, 1); // Projection of gravity
+    
+    ZSL_MATRIX_DEF(hx, 3, 1); // Is not correct for accelerating system
     hx.data[0] = -g*st;
     hx.data[1] = g*sp*ct;
-    hx.data[2] = g*cp*ct + drag_accel;
+    hx.data[2] = g*cp*ct;
 
     // create H (jacobian of h(x))
     ZSL_MATRIX_DEF(H, 3, 3);
@@ -668,9 +696,6 @@ void attitude_filter_accelerometer(attitude_filter_t *att_kf, position_filter_t 
     // y
     ZSL_MATRIX_DEF(y, 3, 1);
     zsl_mtx_sub(&z, &hx, &y);
-
-    y.data[0] = 0;
-    y.data[1] = 0;
 
     // S
     ZSL_MATRIX_DEF(HP, 3, 3);
@@ -701,14 +726,144 @@ void attitude_filter_accelerometer(attitude_filter_t *att_kf, position_filter_t 
     zsl_mtx_mult(&I3KH, &att_kf->P, &att_kf->P);
 };
 
-float filter_get_altitude(position_filter_t *pos_kf) {
-    return pos_kf->X_data[2];
-}
 
-float filter_get_velocity(position_filter_t *pos_kf) {
+
+void update_velocity_norm(position_filter_t *pos_kf) {
     float vx = pos_kf->X_data[3];
     float vy = pos_kf->X_data[4];
     float vz = pos_kf->X_data[5];
-    float v_resultant = sqrtf(vx*vx + vy*vy + vz*vz);
-    return v_resultant;
+    if (vz>0){
+        pos_kf->v_norm = sqrtf(vx*vx + vy*vy + vz*vz);
+    } else{ 
+        pos_kf->v_norm = -sqrtf(vx*vx + vy*vy + vz*vz);
+    }
+    
 }
+
+void update_acceleration_norm(position_filter_t *pos_kf) {
+    float ax = pos_kf->X_data[6];
+    float ay = pos_kf->X_data[7];
+    float az = pos_kf->X_data[8];
+    if (az>0){
+        pos_kf->a_norm = sqrtf(ax*ax + ay*ay + az*az);
+    } else{
+        pos_kf->a_norm = -sqrtf(ax*ax + ay*ay + az*az);
+    }
+}
+
+void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
+    init_t            *init  = fjalar->ptr_init;
+    position_filter_t *pos_kf = fjalar->ptr_pos_kf;
+    attitude_filter_t *att_kf = fjalar->ptr_att_kf;
+    aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
+    state_t           *state = fjalar->ptr_state;
+
+    // call things before loop
+    struct k_poll_event events[2] = {
+    K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+                                    K_POLL_MODE_NOTIFY_ONLY,
+                                    &pressure_msgq),
+    K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
+                                    K_POLL_MODE_NOTIFY_ONLY,
+                                    &imu_msgq),
+    };
+
+    // k_poll(&events[0], 1, K_FOREVER);
+    // k_poll(&events[1], 1, K_FOREVER);
+    events[0].state = K_POLL_STATE_NOT_READY;
+    events[1].state = K_POLL_STATE_NOT_READY;
+
+    struct imu_queue_entry imu;
+    struct pressure_queue_entry pressure;
+    struct gps_queue_entry gps;
+
+    position_filter_init(pos_kf, init);
+    attitude_filter_init(att_kf, init);
+
+    while (true) {
+        if (k_poll(events, 2, K_MSEC(1000))) {
+            LOG_ERR("Stopped receiving measurements");
+            continue;
+        }
+
+        if (k_msgq_get(&imu_msgq, &imu, K_NO_WAIT) == 0) {
+            events[1].state = K_POLL_STATE_NOT_READY;
+
+            // correct for IMU mounting inside of rocket - works for any number of rotations of 90 degrees.
+            float a_array[3] = {imu.ax, imu.ay, imu.az};
+            float g_array[3] = {imu.gx, imu.gy, imu.gz};
+
+            float ax = a_array[init->new_x_index] * init->new_x_sign; 
+            float ay = a_array[init->new_y_index] * init->new_y_sign; 
+            float az = a_array[init->new_z_index] * init->new_z_sign;
+            
+            float gx = g_array[init->new_x_index] * init->new_x_sign; 
+            float gy = g_array[init->new_y_index] * init->new_y_sign; 
+            float gz = g_array[init->new_z_index] * init->new_z_sign; 
+            
+            // call filters
+            position_filter_accelerometer(init, pos_kf, att_kf, ax, ay, az, imu.t); // needs magnetometer
+            attitude_filter_gyroscope(pos_kf, att_kf, gx, gy, gz, imu.t);
+
+            // use state machine
+            if (pos_kf->X_data[2]<10 && fabsf(pos_kf->X_data[8])<1){
+                attitude_filter_accelerometer_ground(att_kf, pos_kf, aerodynamics, ax, ay, az, imu.t); //only used pre launch
+            }
+
+
+        }
+
+        if (k_msgq_get(&pressure_msgq, &pressure, K_NO_WAIT) == 0) {
+            events[0].state = K_POLL_STATE_NOT_READY;            
+            
+            // use state machine
+            if (pos_kf->v_norm<340){
+                //position_filter_barometer(pos_kf, pressure.pressure, pressure.t); // Fix this with new barometer calculation (static and dynamic pressure)
+            }else{LOG_INF("SONIC BOOM WARNING");}          
+        }
+
+
+        #if DT_ALIAS_EXISTS(gps_uart)
+        {
+            struct gps_queue_entry gps;
+            if (k_msgq_get(&gps_msgq, &gps, K_NO_WAIT) == 0 && !isnan(gps.lat) && !isnan(gps.lon) && !isnan(gps.alt)) {
+
+                position_filter_gps(init, pos_kf, gps.lat, gps.lon, gps.alt, gps.t);
+
+
+
+            } else {
+                LOG_WRN("GPS sample dropped (NaN/Inf)");
+            }
+        }
+        #endif
+
+        update_velocity_norm(pos_kf);
+        update_acceleration_norm(pos_kf);
+
+        Pmtx_analysis(pos_kf);
+
+        
+
+        /*
+        zsl_real_t P_data[9];
+    struct zsl_mtx P;
+    zsl_real_t X_data[9];
+    struct zsl_mtx X;
+    zsl_real_t Q_data[9];
+    struct zsl_mtx Q;
+    zsl_real_t R_data[9];
+    struct zsl_mtx R;
+
+    float phi;
+    float theta;
+    float psi;
+    */
+
+
+
+        }
+    }
+
+
+

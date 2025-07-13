@@ -3,9 +3,22 @@
 #include "fjalar.h"
 #include "filter.h"
 
-void init_flight_state(fjalar_t *fjalar);
-void init_finish(fjalar_t *fjalar, position_filter_t *pos_kf, attitude_filter_t *att_kf, init_t *init);
+typedef struct fjalar fjalar_t;
+typedef struct init init_t;
+typedef struct position_filter position_filter_t;
+typedef struct attitude_filter attitude_filter_t;
+typedef struct aerodynamics aerodynamics_t;
 
-void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1);
-void periodic_thread(void *p1, void *p2, void *p3);
+typedef struct state {
+    int flight_state; // to implement for state machine
+    
+    uint32_t liftoff_time; // need to add an update to this inside of state machine
+    uint32_t apogee_time; // need to add an update to this inside of state machine
+
+    bool drogue_deployed; // use in state machine maybe remove and only keep in fjalar, or edit communications.c (noooooo must I learn new code)
+    bool main_deployed; // use in state machine
+} state_t;
+
+void init_flight_state(fjalar_t *fjalar);
+
 

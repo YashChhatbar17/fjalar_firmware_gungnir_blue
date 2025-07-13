@@ -1,3 +1,16 @@
+/*
+This is the commands script; its purpose is to:
+1) Read bytes from the communication channel, assemble them into Fjalar protocol messages.
+2) Dispatch each complete message to the appropriate handler based on its tag.
+3) Enforce permissions (sudo mode) for critical operations.
+4) Update the system state (flight mode, sudo flag), trigger hardware actions (pyros), 
+   and manage flash memory (clear/read).
+5) Send acknowledgements or data responses back over the same channel.
+
+It sits between the low-level communication module and the higher-level flight logic,
+translating incoming commands into state changes and actuator outputs.
+*/
+
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <protocol.h>

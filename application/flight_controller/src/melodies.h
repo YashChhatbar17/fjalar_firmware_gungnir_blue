@@ -1,3 +1,9 @@
+/*
+This is the melodies script, and it serves no purpose.
+
+If one has spent enough nights in the workshop with fjalar, he might add his own favourite melody here.
+*/
+
 #define NOTE_B0  31
 #define NOTE_C1  33
 #define NOTE_CS1 35

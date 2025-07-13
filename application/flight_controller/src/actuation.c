@@ -1,3 +1,7 @@
+/*
+This is the actuation script, its purpose is to:
+1) Control hardware such as buzzer and led. One can, if he has the humour for it, play a little song on Fjalar.
+*/
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>

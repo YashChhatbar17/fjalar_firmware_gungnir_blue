@@ -3,6 +3,11 @@
 #include <zsl/matrices.h>
 #include "fjalar.h"
 
+typedef struct fjalar fjalar_t;
+typedef struct init init_t;
+typedef struct aerodynamics aerodynamics_t;
+typedef struct state state_t;
+
 typedef struct position_filter {
     zsl_real_t P_data[81];
     struct zsl_mtx P;
@@ -17,14 +22,9 @@ typedef struct position_filter {
     zsl_real_t Ptwosigma_data[9];
     struct zsl_mtx Ptwosigma;
 
-    float lat0;
-    float lon0;
-    float alt0;
-    float g;
-    float pressure_ground;
-    float expected_apogee;
 
-    float whatever;
+    float a_norm;
+    float v_norm;
 
     uint32_t previous_update_accelerometer;
     bool seeded;
@@ -48,18 +48,5 @@ typedef struct attitude_filter {
     bool seeded;
 } attitude_filter_t;
 
+void init_filter(fjalar_t *fjalar);
 
-
-void position_filter_init(position_filter_t *pos_kf, init_t *init);
-void position_filter_accelerometer(position_filter_t *pos_kf, attitude_filter_t *att_kf, float ax, float ay, float az, uint32_t time);
-void position_filter_barometer(position_filter_t *pos_kf, float pressure, uint32_t time);
-void position_filter_gps(position_filter_t *pos_kf, float lat, float lon, float alt, uint32_t time);
-
-void attitude_filter_init(attitude_filter_t *att_kf, init_t *init);
-void attitude_filter_gyroscope(position_filter_t *pos_kf, attitude_filter_t *att_kf, float gx, float gy, float gz, uint32_t time);
-void attitude_filter_accelerometer(attitude_filter_t *att_kf, position_filter_t *pos_kf, float ax, float ay, float az, uint32_t time);
-
-float filter_get_altitude(position_filter_t *pos_kf);
-float filter_get_velocity(position_filter_t *pos_kf);
-
-void Pmtx_analysis(position_filter_t *pos_kf);

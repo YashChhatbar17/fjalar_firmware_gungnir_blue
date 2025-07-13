@@ -1,17 +1,32 @@
+#pragma once
+
 #include <zsl/interp.h>   /* zsl_interp_lin_y_arr() */
 #include "filter.h"
 
-float adrag_get(position_filter_t *pos_kf);
-float cb_update(position_filter_t *pos_kf, float v_y, float v_z, float z);
-void update_apogee_estimate(position_filter_t *pos_kf);
+typedef struct fjalar fjalar_t;
+typedef struct init t;
+typedef struct position_filter position_filter_t;
+typedef struct attitude_filter attitude_filter_t;
+typedef struct state state_t;
+
+typedef struct aerodynamics {
+    zsl_real_t drag_data[3]; // acceleration, not force!
+    struct zsl_mtx drag; // drag induced acceleration in local frame
+    float drag_norm;
+    float expected_apogee; // predicted apogee based on drag model
+    bool thrust_over; // true if thrust is over, false if not
+    float g_physics;
+} aerodynamics_t;
+
+void init_aerodynamics(fjalar_t *fjalar);
 
 #ifndef AERODYNAMICS_H
 #define AERODYNAMICS_H
 
-#define MASS_DRY  9.5 // Signy
+// change these values to Freyja values
+#define MASS_DRY  9 //38 // Freyja
 #define GRAVITY 9.81
-#define AREA 0.0087 // Signy
-
+#define AREA 0.008 // 0.011 // Freyja
 
 static const struct zsl_interp_xy cd_tbl[] = {
     {3.43, 0.445392077},

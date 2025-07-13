@@ -1,7 +1,13 @@
 #pragma once
 #define DT_ALIAS_EXISTS(alias) DT_NODE_EXISTS(DT_ALIAS(alias))
 
-enum fjalar_flight_state {
+typedef struct init init_t;
+typedef struct position_filter position_filter_t;
+typedef struct attitude_filter attitude_filter_t;
+typedef struct aerodynamics aerodynamics_t;
+typedef struct state state_t;
+
+enum fjalar_flight_state { // code these in to state machine
     STATE_IDLE,
     STATE_LAUNCHPAD,
     STATE_BOOST,
@@ -12,7 +18,7 @@ enum fjalar_flight_state {
     STATE_LANDED,
 };
 
-enum fjalar_flight_event {
+enum fjalar_flight_event { // code these in to state machine
     EVENT_LAUNCH,
     EVENT_BURNOUT,
     EVENT_APOGEE,
@@ -21,51 +27,35 @@ enum fjalar_flight_event {
     EVENT_LANDED
 };
 
-typedef struct {
+typedef struct fjalar {
     enum fjalar_flight_state flight_state;
-    float altitude;
-    float ground_level;
-    float velocity;
-    float ax;
-    float ay;
-    float az;
-    bool drogue_deployed;
-    bool main_deployed;
-    uint32_t liftoff_at;
-    uint32_t apogee_at;
-    bool sudo;
-    uint32_t flash_address;
-    uint32_t flash_size;
-    float battery_voltage;
-    float latitude;
-    float longitude;
-    bool pyro1_sense;
-    bool pyro2_sense;
-    bool pyro3_sense;
+    float altitude; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    float ground_level; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    float velocity; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    float ax; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    float ay; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    float az; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    bool drogue_deployed; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    bool main_deployed; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    uint32_t liftoff_at; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    uint32_t apogee_at; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    bool sudo; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    uint32_t flash_address; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    uint32_t flash_size; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    float battery_voltage; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    float latitude; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    float longitude; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    bool pyro1_sense; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    bool pyro2_sense; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    bool pyro3_sense; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
+    
+    init_t            *ptr_init;
+    position_filter_t *ptr_pos_kf;
+    attitude_filter_t *ptr_att_kf;
+    aerodynamics_t    *ptr_aerodynamics;
+    state_t           *ptr_state;
 
-    int new_x_index;
-    int new_y_index;
-    int new_z_index;
-    int new_x_sign;
-    int new_y_sign;
-    int new_z_sign;
 } fjalar_t;
 
-#define IMU_INIT_N 1
-#define BARO_INIT_N 1
-#define GPS_INIT_N 0
-
-typedef struct {
-    // arrays
-    float ax[IMU_INIT_N], ay[IMU_INIT_N], az[IMU_INIT_N], gx[IMU_INIT_N], gy[IMU_INIT_N], gz[IMU_INIT_N];
-    float p[BARO_INIT_N];
-    float lat[GPS_INIT_N], lon[GPS_INIT_N], alt[GPS_INIT_N];
-    // mean and variances
-    double mean_ax, mean_ay, mean_az, mean_gx, mean_gy, mean_gz, mean_p, mean_lon, mean_lat, mean_alt;
-    double var_ax, var_ay, var_az, var_gx, var_gy, var_gz, var_p, var_lon, var_lat, var_alt;
-
-    uint16_t n_imu, n_baro, n_gps;
-    bool position_init;
-} init_t;
 
 extern fjalar_t fjalar_god;
