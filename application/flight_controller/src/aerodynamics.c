@@ -134,12 +134,30 @@ void drag_update(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodynam
     }
 }
 
-void is_thrust_over(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodynamics_t *aerodynamics){ // will only be correct if run during flight, not before launch
-    float calculated_acceleration = aerodynamics->drag_norm - aerodynamics->g_physics;
-    float estimated_acceleration  = pos_kf->a_norm;
+void update_thrust(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodynamics_t *aerodynamics, state_t *state){ // will only be correct if run during flight, not before launch
 
-    float a_diff = fabsf(calculated_acceleration - estimated_acceleration); // diff between estimated and predicted acceleration
-    aerodynamics->thrust_over = (pos_kf->X_data[2]>10 && a_diff < 3);
+
+    float N; // normal force induced acceleration
+    if (state->flight_state == STATE_IDLE || state->flight_event == STATE_LAUNCHPAD){
+        N = aerodynamics->g_physics;
+    } else{N = 0;}
+    float g = -(aerodynamics->g_physics); // gravitational acceleration
+    float D = aerodynamics->drag_norm; // drag acceleration
+    float T; // Thrust
+    float total_acceleration = pos_kf->a_norm;
+
+    if (state->flight_state == STATE_IDLE || state->flight_state == STATE_LAUNCHPAD){
+        T = total_acceleration - N;
+    }
+    if (state->flight_state == STATE_BOOST || state->flight_state == STATE_COAST){
+        T = total_acceleration - g - D;
+    }
+
+    if (fabsf(T)>3){
+        aerodynamics->thrust_bool = 1; // thrust exists
+    } else{
+        aerodynamics->thrust_bool = 0; // thrust does not exist
+    }
 }
 
 void update_apogee_estimate(position_filter_t *pos_kf, aerodynamics_t *aerodynamics){
@@ -183,9 +201,16 @@ void update_apogee_estimate(position_filter_t *pos_kf, aerodynamics_t *aerodynam
         xy   += dt * v_xy;
         z    += dt * v_z;
     }
-    LOG_INF("apogee estimate: %f", z);
     aerodynamics->expected_apogee = z;
 
+}
+
+void update_mach_number(position_filter_t *pos_kf, aerodynamics_t *aerodynamics){
+    float v_sound = sqrtf(aerodynamics->specific_gas_constant_air*aerodynamics->heat_capacity_ratio_air*aerodynamics->temperature_kelvin);
+    aerodynamics->v_sound = v_sound;
+
+    float mach_number = (pos_kf->v_norm)/v_sound;
+    aerodynamics->mach_number = mach_number;
 }
 
 
@@ -195,20 +220,30 @@ void aerodynamics_thread(fjalar_t *fjalar, void *p2, void *p1) {
     position_filter_t *pos_kf = fjalar->ptr_pos_kf;
     attitude_filter_t *att_kf = fjalar->ptr_att_kf;
     aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
+    state_t           *state = fjalar->ptr_state;
 
     aerodynamics->g_physics = 9.81;
+    aerodynamics->specific_gas_constant_air = 287; // J/(kg*K)
+    aerodynamics->heat_capacity_ratio_air = 1.4;
+    aerodynamics->temperature_kelvin = 273.15+15; // add termometer
+    aerodynamics->mach_number = 0;
   
     drag_init(aerodynamics);
 
-    while (true){
-        drag_update(pos_kf, att_kf, aerodynamics); // only run during cruise - state machine
-        is_thrust_over(pos_kf, att_kf, aerodynamics);
+    while (true){ 
 
-        // state machine (between takeoff and apogee)
-        if (pos_kf->X_data[2]>10 && aerodynamics->thrust_over){
+        drag_update(pos_kf, att_kf, aerodynamics); // needs to be updated at all states due to logic in update_thrust 
+
+        if (state->flight_state != STATE_IDLE){ // doesn't run during init
+            update_thrust(pos_kf, att_kf, aerodynamics, state);
+        }
+        
+
+        if (state->flight_state == STATE_COAST){ // only run when thrust is not active
             update_apogee_estimate(pos_kf, aerodynamics);
         } else{aerodynamics->expected_apogee = 0;}
 
+        update_mach_number(pos_kf, aerodynamics);
 
         k_msleep(10); // 100 Hz
     }

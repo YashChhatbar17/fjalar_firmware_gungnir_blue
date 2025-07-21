@@ -186,7 +186,7 @@ void imu_thread(fjalar_t *fjalar, void *p2, void *p3) {
 		msg.data.data.imu_reading.gx = sensor_value_to_float(&gx);
 		msg.data.data.imu_reading.gy = sensor_value_to_float(&gy);
 		msg.data.data.imu_reading.gz = sensor_value_to_float(&gz);
-		send_message(fjalar, &msg, MSG_PRIO_LOW);
+		send_message(fjalar, fjalar->ptr_state, &msg, MSG_PRIO_LOW);
 	}
 }
 
@@ -235,7 +235,7 @@ void barometer_thread(fjalar_t *fjalar, void *p2, void *p3) {
 		msg.has_data = true;
 		msg.data.which_data = FJALAR_DATA_PRESSURE_READING_TAG;
 		msg.data.data.pressure_reading.pressure = sensor_value_to_float(&pressure);;
-		send_message(fjalar, &msg, MSG_PRIO_LOW);
+		send_message(fjalar, fjalar->ptr_state, &msg, MSG_PRIO_LOW);
 	}
 }
 

@@ -25,7 +25,6 @@ typedef struct init{
     float lat0;
     float lon0;
     float alt0;
-    float g;
     float pressure_ground;
 
     float roll0;
@@ -38,6 +37,8 @@ typedef struct init{
     int new_x_sign;
     int new_y_sign;
     int new_z_sign;
+
+    bool init_completed;
 
     float pressure;
     bool seeded;

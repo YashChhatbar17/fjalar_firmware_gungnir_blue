@@ -7,28 +7,9 @@ typedef struct attitude_filter attitude_filter_t;
 typedef struct aerodynamics aerodynamics_t;
 typedef struct state state_t;
 
-enum fjalar_flight_state { // code these in to state machine
-    STATE_IDLE,
-    STATE_LAUNCHPAD,
-    STATE_BOOST,
-    STATE_COAST,
-    STATE_FREE_FALL,
-    STATE_DROGUE_DESCENT,
-    STATE_MAIN_DESCENT,
-    STATE_LANDED,
-};
 
-enum fjalar_flight_event { // code these in to state machine
-    EVENT_LAUNCH,
-    EVENT_BURNOUT,
-    EVENT_APOGEE,
-    EVENT_PRIMARY_DEPLOY,
-    EVENT_SECONDARY_DEPLOY,
-    EVENT_LANDED
-};
 
 typedef struct fjalar {
-    enum fjalar_flight_state flight_state;
     float altitude; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
     float ground_level; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
     float velocity; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)

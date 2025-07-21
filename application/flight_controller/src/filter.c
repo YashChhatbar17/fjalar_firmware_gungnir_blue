@@ -166,7 +166,7 @@ void position_filter_accelerometer(init_t *init, position_filter_t *pos_kf, atti
     }
     float dt = (time - pos_kf->previous_update_accelerometer) / 1000.0;
     pos_kf->previous_update_accelerometer = time;
-
+    
     // A matrix
     zsl_real_t A_data[81] = {
         1, 0, 0, dt, 0, 0, 0.5*dt*dt, 0, 0,
@@ -252,7 +252,9 @@ void position_filter_accelerometer(init_t *init, position_filter_t *pos_kf, atti
     // rotate u given an attitude
     ZSL_MATRIX_DEF(u_rot, 3, 1);
     zsl_mtx_mult(&rotation, &u, &u_rot);
+    //LOG_INF("az: %f", u_rot.data[2]);
     u_rot.data[2] = u_rot.data[2] - init->g_accelerometer; // correct for gravity (accelerometers gravity)
+    //LOG_INF("az: %f", u_rot.data[2]);
     // X
     ZSL_MATRIX_DEF(AX, 9, 1);
     ZSL_MATRIX_DEF(BU, 9, 1);
@@ -557,6 +559,7 @@ void attitude_filter_gyroscope(position_filter_t *pos_kf, attitude_filter_t *att
         att_kf->seeded = true;
         return;
     }
+
     float dt = (time - att_kf->previous_update_gyroscope) / 1000.0;
     att_kf->previous_update_gyroscope = time;
 
@@ -634,6 +637,8 @@ void attitude_filter_gyroscope(position_filter_t *pos_kf, attitude_filter_t *att
 
 
 void attitude_filter_accelerometer_ground(attitude_filter_t *att_kf, position_filter_t *pos_kf, aerodynamics_t *aerodynamics, float ax, float ay, float az, uint32_t time){
+    if (az > 10){return;} // Guards against start of boost phase, before state update (!)
+
     // z matrix
     zsl_real_t z_data[3] = {
         ax,
@@ -806,8 +811,8 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             attitude_filter_gyroscope(pos_kf, att_kf, gx, gy, gz, imu.t);
 
             // use state machine
-            if (pos_kf->X_data[2]<10 && fabsf(pos_kf->X_data[8])<1){
-                attitude_filter_accelerometer_ground(att_kf, pos_kf, aerodynamics, ax, ay, az, imu.t); //only used pre launch
+            if (state->flight_state == STATE_IDLE || state->flight_state == STATE_LAUNCHPAD){ //only used pre launch
+                attitude_filter_accelerometer_ground(att_kf, pos_kf, aerodynamics, ax, ay, az, imu.t); 
             }
 
 
@@ -817,9 +822,9 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             events[0].state = K_POLL_STATE_NOT_READY;            
             
             // use state machine
-            if (pos_kf->v_norm<340){
-                //position_filter_barometer(pos_kf, pressure.pressure, pressure.t); // Fix this with new barometer calculation (static and dynamic pressure)
-            }else{LOG_INF("SONIC BOOM WARNING");}          
+            if (state->velocity_class == VELOCITY_SUBSONIC){ // baro bad in native
+                //position_filter_barometer(init, pos_kf, pressure.pressure, pressure.t); // Ask other team about barometer solution on bad data
+            }          
         }
 
 
@@ -843,25 +848,21 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         Pmtx_analysis(pos_kf);
 
-        
+        // for devving [change to LOG_INF]
+        LOG_DBG("x: %f", pos_kf->X_data[0]);
+        LOG_DBG("y: %f", pos_kf->X_data[1]);
+        LOG_DBG("z: %f", pos_kf->X_data[2]);
 
-        /*
-        zsl_real_t P_data[9];
-    struct zsl_mtx P;
-    zsl_real_t X_data[9];
-    struct zsl_mtx X;
-    zsl_real_t Q_data[9];
-    struct zsl_mtx Q;
-    zsl_real_t R_data[9];
-    struct zsl_mtx R;
+        LOG_DBG("vx: %f", pos_kf->X_data[3]);
+        LOG_DBG("vy: %f", pos_kf->X_data[4]);
+        LOG_DBG("vz: %f", pos_kf->X_data[5]);
 
-    float phi;
-    float theta;
-    float psi;
-    */
+        LOG_DBG("ax: %f", pos_kf->X_data[6]);
+        LOG_DBG("ay: %f", pos_kf->X_data[7]);
+        LOG_DBG("az: %f", pos_kf->X_data[8]);
 
-
-
+        LOG_DBG("v_norm: %f", pos_kf->v_norm);
+        LOG_DBG("a_norm: %f", pos_kf->a_norm);
         }
     }
 

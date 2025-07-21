@@ -19,12 +19,13 @@ translating incoming commands into state changes and actuator outputs.
 #include "communication.h"
 #include "fjalar.h"
 #include "actuation.h"
+#include "flight_state.h"
 
 LOG_MODULE_REGISTER(commands, CONFIG_APP_COMMANDS_LOG_LEVEL);
 
 void handle_set_sudo(set_sudo_t *msg, fjalar_t *fjalar, enum com_channels channel);
-void handle_ready_up(ready_up_t *msg, fjalar_t *fjalar, enum com_channels channel);
-void handle_enter_idle(enter_idle_t *msg, fjalar_t *fjalar, enum com_channels channel);
+void handle_ready_up(ready_up_t *msg, fjalar_t *fjalar, state_t *state, enum com_channels channel);
+void handle_enter_idle(enter_idle_t *msg, fjalar_t *fjalar, state_t *state, enum com_channels channel);
 void handle_trigger_pyro(trigger_pyro_t *msg, fjalar_t *fjalar, enum com_channels channel);
 void handle_clear_flash(clear_flash_t *msg, fjalar_t *fjalar, enum com_channels channel);
 void handle_read_flash(read_flash_t *msg, fjalar_t *fjalar, enum com_channels channel);
@@ -35,14 +36,14 @@ void handle_fjalar_buf(struct protocol_state *ps, fjalar_t *fjalar, uint8_t *buf
         int ret;
         ret = parse_fjalar_message(ps, buf[i], &msg);
         if (ret == 1) {
-            handle_fjalar_message(&msg, fjalar, channel);
+            handle_fjalar_message(&msg, fjalar, fjalar->ptr_state, channel);
         } else if (ret == -1) {
             reset_protocol_state(ps);
         }
     }
 }
 
-void handle_fjalar_message(fjalar_message_t *msg, fjalar_t *fjalar, enum com_channels channel) {
+void handle_fjalar_message(fjalar_message_t *msg, fjalar_t *fjalar, state_t *state, enum com_channels channel) {
     LOG_INF("handling msg with id %d", msg->data.which_data);
     switch (msg->data.which_data) {
         case FJALAR_DATA_SET_SUDO_TAG:
@@ -50,11 +51,11 @@ void handle_fjalar_message(fjalar_message_t *msg, fjalar_t *fjalar, enum com_cha
             break;
 
         case FJALAR_DATA_READY_UP_TAG:
-            handle_ready_up(&msg->data.data.ready_up, fjalar, channel);
+            handle_ready_up(&msg->data.data.ready_up, fjalar, state, channel);
             break;
 
         case FJALAR_DATA_ENTER_IDLE_TAG:
-            handle_enter_idle(&msg->data.data.enter_idle, fjalar, channel);
+            handle_enter_idle(&msg->data.data.enter_idle, fjalar, fjalar->ptr_state, channel);
             break;
 
         case FJALAR_DATA_TRIGGER_PYRO_TAG:
@@ -79,22 +80,26 @@ void handle_set_sudo(set_sudo_t *msg, fjalar_t *fjalar, enum com_channels channe
     LOG_WRN("set sudo %d", msg->enabled);
 }
 
-void handle_ready_up(ready_up_t *msg, fjalar_t *fjalar, enum com_channels channel) {
+// this function no longer serves purpose...
+void handle_ready_up(ready_up_t *msg, fjalar_t *fjalar, state_t *state, enum com_channels channel) {
     bool succesful;
-    if (fjalar->sudo == true || fjalar->flight_state == STATE_IDLE) {
-        fjalar->flight_state = STATE_LAUNCHPAD;
+    LOG_INF("handle_ready_up RUN!, this function does nothing, fix.");
+    /*
+    if (fjalar->sudo == true || state->flight_state == STATE_IDLE) {
+        state->flight_state = STATE_LAUNCHPAD;
         succesful = true;
         LOG_INF("changing to ready");
     } else {
         succesful = false;
         LOG_INF("couldn't change to ready");
     }
+    */
 }
 
-void handle_enter_idle(enter_idle_t *msg, fjalar_t *fjalar, enum com_channels channel) {
+void handle_enter_idle(enter_idle_t *msg, fjalar_t *fjalar, state_t *state, enum com_channels channel) {
     bool succesful;
-    if (fjalar->sudo == true || fjalar->flight_state == STATE_LAUNCHPAD) {
-        fjalar->flight_state = STATE_IDLE;
+    if (fjalar->sudo == true || state->flight_state == STATE_LAUNCHPAD) {
+        state->flight_state = STATE_IDLE;
         succesful = true;
         LOG_INF("changing to idle");
     } else {

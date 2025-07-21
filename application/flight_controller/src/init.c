@@ -17,6 +17,7 @@ It is important that the rocket remains stationary while the initialization thre
 #include "filter.h"
 #include "aerodynamics.h"
 #include "flight_state.h"
+#include "communication.h"
 
 LOG_MODULE_REGISTER(init, CONFIG_APP_FLIGHT_LOG_LEVEL);
 
@@ -53,8 +54,6 @@ static void init_finish(init_t *init){
     double mean_lon, mean_lat, mean_alt;
     double mean_p;
 
-    double g_accelerometer;
-
     double diff_ax  = 0, diff_ay  = 0, diff_az  = 0;
     double diff_gx  = 0, diff_gy  = 0, diff_gz  = 0;
     double diff_lon = 0, diff_lat = 0, diff_alt = 0;
@@ -81,7 +80,8 @@ static void init_finish(init_t *init){
     mean_gy = sum_gy/IMU_INIT_N;
     mean_gz = sum_gz/IMU_INIT_N;
 
-    g_accelerometer = sqrtf(mean_ax*mean_ax + mean_ay*mean_ay + mean_az*mean_az);
+    // identify g as sensed by accelerometer (to subtract it later)
+    double g_accelerometer = sqrt(mean_ax*mean_ax + mean_ay*mean_ay + mean_az*mean_az);
 
     for (int i = 0; i<BARO_INIT_N; i++){
         sum_p += init->p[i];}
@@ -138,6 +138,7 @@ static void init_finish(init_t *init){
     init->mean_alt = mean_alt;
 
     init->g_accelerometer = g_accelerometer;
+    LOG_INF("gravitational acceleration as sensed by accelerometer: %f", init->g_accelerometer);
 
     init->var_ax   =   var_ax;
     init->var_ay   =   var_ay;
@@ -158,10 +159,6 @@ static void init_finish(init_t *init){
     init->lat0  = init->mean_lat;
     init->lon0 = init->mean_lon ;
     init->alt0 = init->mean_alt;
-
-    // identify g (to subtract it later)
-    init->g = sqrtf(mean_ax*mean_ax + mean_ay*mean_ay + mean_az*mean_az);
-    LOG_INF("g: %f", init->g);
 
     init->seeded = false;
     LOG_INF("init done: lat0 = %f, lon0 = %f", init->lat0, init->lon0);
@@ -299,6 +296,7 @@ void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
 	init_finish(init);
     init_filter(fjalar);
+    init->init_completed = true;
     LOG_INF("Init phase completed, started Kalman Filters.");
     // add BEEP from buzzer
 }

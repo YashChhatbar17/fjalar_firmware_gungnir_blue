@@ -45,7 +45,7 @@ volatile bool terminate_communication = false;
 K_THREAD_STACK_DEFINE(sampler_thread_stack, SAMPLER_THREAD_STACK_SIZE);
 struct k_thread sampler_thread_data;
 k_tid_t sampler_thread_id;
-void sampler_thread(fjalar_t *fjalar, void *p2, void *p3);
+void sampler_thread(fjalar_t *fjalar, state_t *state, void *p2, void *p3);
 
 #if DT_ALIAS_EXISTS(lora)
 K_THREAD_STACK_DEFINE(lora_thread_stack, LORA_THREAD_STACK_SIZE);
@@ -142,7 +142,7 @@ void init_communication(fjalar_t *fjalar) {
 		sampler_thread_stack,
 		K_THREAD_STACK_SIZEOF(sampler_thread_stack),
 		(k_thread_entry_t) sampler_thread,
-		fjalar, NULL, NULL,
+		fjalar, fjalar->ptr_state, NULL,
 		SAMPLER_THREAD_PRIORITY, 0, K_NO_WAIT
 	);
 	k_thread_name_set(sampler_thread_id, "sampler");
@@ -171,7 +171,7 @@ int deinit_communication() {
 	return e;
 }
 
-void send_message(fjalar_t *fjalar, fjalar_message_t *msg, enum message_priority prio) {
+void send_message(fjalar_t *fjalar, state_t *state, fjalar_message_t *msg, enum message_priority prio) {
 	struct padded_buf pbuf;
 	int size = encode_fjalar_message(msg, pbuf.buf);
 	if (size < 0) {
@@ -181,7 +181,7 @@ void send_message(fjalar_t *fjalar, fjalar_message_t *msg, enum message_priority
 	LOG_DBG("sending message w/ size %d", size);
 	switch(prio) {
 		case MSG_PRIO_LOW:
-			if (fjalar->flight_state == STATE_IDLE || fjalar->flight_state == STATE_LANDED) {
+			if (state->flight_state == STATE_IDLE || state->flight_state == STATE_LANDED) {
 				break;
 			}
 			#if DT_ALIAS_EXISTS(data_flash)
@@ -286,7 +286,7 @@ void store_message(fjalar_t *fjalar, fjalar_message_t *msg) {
 	}
 }
 
-void sampler_thread(fjalar_t *fjalar, void *p2, void *p3) {
+void sampler_thread(fjalar_t *fjalar, state_t *state, void *p2, void *p3) {
 	while (true) {
 		k_msleep(1000);
 		fjalar_message_t msg;
@@ -295,7 +295,7 @@ void sampler_thread(fjalar_t *fjalar, void *p2, void *p3) {
 		msg.data.which_data = FJALAR_DATA_TELEMETRY_PACKET_TAG;
 		msg.data.data.telemetry_packet.altitude = fjalar->altitude - fjalar->ground_level;
 		msg.data.data.telemetry_packet.az = fjalar->az;
-		msg.data.data.telemetry_packet.flight_state = fjalar->flight_state;
+		msg.data.data.telemetry_packet.flight_state = state->flight_state;
 		msg.data.data.telemetry_packet.velocity = fjalar->velocity;
 		msg.data.data.telemetry_packet.battery = fjalar->battery_voltage;
 		msg.data.data.telemetry_packet.latitude = fjalar->latitude;
@@ -305,7 +305,7 @@ void sampler_thread(fjalar_t *fjalar, void *p2, void *p3) {
 		msg.data.data.telemetry_packet.pyro2_connected = fjalar->pyro2_sense;
 		msg.data.data.telemetry_packet.pyro3_connected = fjalar->pyro3_sense;
 		msg.data.data.telemetry_packet.sudo = fjalar->sudo;
-		send_message(fjalar, &msg, MSG_PRIO_HIGH);
+		send_message(fjalar, fjalar->ptr_state, &msg, MSG_PRIO_HIGH);
 	}
 }
 

@@ -3,6 +3,7 @@
 #include <zephyr/kernel.h>
 
 #include "fjalar.h"
+#include "flight_state.h"
 #include "protocol.h"
 
 enum message_priority {
@@ -13,7 +14,7 @@ enum message_priority {
 };
 
 void init_communication(fjalar_t *fjalar);
-void send_message(fjalar_t *fjalar, fjalar_message_t *msg, enum message_priority prio);
+void send_message(fjalar_t *fjalar, state_t *state, fjalar_message_t *msg, enum message_priority prio);
 void send_response(fjalar_t *fjalar, fjalar_message_t *msg, enum com_channels channel);
 
 void clear_flash(fjalar_t *fjalar);

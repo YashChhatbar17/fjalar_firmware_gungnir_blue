@@ -15,6 +15,7 @@ The flight state script serves the following purpose:
 #include "filter.h"
 #include "aerodynamics.h"
 #include "flight_state.h"
+#include "actuation.h"
 
 LOG_MODULE_REGISTER(flight, CONFIG_APP_FLIGHT_LOG_LEVEL);
 
@@ -26,10 +27,7 @@ LOG_MODULE_REGISTER(flight, CONFIG_APP_FLIGHT_LOG_LEVEL);
 
 #define IMU_WINDOW_SIZE 11
 
-#define BOOST_ACCEL_THRESHOLD 15.0
-#define BOOST_SPEED_THRESHOLD 15.0
 
-#define COAST_ACCEL_THRESHOLD 5.0
 #define DROGUE_DEPLOYMENT_FAILURE_DELAY 8000
 
 
@@ -63,71 +61,105 @@ void init_flight_state(fjalar_t *fjalar) {
 }
 
 // fix the information logic
-static void deploy_drogue(init_t *init, state_t *state, position_filter_t *pos_kf) { 
-    state->apogee_time = k_uptime_get_32();
-    LOG_WRN("drogue deployed at %.2f m %.2f s", pos_kf->X_data[2] - init->alt0, (state->apogee_time - state->liftoff_time) / 1000.0f);
+static void deploy_drogue(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf) { 
+    set_pyro(fjalar, 1, true); // Blowing pyro charge, [1 = Drouge]
+    LOG_WRN("drogue deployed at %.2f m %.2f s", pos_kf->X_data[2], (state->apogee_time - state->liftoff_time) / 1000.0f);
 }
-
 
 // fix the information logic
-static void deploy_main(init_t *init, state_t *state, position_filter_t *pos_kf) {
-    LOG_WRN("Main deployed at %.2f m", pos_kf->X_data[2] - init->alt0);
+static void deploy_main(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf) {
+    set_pyro(fjalar, 2, true); // Blowing pyro charge, [2 = Main]
+    LOG_WRN("Main deployed at %.2f m", pos_kf->X_data[2]);
 }
 
-// update state machine
-static void evaluate_state(init_t *init, state_t *state, position_filter_t *pos_kf) {
+static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf, aerodynamics_t *aerodynamics) {
     float az = pos_kf->X_data[8];
     float vz = pos_kf->X_data[5];
     float z  = pos_kf->X_data[2];
 
+    float a_norm = pos_kf->a_norm;
+    float v_norm = pos_kf->v_norm;
+
+
     switch (state->flight_state) {
     case STATE_IDLE:
-        //we chillin'
+        if (init->init_completed){
+            state->flight_state = STATE_LAUNCHPAD; // change this state to be called "initiated"
+        }
         break;
     case STATE_LAUNCHPAD:
-        if (az > BOOST_ACCEL_THRESHOLD) {
+        if (a_norm > BOOST_ACCEL_THRESHOLD) {
             state->flight_state = STATE_BOOST;
             state->liftoff_time = k_uptime_get_32();
             LOG_WRN("Changing state to BOOST due to acceleration");
         }
-        if (vz > BOOST_SPEED_THRESHOLD) {
+        if (v_norm > BOOST_SPEED_THRESHOLD) {
             state->flight_state = STATE_BOOST;
             state->liftoff_time = k_uptime_get_32();
             LOG_WRN("Changing state to BOOST due to speed");
         }
         break;
     case STATE_BOOST:
-        if (az < COAST_ACCEL_THRESHOLD) {
+        if (az < COAST_ACCEL_THRESHOLD && !aerodynamics->thrust_bool) {
             state->flight_state = STATE_COAST;
             LOG_WRN("Changing state to COAST due to acceleration");
         }
-        
         if (vz < 0) {
-            LOG_WRN("Fake pressure increase due to sonic shock wave"); // look this over, create condition inside of state machine 
-        }
+            LOG_WRN("Fake pressure increase due to sonic shock wave"); // this is probably useless
+            }
         break;
     case STATE_COAST:
+        
         if (vz < 0) {
-            deploy_drogue(init, state, pos_kf);
-            state->flight_state = STATE_FREE_FALL;
+            state->apogee_time = k_uptime_get_32();
+
+            deploy_drogue(fjalar, init, state, pos_kf);
+            state->flight_state = STATE_DROGUE_DESCENT;
             LOG_WRN("Changing state to FREE_FALL due to speed");
         }
         break;
-    case STATE_FREE_FALL:
-        if (k_uptime_get_32() - state->apogee_time > DROGUE_DEPLOYMENT_FAILURE_DELAY) {
-            // vec3 acc = {state->ax, state->ay, state->az};
+    case STATE_DROGUE_DESCENT:
+        if (z < 200) {
+            deploy_main(fjalar, init, state, pos_kf);
+            state->flight_state = STATE_MAIN_DESCENT;
         }
         break;
-    case STATE_DROGUE_DESCENT:
-        deploy_main(init, state, pos_kf);
-        break;
     case STATE_MAIN_DESCENT:
+        if (a_norm > init->g_accelerometer-2 && a_norm<init->g_accelerometer+2){
+            state->flight_state = STATE_LANDED;
+        }
         break;
     case STATE_LANDED:
+        // yay we landed (right?)
         break;
     }
 }
 
+static void evaluate_velocity(aerodynamics_t *aerodynamics, state_t *state) {
+    float M = aerodynamics->mach_number;
+    switch(state->velocity_class){
+    case VELOCITY_SUBSONIC:
+        if (M > 0.8){
+            state->velocity_class = VELOCITY_TRANSONIC;
+            LOG_WRN("velocity class changed to transsonic");
+        }
+    case VELOCITY_TRANSONIC:
+        if (M > 1.2){
+            state->velocity_class = VELOCITY_SUPERSONIC;
+            LOG_WRN("velocity class changed to supersonic");
+        }
+        if (M < 0.8){
+            state->velocity_class = VELOCITY_SUBSONIC;
+            LOG_WRN("velocity class changed to subsonic");
+        }
+    case VELOCITY_SUPERSONIC:
+        if (M < 1.2){
+            state->velocity_class = VELOCITY_TRANSONIC;
+            LOG_WRN("velocity class changed to transsonic");
+        }
+
+    }
+}
 
 void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
     init_t            *init  = fjalar->ptr_init;
@@ -136,11 +168,11 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
     aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
     state_t           *state = fjalar->ptr_state;
 
-
+    state->flight_state = STATE_IDLE;
+    state->velocity_class = VELOCITY_SUBSONIC;
 
     while (true) {
-        evaluate_state(init, state, pos_kf);
-        //LOG_DBG("state %d", fjalar->flight_state);
+        evaluate_state(fjalar, init, state, pos_kf, aerodynamics);
         k_msleep(10);
     }
 }

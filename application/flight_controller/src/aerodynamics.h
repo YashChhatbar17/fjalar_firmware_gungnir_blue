@@ -14,8 +14,14 @@ typedef struct aerodynamics {
     struct zsl_mtx drag; // drag induced acceleration in local frame
     float drag_norm;
     float expected_apogee; // predicted apogee based on drag model
-    bool thrust_over; // true if thrust is over, false if not
+    bool thrust_bool; // true if there is thrust, false if no thrust.
     float g_physics;
+
+    float temperature_kelvin;
+    float specific_gas_constant_air;
+    float heat_capacity_ratio_air;
+    float v_sound;
+    float mach_number;
 } aerodynamics_t;
 
 void init_aerodynamics(fjalar_t *fjalar);
@@ -26,7 +32,7 @@ void init_aerodynamics(fjalar_t *fjalar);
 // change these values to Freyja values
 #define MASS_DRY  9 //38 // Freyja
 #define GRAVITY 9.81
-#define AREA 0.008 // 0.011 // Freyja
+#define AREA 0.008 // 0.022 // Freyja
 
 static const struct zsl_interp_xy cd_tbl[] = {
     {3.43, 0.445392077},

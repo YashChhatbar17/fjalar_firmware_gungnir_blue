@@ -11,6 +11,7 @@ This is the actuation script, its purpose is to:
 
 #include "fjalar.h"
 #include "melodies.h"
+#include "flight_state.h"
 
 LOG_MODULE_REGISTER(actuation, CONFIG_APP_ACTUATION_LOG_LEVEL);
 
@@ -31,7 +32,7 @@ void led_thread(fjalar_t *fjalar, void *, void *);
 K_THREAD_STACK_DEFINE(buzzer_thread_stack, BUZZER_THREAD_STACK_SIZE);
 struct k_thread buzzer_thread_data;
 k_tid_t buzzer_thread_id;
-void buzzer_thread(fjalar_t *fjalar, void *, void *);
+void buzzer_thread(fjalar_t *fjalar, state_t *state, void *);
 
 K_THREAD_STACK_DEFINE(pyro_thread_stack, PYRO_THREAD_STACK_SIZE);
 struct k_thread pyro_thread_data;
@@ -68,7 +69,7 @@ void init_actuation(fjalar_t *fjalar) {
 		buzzer_thread_stack,
 		K_THREAD_STACK_SIZEOF(buzzer_thread_stack),
 		(k_thread_entry_t) buzzer_thread,
-		fjalar, NULL, NULL,
+		fjalar, fjalar->ptr_state, NULL,
 		BUZZER_THREAD_PRIORITY, 0, K_NO_WAIT
 	);
 	k_thread_name_set(buzzer_thread_id, "buzzer");
@@ -99,12 +100,12 @@ void led_thread(fjalar_t *fjalar, void *p2, void *p3) {
 
 void set_pyro(fjalar_t *fjalar, int pyro, bool state) {
     switch (pyro) {
-        case 1:
+        case 1: // Drouge parachute
             const struct gpio_dt_spec pyro1_dt = GPIO_DT_SPEC_GET(DT_ALIAS(pyro1), gpios);
             gpio_pin_set_dt(&pyro1_dt, state);
             break;
 
-        case 2:
+        case 2: // Main parachute
             const struct gpio_dt_spec pyro2_dt = GPIO_DT_SPEC_GET(DT_ALIAS(pyro2), gpios);
             gpio_pin_set_dt(&pyro2_dt, state);
             break;
@@ -180,7 +181,7 @@ void play_song(const struct pwm_dt_spec *buzzer_dt, int melody[], int size, int 
 }
 
 #if DT_ALIAS_EXISTS(buzzer)
-void buzzer_thread(fjalar_t *fjalar, void *p2, void *p3) {
+void buzzer_thread(fjalar_t *fjalar, state_t *state, void *p3) {
     #if !CONFIG_BUZZER_ENABLED
     LOG_INF("Buzzer disabled");
     return;
@@ -204,7 +205,7 @@ void buzzer_thread(fjalar_t *fjalar, void *p2, void *p3) {
                 k_msleep(1000);
                 continue;
         }
-        switch (fjalar->flight_state) {
+        switch (state->flight_state) {
             case STATE_LANDED:
                 play_song(&buzzer_dt, nokia_melody, sizeof(nokia_melody), nokia_tempo);
                 k_msleep(1000);
