@@ -33,6 +33,7 @@ target_sources(app PRIVATE
     src/hello.cpp
     src/aerodynamics.c
     src/init.c
+    src/control.c
 )
 
 if(TEST_BUILD)

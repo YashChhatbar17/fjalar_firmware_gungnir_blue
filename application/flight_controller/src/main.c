@@ -21,6 +21,7 @@ This is the main script, its purpose is to:
 #include "init.h"
 #include "aerodynamics.h"
 #include "flight_state.h"
+#include "control.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_APP_MAIN_LOG_LEVEL);
 
@@ -28,14 +29,16 @@ static init_t            init_obj;
 static position_filter_t position_filter_obj;
 static attitude_filter_t attitude_filter_obj;
 static aerodynamics_t    aerodynamics_obj;
-static state_t           state_obj;  
+static state_t           state_obj; 
+static control_t		 control_obj; 
 
 fjalar_t fjalar_god = {
 	.ptr_init         = &init_obj,
 	.ptr_pos_kf       = &position_filter_obj,
 	.ptr_att_kf       = &attitude_filter_obj,
 	.ptr_aerodynamics = &aerodynamics_obj,
-	.ptr_state        = &state_obj
+	.ptr_state        = &state_obj,
+	.ptr_control	  = &control_obj
 };
 
 int main(void) {
@@ -59,5 +62,6 @@ int main(void) {
 	init_aerodynamics(&fjalar_god);
 	init_communication(&fjalar_god);
 	init_actuation(&fjalar_god);
+	init_control(&fjalar_god);
 	return 0;
 }

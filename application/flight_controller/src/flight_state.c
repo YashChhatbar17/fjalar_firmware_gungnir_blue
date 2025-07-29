@@ -173,6 +173,7 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
     while (true) {
         evaluate_state(fjalar, init, state, pos_kf, aerodynamics);
+        // run evaluate velocity
         k_msleep(10);
     }
 }
