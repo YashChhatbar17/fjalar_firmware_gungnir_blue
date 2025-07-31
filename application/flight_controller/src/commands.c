@@ -113,9 +113,9 @@ void handle_trigger_pyro(trigger_pyro_t *msg, fjalar_t *fjalar, enum com_channel
         LOG_WRN("Tried to enable pyro %d when not in sudo mode", msg->pyro);
         return;
     }
-    set_pyro(fjalar, msg->pyro, 1);
-    k_msleep(500);
-    set_pyro(fjalar, msg->pyro, 0);
+        set_pyro(fjalar, msg->pyro, 1);
+        k_msleep(500);
+        set_pyro(fjalar, msg->pyro, 0);
 }
 
 void handle_clear_flash(clear_flash_t *msg, fjalar_t *fjalar, enum com_channels channel) {

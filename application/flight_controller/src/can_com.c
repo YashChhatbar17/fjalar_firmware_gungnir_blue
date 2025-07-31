@@ -40,7 +40,10 @@ void init_can(fjalar_t *fjalar) {
 	k_thread_name_set(can_thread_id, "can");
 }
 
+#if DT_ALIAS_EXISTS(canbus)
+
 static loki_context_t loki_context;
+struct can_timing timing;
 
 const struct can_filter filter_rx_loki = {
     .flags = 0,
@@ -84,7 +87,7 @@ void can_tx_loki(const struct device *can_dev, state_t *state)
 
     struct can_frame frame = {
         .flags = 0,
-        .id    = 0x67F, // 0x67F = Fjalar 1, 0x57F = Fjalar 2
+        .id    = 0x67F, // 0x67F = Fjalar 1, 0x57F = Fjalar 2 put this as #define in header
         .dlc   = DLC,
     };
     memcpy(frame.data, data, DLC);
@@ -138,9 +141,13 @@ void can_rx_sigurd(const struct device *const can_dev, struct can_frame *frame, 
 static int can_cb_priv_init(void){
     int err = can_add_rx_filter(can_dev, can_rx_loki, &loki_context, &filter_rx_loki);
     if (err < 0) {LOG_ERR("add_rx_filter failed: %d", err);}
+
+    // add Sigurd filter too
     return 0;
 }
 SYS_INIT(can_cb_priv_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#endif
 
 void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
     init_t            *init  = fjalar->ptr_init;
@@ -150,13 +157,21 @@ void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
     state_t           *state = fjalar->ptr_state;
     can_t             *can = fjalar->ptr_can;
 
+    #if DT_ALIAS_EXISTS(canbus)
+    
+    int ret;
+    ret = can_set_bitrate_data(can_dev, 500000); // 500 kb/s
+    if (ret) {LOG_ERR("Failed to set CAN bitrate: [%d]", ret);}
+    else{LOG_INF("CAN bitrate successfully set to 500kb/s");}
 
-    //ret = can_add_rx_filter(can_dev, can_rx_sigurd, &sigurd_context, &filter_rx_sigurd);
-    //if (ret < 0) {LOG_ERR("Unable to add rx sigurd filter [%d]", ret);}
+
+    #endif
 
     while (true) {
+        #if DT_ALIAS_EXISTS(canbus)
         //can_tx_loki(can_dev, state);
         //can_tx_sigurd(state, can_dev);
+        #endif
 
         k_msleep(10); // 100 Hz
     }

@@ -22,11 +22,11 @@ enum fjalar_flight_state { // code these in to state machine
 enum fjalar_flight_event { // potentially make event machine, but why?
     EVENT_LAUNCH,
     EVENT_BURNOUT,
+    EVENT_ABOVE_ACS_THRESHOLD,
     EVENT_APOGEE,
     EVENT_PRIMARY_DEPLOY,
     EVENT_SECONDARY_DEPLOY,
-    EVENT_LANDED,
-    EVENT_ABOVE_ACS_THRESHOLD
+    EVENT_LANDED
 };
 
 enum fjalar_velocity_class {

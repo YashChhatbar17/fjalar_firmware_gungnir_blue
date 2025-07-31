@@ -88,7 +88,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
         }
         break;
     case STATE_LAUNCHPAD:
-        if (a_norm > BOOST_ACCEL_THRESHOLD) {
+        if (a_norm > BOOST_ACCEL_THRESHOLD && z > 10) {
             state->flight_state = STATE_BOOST;
             state->liftoff_time = k_uptime_get_32();
             LOG_WRN("Changing state to BOOST due to acceleration");
@@ -135,6 +135,55 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
     }
 }
 
+static void evaluate_event(fjalar_t *fjalar, state_t *state, position_filter_t *pos_kf) {
+    float z  = pos_kf->X_data[2];
+
+    switch (state->flight_event) {
+    if (state->flight_state == STATE_BOOST){
+        state->flight_event = EVENT_LAUNCH;
+    }
+    case EVENT_LAUNCH:
+        if (state->flight_state == STATE_COAST){
+            state->flight_event = EVENT_BURNOUT;
+        }
+        break;
+
+    case EVENT_BURNOUT:
+        break;
+        if (z > 1500){
+            state->flight_event = EVENT_ABOVE_ACS_THRESHOLD;
+        }
+
+    case EVENT_ABOVE_ACS_THRESHOLD:
+        if (state->flight_state == STATE_DROGUE_DESCENT){
+            state->flight_event = EVENT_APOGEE;
+        }
+        break;
+
+    case EVENT_APOGEE:
+        if (fjalar->pyro1_sense == 0){
+            state->flight_event = EVENT_PRIMARY_DEPLOY;
+        }
+        break;
+
+    case EVENT_PRIMARY_DEPLOY:
+        if (fjalar->pyro2_sense == 0){
+            state->flight_event = EVENT_SECONDARY_DEPLOY;
+        }
+        break;
+
+    case EVENT_SECONDARY_DEPLOY:
+        if (state->flight_state == STATE_LANDED){
+            state->flight_event = EVENT_LANDED;
+        }
+        break;
+
+    case EVENT_LANDED:
+        // chilling
+        break;
+    }
+}
+
 static void evaluate_velocity(aerodynamics_t *aerodynamics, state_t *state) {
     float M = aerodynamics->mach_number;
     switch(state->velocity_class){
@@ -143,6 +192,8 @@ static void evaluate_velocity(aerodynamics_t *aerodynamics, state_t *state) {
             state->velocity_class = VELOCITY_TRANSONIC;
             LOG_WRN("velocity class changed to transsonic");
         }
+        break;
+
     case VELOCITY_TRANSONIC:
         if (M > 1.2){
             state->velocity_class = VELOCITY_SUPERSONIC;
@@ -152,11 +203,14 @@ static void evaluate_velocity(aerodynamics_t *aerodynamics, state_t *state) {
             state->velocity_class = VELOCITY_SUBSONIC;
             LOG_WRN("velocity class changed to subsonic");
         }
+        break;
+
     case VELOCITY_SUPERSONIC:
         if (M < 1.2){
             state->velocity_class = VELOCITY_TRANSONIC;
             LOG_WRN("velocity class changed to transsonic");
         }
+        break;
 
     }
 }
@@ -173,6 +227,8 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
     while (true) {
         evaluate_state(fjalar, init, state, pos_kf, aerodynamics);
+        evaluate_event(fjalar, state, pos_kf);
+        evaluate_velocity(aerodynamics, state);
         k_msleep(10);
     }
 }
