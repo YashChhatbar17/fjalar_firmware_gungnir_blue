@@ -25,7 +25,8 @@ enum fjalar_flight_event { // potentially make event machine, but why?
     EVENT_APOGEE,
     EVENT_PRIMARY_DEPLOY,
     EVENT_SECONDARY_DEPLOY,
-    EVENT_LANDED
+    EVENT_LANDED,
+    EVENT_ABOVE_ACS_THRESHOLD
 };
 
 enum fjalar_velocity_class {
@@ -51,6 +52,7 @@ typedef struct state {
 
     bool drogue_deployed; // use in state machine maybe remove and only keep in fjalar, or edit communications.c (noooooo must I learn new code)
     bool main_deployed; // use in state machine
+
 } state_t;
 
 void init_flight_state(fjalar_t *fjalar);
