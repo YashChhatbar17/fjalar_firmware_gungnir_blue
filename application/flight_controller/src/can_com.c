@@ -1,0 +1,180 @@
+#include <zephyr/drivers/can.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/sensor.h>
+#include <math.h>
+#include <pla.h>
+#include <zephyr/init.h>
+
+#include "fjalar.h"
+#include "sensors.h"
+#include "init.h"
+#include "filter.h"
+#include "aerodynamics.h"
+#include "flight_state.h"
+#include "actuation.h"
+#include "can_com.h"
+
+LOG_MODULE_REGISTER(can_com, CONFIG_APP_FLIGHT_LOG_LEVEL);
+
+#define CAN_THREAD_PRIORITY 7
+#define CAN_THREAD_STACK_SIZE 4096
+
+#define MATCH_ALL_STD_ID  0x7FFu  // binary 0b11111111111 (must match all 11 bits of identifier)
+
+void can_thread(fjalar_t *fjalar, void *p2, void *p1);
+
+K_THREAD_STACK_DEFINE(can_thread_stack, CAN_THREAD_STACK_SIZE);
+struct k_thread can_thread_data;
+k_tid_t can_thread_id;
+
+void init_can(fjalar_t *fjalar) {
+    can_thread_id = k_thread_create(
+		&can_thread_data,
+		can_thread_stack,
+		K_THREAD_STACK_SIZEOF(can_thread_stack),
+		(k_thread_entry_t) can_thread,
+		fjalar, NULL, NULL,
+		CAN_THREAD_PRIORITY, 0, K_NO_WAIT
+	);
+	k_thread_name_set(can_thread_id, "can");
+}
+
+#if DT_ALIAS_EXISTS(canbus)
+
+static loki_context_t loki_context;
+struct can_timing timing;
+
+const struct can_filter filter_rx_loki = {
+    .flags = 0,
+    .id = 0x6FF,
+    .mask = MATCH_ALL_STD_ID
+};
+
+/*
+const struct can_filter filter_rx_sigurd = {
+    .flags = 0, 
+    .id = 0x000, // change
+    .mask = MATCH_ALL_STD_ID
+};
+*/
+
+const struct device *const can_dev = DEVICE_DT_GET(DT_ALIAS(canbus));
+
+void can_tx_loki(const struct device *can_dev, state_t *state)
+{
+    const size_t DLC = 4;
+    uint8_t data[DLC];
+    int ret;
+
+    // byte 0: high nibble=state, low nibble=substate 
+    uint8_t st = (uint8_t)state->flight_state;
+    uint8_t ev = (uint8_t)state->flight_event;
+    if (st > 0x0F || ev > 0x0F) {
+        LOG_ERR("state/event out of range");
+    }
+    data[0] = (st << 4) | (ev & 0x0F);
+
+    // byte 1: event marker 
+    data[1] = (state->flight_event == EVENT_ABOVE_ACS_THRESHOLD) ? 0xAA : 0x55;
+
+    // bytes 2–3: angle ×100 
+    float  angle_f = 0.0; // replace with control variable
+    if (angle_f < 0.0f || angle_f > 360.0f) {LOG_ERR("angle invalid");}
+    uint16_t raw_angle = (uint16_t)roundf(angle_f * 100.0f);
+    data[2] = (raw_angle >> 8) & 0xFF;
+    data[3] = raw_angle & 0xFF;
+
+    struct can_frame frame = {
+        .flags = 0,
+        .id    = 0x67F, // 0x67F = Fjalar 1, 0x57F = Fjalar 2 put this as #define in header
+        .dlc   = DLC,
+    };
+    memcpy(frame.data, data, DLC);
+
+    ret = can_send(can_dev, &frame, K_MSEC(100), NULL, NULL);
+    if (ret) {
+        LOG_ERR("CAN TX Loki failed [%d]", ret);
+    }
+}
+
+void can_tx_sigurd(state_t *state, const struct device *const can_dev){
+    /*
+    struct can_frame can_tx_sigurd_frame = {
+        .flags = 0,
+        .id = 0x123, // change
+        .dlc = 8, // change
+        .data = {} // change
+    };
+    
+    int ret;
+    ret = can_send(can_dev, &can_tx_sigurd_frame, K_MSEC(100), NULL, NULL);
+    if (ret != 0) {LOG_ERR("can tx sigurd failed [%d]", ret);}
+        
+    */
+
+}
+
+void can_rx_loki(const struct device *const can_dev, struct can_frame *frame, void *user_data){
+    loki_context_t *context = user_data;
+    const uint8_t *data = frame->data;
+
+    if (frame->dlc != 4) {LOG_ERR("Wrong dlc can rx loki");}
+
+    // byte 0: low nibble = state, high nibble = substate
+    context->loki_state     =  data[0] & 0x0F;
+    context->loki_sub_state = (data[0] >> 4) & 0x0F;
+
+    // bytes 1–2: 16-bit angle, gain=100 
+    uint16_t raw_angle = (data[1] << 8) | data[2];
+    context->loki_angle    = raw_angle / 100.0f;
+
+    // byte 3: battery, gain=10 
+    context->battery_voltage = data[3] / 10.0f;
+}
+
+void can_rx_sigurd(const struct device *const can_dev, struct can_frame *frame, void *user_data){
+    // stuff
+}
+
+// Give privilage to RX callbacks
+static int can_cb_priv_init(void){
+    int err;
+    err = can_add_rx_filter(can_dev, can_rx_loki, &loki_context, &filter_rx_loki);
+    if (err < 0) {LOG_ERR("adding loki filter failed: %d", err);}
+
+    //err = can_add_rx_filter(can_dev, can_rx_sigurd, &sigurd_context, &filter_rx_sigurd);
+    //if (err < 0) {LOG_ERR("adding sigurd filter failed: %d", err);}
+    return 0;
+}
+SYS_INIT(can_cb_priv_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+
+#endif
+
+void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
+    init_t            *init  = fjalar->ptr_init;
+    position_filter_t *pos_kf = fjalar->ptr_pos_kf;
+    attitude_filter_t *att_kf = fjalar->ptr_att_kf;
+    aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
+    state_t           *state = fjalar->ptr_state;
+    can_t             *can = fjalar->ptr_can;
+
+    #if DT_ALIAS_EXISTS(canbus)
+    
+    int ret;
+    ret = can_set_bitrate_data(can_dev, 500000); // 500 kb/s
+    if (ret) {LOG_ERR("Failed to set CAN bitrate: [%d]", ret);}
+    else{LOG_INF("CAN bitrate successfully set to 500kb/s");}
+
+
+    #endif
+
+    while (true) {
+        #if DT_ALIAS_EXISTS(canbus)
+        //can_tx_loki(can_dev, state);
+        //can_tx_sigurd(state, can_dev);
+        #endif
+
+        k_msleep(10); // 100 Hz
+    }
+}
