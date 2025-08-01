@@ -139,10 +139,12 @@ void can_rx_sigurd(const struct device *const can_dev, struct can_frame *frame, 
 
 // Give privilage to RX callbacks
 static int can_cb_priv_init(void){
-    int err = can_add_rx_filter(can_dev, can_rx_loki, &loki_context, &filter_rx_loki);
-    if (err < 0) {LOG_ERR("add_rx_filter failed: %d", err);}
+    int err;
+    err = can_add_rx_filter(can_dev, can_rx_loki, &loki_context, &filter_rx_loki);
+    if (err < 0) {LOG_ERR("adding loki filter failed: %d", err);}
 
-    // add Sigurd filter too
+    //err = can_add_rx_filter(can_dev, can_rx_sigurd, &sigurd_context, &filter_rx_sigurd);
+    //if (err < 0) {LOG_ERR("adding sigurd filter failed: %d", err);}
     return 0;
 }
 SYS_INIT(can_cb_priv_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
