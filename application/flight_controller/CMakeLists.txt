@@ -22,11 +22,16 @@ add_subdirectory(../common ../build/common)
 
 add_subdirectory(lib)
 
+zephyr_include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/com_interfaces
+)
+
 # main
 target_sources(app PRIVATE
     src/flight_state.c
     src/sensors.c
-    src/communication.c
+    src/com_master.c
     src/commands.c
     src/actuation.c
     src/filter.c
@@ -34,6 +39,10 @@ target_sources(app PRIVATE
     src/aerodynamics.c
     src/init.c
     src/can_com.c
+    src/com_interfaces/com_flash.c
+    src/com_interfaces/com_lora.c
+    src/com_interfaces/com_uart.c
+    src/com_interfaces/com_usb.c
 )
 
 if(TEST_BUILD)

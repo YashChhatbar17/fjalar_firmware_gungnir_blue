@@ -15,7 +15,7 @@ to a message queue which will be intercepted by the kalman filters.
 
 #include "fjalar.h"
 #include "sensors.h"
-#include "communication.h"
+#include "com_master.h"
 
 LOG_MODULE_REGISTER(sensors, CONFIG_APP_SENSORS_LOG_LEVEL);
 

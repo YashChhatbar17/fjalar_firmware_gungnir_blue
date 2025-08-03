@@ -17,7 +17,7 @@ It is important that the rocket remains stationary while the initialization thre
 #include "filter.h"
 #include "aerodynamics.h"
 #include "flight_state.h"
-#include "communication.h"
+#include "com_master.h"
 
 LOG_MODULE_REGISTER(init, CONFIG_APP_FLIGHT_LOG_LEVEL);
 
