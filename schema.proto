@@ -99,6 +99,30 @@ message EventHappened {
     Events event;
 }
 
+message HilIn{
+    float ax = 1;
+    float ay = 2;
+    float az = 3;
+
+    float gx = 4;
+    float gy = 5;
+    float gz = 6;
+
+    float p = 7;
+
+    float lon = 8;
+    float lat = 9;
+    float alt = 10;
+
+    uint32 time = 11;
+}
+
+message HilOut{
+    float airbrake_percentage = 1;
+    bool main_deployed = 2;
+    bool drogue_deployed = 3;
+}
+
 message FjalarData {
     oneof data {
         Acknowledge acknowledge = 1;
