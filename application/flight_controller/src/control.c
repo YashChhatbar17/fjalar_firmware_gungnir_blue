@@ -16,6 +16,7 @@
 #define CONTROL_THREAD_PRIORITY 7
 #define CONTROL_THREAD_STACK_SIZE 4096
 
+
 LOG_MODULE_REGISTER(control, CONFIG_APP_FLIGHT_LOG_LEVEL);
 
 void control_thread(fjalar_t *fjalar, void *p2, void *p1);
@@ -46,11 +47,72 @@ void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
     state_t           *state = fjalar->ptr_state;
     control_t         *control = fjalar->ptr_control;
 
-    control->control_output = 10.0; // just to test if struct is working
-
+    static float integral = 0.0f;
+    static float last_error = 0.0f;
     while (true){
-        LOG_INF("conttrol loop running"); // test logging
-        LOG_INF("output: %f", control->control_output); // test struct
+
+        float altitude_AGL = pos_kf->X_data[2];
+
+        if (state->flight_state == STATE_COAST && altitude_AGL > 1500.0f) {
+            float predicted_apogee = aerodynamics->expected_apogee;
+            float error = predicted_apogee - TARGET_APOGEE_AGL;
+
+            integral += error * SAMPLING_TIME_S;
+
+            if (integral > PID_INTEGRAL_MAX) {
+                    integral = PID_INTEGRAL_MAX;
+            } else if (integral < -PID_INTEGRAL_MAX) {
+                    integral = -PID_INTEGRAL_MAX;
+                }
+            float derivative = (error - last_error)/SAMPLING_TIME_S;
+            float output = (PID_P_GAIN * error) + (PID_I_GAIN * integral) + (PID_D_GAIN * derivative);
+            last_error = error;
+
+             // Clamp the final output to range 0 to 1
+            if (output > PID_OUTPUT_MAX) {
+                    output = PID_OUTPUT_MAX;
+            } else if (output < PID_OUTPUT_MIN) {
+                    output = PID_OUTPUT_MIN;
+                }
+
+            // Block of code converting linear movement of airbrakes on the rails to degrees for the motor    
+            float desired_deployment_mm = output * x_max;
+            float A = desired_deployment_mm + x_ret;
+            float num = (A * A) - (link_L * link_L - crank_R * crank_R);
+            float den = 2 * crank_R * A;
+            float arg = num / den;
+
+            if (arg > 1.0f) arg = 1.0f;
+            if (arg < -1.0f) arg = 1.0f;
+
+            float theta = asinf(arg) * (180.0f / 3.14159f);
+            control->control_output = theta;
+
+            LOG_INF("conttrol loop running");
+            LOG_INF("HELLOOOOOO");
+            LOG_INF("TARGET APOGEE: %f", TARGET_APOGEE_AGL);
+            LOG_INF("Sampling Rate: %f", SAMPLING_RATE_HZ);
+            LOG_INF("Sampling Time: %f", SAMPLING_TIME_S);
+            LOG_INF("Predicted Apogee: %f", predicted_apogee);
+            LOG_INF("ERROR: %f", error);
+            LOG_INF("Derivative: %f", derivative);
+            LOG_INF("Integral: %f", integral);
+            LOG_INF("Current State: %d", state->flight_state);
+            LOG_INF("Current Altitude: %f", altitude_AGL);
+            //LOG_INF("PID output: %f", output);
+            LOG_INF("output: %f", control->control_output);
+            LOG_INF("CONTROL ACTIVE: Alt=%.1f, Pred_Ap=%.1f, Err=%.1f, PID_Out=%.2f, Angle=%.2f",
+                altitude_AGL, predicted_apogee, error, output, control->control_output);
+
+        } else {
+            //to prevent integral windup
+            integral = 0.0f;
+            last_error = 0.0f;
+            control->control_output = 0.0f;
+            
+           
+            LOG_INF("CONTROL INACTIVE: State=%d, Alt=%.1f", state->flight_state, altitude_AGL);
+        }
 
         k_msleep(10); // 100 Hz
     }
