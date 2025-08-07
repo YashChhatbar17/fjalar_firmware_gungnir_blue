@@ -805,7 +805,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             float gx = g_array[init->new_x_index] * init->new_x_sign; 
             float gy = g_array[init->new_y_index] * init->new_y_sign; 
             float gz = g_array[init->new_z_index] * init->new_z_sign; 
-            
+
             // call filters
             position_filter_accelerometer(init, pos_kf, att_kf, ax, ay, az, imu.t); // needs magnetometer
             attitude_filter_gyroscope(pos_kf, att_kf, gx, gy, gz, imu.t);
@@ -820,7 +820,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         if (k_msgq_get(&pressure_msgq, &pressure, K_NO_WAIT) == 0) {
             events[0].state = K_POLL_STATE_NOT_READY;            
-            
+            LOG_INF("p : %f", pressure.pressure*1000);
             // use state machine
             if (state->velocity_class == VELOCITY_SUBSONIC){ // baro bad in native
                 //position_filter_barometer(init, pos_kf, pressure.pressure, pressure.t); // Ask other team about barometer solution on bad data
@@ -863,6 +863,8 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         LOG_DBG("v_norm: %f", pos_kf->v_norm);
         LOG_DBG("a_norm: %f", pos_kf->a_norm);
+
+        k_msleep(10); // 100 Hz
         }
     }
 

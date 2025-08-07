@@ -8,7 +8,10 @@ typedef struct aerodynamics aerodynamics_t;
 typedef struct state state_t;
 
 typedef struct can {
-
+    uint8_t  loki_state;
+    uint8_t  loki_sub_state;
+    float    loki_angle;
+    float    battery_voltage;
 } can_t;
 
 typedef struct {
