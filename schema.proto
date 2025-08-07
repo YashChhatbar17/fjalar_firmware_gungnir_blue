@@ -96,7 +96,7 @@ enum Events {
 }
 
 message EventHappened {
-    Events event;
+    Events event = 1;
 }
 
 message HilIn{
@@ -138,6 +138,8 @@ message FjalarData {
         ReadyUp ready_up = 12;
         EnterIdle enter_idle = 13;
         TriggerPyro trigger_pyro = 14;
+        HilIn hil_in = 15;
+        HilOut hil_out = 16;
     };
 }
 

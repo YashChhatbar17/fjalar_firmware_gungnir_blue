@@ -20,6 +20,7 @@ translating incoming commands into state changes and actuator outputs.
 #include "fjalar.h"
 #include "actuation.h"
 #include "flight_state.h"
+#include "hilsensor.h"
 
 LOG_MODULE_REGISTER(commands, CONFIG_APP_COMMANDS_LOG_LEVEL);
 
@@ -45,7 +46,7 @@ void handle_fjalar_buf(struct protocol_state *ps, fjalar_t *fjalar, uint8_t *buf
 }
 
 void handle_fjalar_message(fjalar_message_t *msg, fjalar_t *fjalar, state_t *state, enum com_channels channel) {
-    LOG_INF("handling msg with id %d", msg->data.which_data);
+    //LOG_INF("handling msg with id %d", msg->data.which_data);
     switch (msg->data.which_data) {
         case FJALAR_DATA_SET_SUDO_TAG:
             handle_set_sudo(&msg->data.data.set_sudo, fjalar, channel);
@@ -146,26 +147,23 @@ void handle_read_flash(read_flash_t *msg, fjalar_t *fjalar, enum com_channels ch
 }
 
 void handle_hil_in(hil_in_t *msg, fjalar_t *fjalar, enum com_channels channel){
-    #if DT_ALIAS_EXISTS(dummysensor) // change name ltr
+    #if DT_NODE_EXISTS(DT_ALIAS(hilsensor))
     const struct device *const hilsensor_dev = DEVICE_DT_GET(DT_ALIAS(hilsensor));
-    struct hil_data_t hil_data = {
-        .ax = msg->ax;
-        .ay = msg->ay;
-        .az = msg->az;
 
-        .gx = msg->gx;
-        .gy = msg->gy;
-        .gz = msg->gz;
-
-        .p = msg->p;
-
-        .lon = msg->lon;
-        .lat = msg->lat;
-        .alt = msg->alt;
-    }
+    hil_data_t hil_data = {
+        .ax = msg->ax,
+        .ay = msg->ay,
+        .az = msg->az,
+        .gx = msg->gx,
+        .gy = msg->gy,
+        .gz = msg->gz,
+        .p = msg->p,
+        .lon = msg->lon,
+        .lat = msg->lat,
+        .alt = msg->alt,
+        .time = k_uptime_get_32(),
+    };
 
     hilsensor_feed(hilsensor_dev, &hil_data);
     #endif
-    
-    
 }

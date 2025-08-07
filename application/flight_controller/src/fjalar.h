@@ -31,7 +31,7 @@ typedef struct fjalar {
     bool pyro1_sense; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
     bool pyro2_sense; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
     bool pyro3_sense; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    
+        
     init_t            *ptr_init;
     position_filter_t *ptr_pos_kf;
     attitude_filter_t *ptr_att_kf;

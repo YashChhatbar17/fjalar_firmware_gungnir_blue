@@ -56,6 +56,7 @@ int main(void) {
 	hello_from_cpp(cpp_buf, sizeof(cpp_buf));
 	printk("%s", cpp_buf);
 
+
 	init_sensors(&fjalar_god);
 	init_init(&fjalar_god); // will init filter when done
 	init_flight_state(&fjalar_god);

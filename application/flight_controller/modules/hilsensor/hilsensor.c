@@ -48,7 +48,7 @@ static int hilsensor_channel_get(const struct device *dev, enum sensor_channel c
 	return 0;
 }
 
-static int hilsensor_feed(const struct device *dev, hil_data_t *hil){
+int hilsensor_feed(const struct device *dev, hil_data_t *hil){
 	struct hilsensor_data *data = dev->data;
 	data->hil_data = *hil;
 	return 0;

@@ -27,7 +27,7 @@
 		gps-uart = &usart1;
 		buzzer = &buzzer;
 		lora = &lora;
-
+		canbus = &fdcan1;
 	};
 
 	zephyr,user {
@@ -96,4 +96,15 @@
 		zephyr,oversampling = <4>;
 		status = "okay";
 	};
+};
+
+&fdcan1 {
+    status = "okay";
+    pinctrl-0 = <&fdcan1_rx_pb8 &fdcan1_tx_pb9>;
+    pinctrl-names = "default"; 
+    clocks      = <
+        &rcc STM32_CLOCK_BUS_APB1_2  0x00000200
+        &rcc STM32_SRC_PLL1_Q        FDCAN1_SEL(1)
+    >;
+    clock-names = "apb1", "fck";
 };
