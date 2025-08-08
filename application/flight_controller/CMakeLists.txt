@@ -34,6 +34,7 @@ target_sources(app PRIVATE
     src/hello.cpp
     src/aerodynamics.c
     src/init.c
+    src/control.c
     src/can_com.c
 )
 

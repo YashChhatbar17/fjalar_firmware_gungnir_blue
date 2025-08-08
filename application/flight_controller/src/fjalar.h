@@ -6,8 +6,8 @@ typedef struct position_filter position_filter_t;
 typedef struct attitude_filter attitude_filter_t;
 typedef struct aerodynamics aerodynamics_t;
 typedef struct state state_t;
+typedef struct control control_t;
 typedef struct can can_t;
-
 
 
 
@@ -37,6 +37,7 @@ typedef struct fjalar {
     attitude_filter_t *ptr_att_kf;
     aerodynamics_t    *ptr_aerodynamics;
     state_t           *ptr_state;
+    control_t         *ptr_control;
     can_t             *ptr_can;
 } fjalar_t;
 
