@@ -39,7 +39,7 @@ target_sources(app PRIVATE
     src/init.c
     src/control.c
     src/external_communication/com_master.c
-    src/external_communication/can_com.c
+    src/external_communication/com_can.c
     src/external_communication/com_flash.c
     src/external_communication/com_lora.c
     src/external_communication/com_uart.c

@@ -21,7 +21,7 @@ This is the main script, its purpose is to:
 #include "aerodynamics.h"
 #include "flight_state.h"
 #include "control.h"
-#include "can_com.h"
+#include "com_can.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_APP_MAIN_LOG_LEVEL);
 

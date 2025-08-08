@@ -14,7 +14,8 @@
 #include "aerodynamics.h"
 #include "flight_state.h"
 #include "actuation.h"
-#include "can_com.h"
+#include "com_can.h"
+#include "control.h"
 
 LOG_MODULE_REGISTER(can_com, CONFIG_APP_FLIGHT_LOG_LEVEL);
 
@@ -62,7 +63,7 @@ const struct can_filter filter_rx_sigurd = {
 
 const struct device *const can_dev = DEVICE_DT_GET(DT_ALIAS(canbus));
 
-void can_tx_loki(const struct device *can_dev, state_t *state)
+void can_tx_loki(const struct device *can_dev, state_t *state, control_t *control)
 {
     const size_t DLC = 4;
     uint8_t data[DLC];
@@ -80,9 +81,9 @@ void can_tx_loki(const struct device *can_dev, state_t *state)
     data[1] = (state->flight_event == EVENT_ABOVE_ACS_THRESHOLD && state->flight_state == STATE_COAST) ? 0xAA : 0x55;
 
     // bytes 2–3: angle ×100 
-    float  angle_f = 0.0; // replace with control variable
-    if (angle_f < 0.0f || angle_f > 360.0f) {LOG_ERR("angle invalid");}
-    uint16_t raw_angle = (uint16_t)roundf(angle_f * 100.0f);
+    float  airbrake_angle = control->airbrakes_angle; // from control script (PID algo)
+    if (airbrake_angle < 0.0f || airbrake_angle > 360.0f) {LOG_ERR("angle invalid");}
+    uint16_t raw_angle = (uint16_t)roundf(airbrake_angle * 100.0f);
     data[2] = (raw_angle >> 8) & 0xFF;
     data[3] = raw_angle & 0xFF;
 
@@ -159,6 +160,7 @@ void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
     aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
     state_t           *state = fjalar->ptr_state;
     can_t             *can = fjalar->ptr_can;
+    control_t         *control = fjalar->ptr_control;
 
     #if DT_ALIAS_EXISTS(canbus)
 
@@ -189,7 +191,7 @@ void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
     while (true) {
         #if DT_ALIAS_EXISTS(canbus)
-        can_tx_loki(can_dev, state);
+        can_tx_loki(can_dev, state, control);
         //can_tx_sigurd(state, can_dev);
         #endif
 

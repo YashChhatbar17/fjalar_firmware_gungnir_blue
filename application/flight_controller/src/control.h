@@ -27,7 +27,7 @@ typedef struct attitude_filter attitude_filter_t;
 typedef struct aerodynamics aerodynamics_t;
 
 typedef struct control {
-    float control_output; // rename, idk what you guys need
+    float airbrakes_angle; // rename, idk what you guys need
 } control_t;
 
 void init_control(fjalar_t *fjalar);

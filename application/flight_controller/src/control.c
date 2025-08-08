@@ -86,16 +86,16 @@ void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
             if (arg < -1.0f) arg = 1.0f;
 
             float theta = asinf(arg) * (180.0f / 3.14159f);
-            control->control_output = theta;
+            control->airbrakes_angle = theta;
 
-            //LOG_INF("output: %f", control->control_output);
-            //LOG_INF("CONTROL ACTIVE: Alt=%.1f, Pred_Ap=%.1f, Err=%.1f, PID_Out=%.2f, Angle=%.2f", altitude_AGL, predicted_apogee, error, output, control->control_output);
+            //LOG_INF("output: %f", control->airbrakes_angle);
+            //LOG_INF("CONTROL ACTIVE: Alt=%.1f, Pred_Ap=%.1f, Err=%.1f, PID_Out=%.2f, Angle=%.2f", altitude_AGL, predicted_apogee, error, output, control->airbrakes_angle);
 
         } else {
             //to prevent integral windup
             integral = 0.0f;
             last_error = 0.0f;
-            control->control_output = 0.0f;
+            control->airbrakes_angle = 0.0f;
             }
 
         k_msleep(10); // 100 Hz
