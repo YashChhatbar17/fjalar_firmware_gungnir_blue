@@ -17,7 +17,6 @@ This is the main script, its purpose is to:
 #include "flight_state.h"
 #include "com_master.h"
 #include "actuation.h"
-#include "hello.h"
 #include "init.h"
 #include "aerodynamics.h"
 #include "flight_state.h"
@@ -56,10 +55,6 @@ int main(void) {
 	printk("Started\n");
 
 	fjalar_god.sudo = false;
-	uint8_t cpp_buf[64];
-	hello_from_cpp(cpp_buf, sizeof(cpp_buf));
-	printk("%s", cpp_buf);
-
 
 	init_sensors(&fjalar_god);
 	init_init(&fjalar_god); // will init filter when done

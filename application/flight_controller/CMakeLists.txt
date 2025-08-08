@@ -25,26 +25,25 @@ add_subdirectory(lib)
 
 zephyr_include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/src
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/com_interfaces
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/external_communication
 )
 
 # main
 target_sources(app PRIVATE
     src/flight_state.c
     src/sensors.c
-    src/com_master.c
     src/commands.c
     src/actuation.c
     src/filter.c
-    src/hello.cpp
     src/aerodynamics.c
     src/init.c
     src/control.c
-    src/can_com.c
-    src/com_interfaces/com_flash.c
-    src/com_interfaces/com_lora.c
-    src/com_interfaces/com_uart.c
-    src/com_interfaces/com_usb.c
+    src/external_communication/com_master.c
+    src/external_communication/can_com.c
+    src/external_communication/com_flash.c
+    src/external_communication/com_lora.c
+    src/external_communication/com_uart.c
+    src/external_communication/com_usb.c
 )
 
 if(TEST_BUILD)

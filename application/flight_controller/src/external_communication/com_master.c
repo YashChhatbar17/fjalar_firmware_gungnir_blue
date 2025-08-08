@@ -15,10 +15,10 @@ sensor information via usb/uart.
 #include "fjalar.h"
 #include "commands.h"
 #include "com_master.h"
-#include "com_interfaces/com_flash.h"
-#include "com_interfaces/com_lora.h"
-#include "com_interfaces/com_uart.h"
-#include "com_interfaces/com_usb.h"
+#include "com_flash.h"
+#include "com_lora.h"
+#include "com_uart.h"
+#include "com_usb.h"
 
 LOG_MODULE_REGISTER(com_master, CONFIG_APP_COMMUNICATION_LOG_LEVEL);
 
