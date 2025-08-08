@@ -19,7 +19,7 @@
     };
 
     dummysensor: dummysensor {
-        compatible = "aesir,dummysensor";
+        compatible = "aesir,hilsensor";
         status = "okay";
     };
 

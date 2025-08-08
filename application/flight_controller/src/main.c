@@ -22,6 +22,7 @@ This is the main script, its purpose is to:
 #include "aerodynamics.h"
 #include "flight_state.h"
 #include "control.h"
+#include "can_com.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_APP_MAIN_LOG_LEVEL);
 
@@ -31,6 +32,8 @@ static attitude_filter_t attitude_filter_obj;
 static aerodynamics_t    aerodynamics_obj;
 static state_t           state_obj; 
 static control_t		 control_obj; 
+static state_t           state_obj;  
+static can_t			 can_obj;
 
 fjalar_t fjalar_god = {
 	.ptr_init         = &init_obj,
@@ -39,6 +42,7 @@ fjalar_t fjalar_god = {
 	.ptr_aerodynamics = &aerodynamics_obj,
 	.ptr_state        = &state_obj,
 	.ptr_control	  = &control_obj
+	.ptr_can	      = &can_obj
 };
 
 int main(void) {
@@ -56,6 +60,7 @@ int main(void) {
 	hello_from_cpp(cpp_buf, sizeof(cpp_buf));
 	printk("%s", cpp_buf);
 
+
 	init_sensors(&fjalar_god);
 	init_init(&fjalar_god); // will init filter when done
 	init_flight_state(&fjalar_god);
@@ -63,5 +68,6 @@ int main(void) {
 	init_communication(&fjalar_god);
 	init_actuation(&fjalar_god);
 	init_control(&fjalar_god);
+	init_can(&fjalar_god);
 	return 0;
 }

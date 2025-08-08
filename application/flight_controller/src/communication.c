@@ -196,7 +196,7 @@ void send_message(fjalar_t *fjalar, state_t *state, fjalar_message_t *msg, enum 
 			#endif
 			#if DT_ALIAS_EXISTS(data_usb)
 			if (k_msgq_put(&usb_msgq, &pbuf, K_NO_WAIT)) {
-				LOG_INF("could not insert data usb msgq");
+				//LOG_INF("could not insert data usb msgq");
 			}
 			#endif
 			break;
@@ -219,7 +219,7 @@ void send_message(fjalar_t *fjalar, state_t *state, fjalar_message_t *msg, enum 
 			#endif
 			#if DT_ALIAS_EXISTS(data_usb)
 			if (k_msgq_put(&usb_msgq, &pbuf, K_NO_WAIT)) {
-				LOG_INF("could not insert data usb msgq");
+				//LOG_INF("could not insert data usb msgq");
 			}
 			#endif
 			break;
@@ -266,7 +266,7 @@ void send_response(fjalar_t *fjalar, fjalar_message_t *msg, enum com_channels ch
 		case COM_CHAN_USB:
 			#if DT_ALIAS_EXISTS(data_usb)
 			if (k_msgq_put(&usb_msgq, &pbuf, K_NO_WAIT)) {
-				LOG_INF("could not insert data usb msgq");
+				LOG_WRN("could not insert data usb msgq");
 			}
 			#endif
 			break;
@@ -286,7 +286,7 @@ void store_message(fjalar_t *fjalar, fjalar_message_t *msg) {
 	}
 }
 
-void sampler_thread(fjalar_t *fjalar, state_t *state, void *p2, void *p3) {
+void sampler_thread(fjalar_t *fjalar, state_t *state, void *p2, void *p3) { // remove state ptr?
 	while (true) {
 		k_msleep(1000);
 		fjalar_message_t msg;
@@ -305,6 +305,10 @@ void sampler_thread(fjalar_t *fjalar, state_t *state, void *p2, void *p3) {
 		msg.data.data.telemetry_packet.pyro2_connected = fjalar->pyro2_sense;
 		msg.data.data.telemetry_packet.pyro3_connected = fjalar->pyro3_sense;
 		msg.data.data.telemetry_packet.sudo = fjalar->sudo;
+
+		msg.data.data.hil_out.airbrake_percentage = 0.0f;
+		msg.data.data.hil_out.main_deployed = fjalar->main_deployed;
+		msg.data.data.hil_out.drogue_deployed = fjalar->drogue_deployed;
 		send_message(fjalar, fjalar->ptr_state, &msg, MSG_PRIO_HIGH);
 	}
 }
@@ -556,7 +560,7 @@ void uart_thread(fjalar_t *fjalar, void *p2, void *p3) {
 		if (ret != -1) {
 			LOG_ERR("UART read error");
 		}
-
+		
 		// tx
 		struct padded_buf pbuf;
 		ret = k_msgq_get(&uart_msgq, &pbuf, K_NO_WAIT);

@@ -7,6 +7,7 @@ typedef struct attitude_filter attitude_filter_t;
 typedef struct aerodynamics aerodynamics_t;
 typedef struct state state_t;
 typedef struct control control_t;
+typedef struct can can_t;
 
 
 
@@ -30,14 +31,14 @@ typedef struct fjalar {
     bool pyro1_sense; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
     bool pyro2_sense; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
     bool pyro3_sense; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    
+        
     init_t            *ptr_init;
     position_filter_t *ptr_pos_kf;
     attitude_filter_t *ptr_att_kf;
     aerodynamics_t    *ptr_aerodynamics;
     state_t           *ptr_state;
     control_t         *ptr_control;
-
+    can_t             *ptr_can;
 } fjalar_t;
 
 
