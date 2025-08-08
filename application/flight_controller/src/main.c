@@ -41,7 +41,7 @@ fjalar_t fjalar_god = {
 	.ptr_att_kf       = &attitude_filter_obj,
 	.ptr_aerodynamics = &aerodynamics_obj,
 	.ptr_state        = &state_obj,
-	.ptr_control	  = &control_obj
+	.ptr_control	  = &control_obj,
 	.ptr_can	      = &can_obj
 };
 

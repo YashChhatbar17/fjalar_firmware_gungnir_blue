@@ -88,19 +88,15 @@ void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
             float theta = asinf(arg) * (180.0f / 3.14159f);
             control->control_output = theta;
 
-            LOG_INF("output: %f", control->control_output);
-            LOG_INF("CONTROL ACTIVE: Alt=%.1f, Pred_Ap=%.1f, Err=%.1f, PID_Out=%.2f, Angle=%.2f",
-                altitude_AGL, predicted_apogee, error, output, control->control_output);
+            //LOG_INF("output: %f", control->control_output);
+            //LOG_INF("CONTROL ACTIVE: Alt=%.1f, Pred_Ap=%.1f, Err=%.1f, PID_Out=%.2f, Angle=%.2f", altitude_AGL, predicted_apogee, error, output, control->control_output);
 
         } else {
             //to prevent integral windup
             integral = 0.0f;
             last_error = 0.0f;
             control->control_output = 0.0f;
-            
-           
-            LOG_INF("CONTROL INACTIVE: State=%d, Alt=%.1f", state->flight_state, altitude_AGL);
-        }
+            }
 
         k_msleep(10); // 100 Hz
     }
