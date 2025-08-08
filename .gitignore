@@ -7,3 +7,4 @@ __pycache__
 zephyr
 flash.bin
 sca
+schemamatrocket.proto

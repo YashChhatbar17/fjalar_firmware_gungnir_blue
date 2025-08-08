@@ -11,6 +11,7 @@ endif()
 
 list(APPEND EXTRA_ZEPHYR_MODULES
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/dummysensor
+    ${CMAKE_CURRENT_SOURCE_DIR}/modules/hilsensor
     ${CMAKE_CURRENT_SOURCE_DIR}/modules/ms5611
 )
 
@@ -38,6 +39,7 @@ target_sources(app PRIVATE
     src/hello.cpp
     src/aerodynamics.c
     src/init.c
+    src/control.c
     src/can_com.c
     src/com_interfaces/com_flash.c
     src/com_interfaces/com_lora.c

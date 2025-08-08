@@ -5,6 +5,7 @@
 #include <math.h>
 #include <pla.h>
 #include <zephyr/init.h>
+#include <zephyr/drivers/can.h> 
 
 #include "fjalar.h"
 #include "sensors.h"
@@ -76,7 +77,7 @@ void can_tx_loki(const struct device *can_dev, state_t *state)
     data[0] = (st << 4) | (ev & 0x0F);
 
     // byte 1: event marker 
-    data[1] = (state->flight_event == EVENT_ABOVE_ACS_THRESHOLD) ? 0xAA : 0x55;
+    data[1] = (state->flight_event == EVENT_ABOVE_ACS_THRESHOLD && state->flight_state == STATE_COAST) ? 0xAA : 0x55;
 
     // bytes 2–3: angle ×100 
     float  angle_f = 0.0; // replace with control variable
@@ -93,9 +94,7 @@ void can_tx_loki(const struct device *can_dev, state_t *state)
     memcpy(frame.data, data, DLC);
 
     ret = can_send(can_dev, &frame, K_MSEC(100), NULL, NULL);
-    if (ret) {
-        LOG_ERR("CAN TX Loki failed [%d]", ret);
-    }
+    if (ret) {LOG_ERR("CAN TX Loki failed [%d]", ret);}
 }
 
 void can_tx_sigurd(state_t *state, const struct device *const can_dev){
@@ -116,6 +115,7 @@ void can_tx_sigurd(state_t *state, const struct device *const can_dev){
 }
 
 void can_rx_loki(const struct device *const can_dev, struct can_frame *frame, void *user_data){
+    LOG_INF("RX Loki recieved");
     loki_context_t *context = user_data;
     const uint8_t *data = frame->data;
 
@@ -137,6 +137,8 @@ void can_rx_sigurd(const struct device *const can_dev, struct can_frame *frame, 
     // stuff
 }
 
+
+
 // Give privilage to RX callbacks
 static int can_cb_priv_init(void){
     int err;
@@ -147,7 +149,6 @@ static int can_cb_priv_init(void){
     //if (err < 0) {LOG_ERR("adding sigurd filter failed: %d", err);}
     return 0;
 }
-SYS_INIT(can_cb_priv_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif
 
@@ -160,20 +161,44 @@ void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
     can_t             *can = fjalar->ptr_can;
 
     #if DT_ALIAS_EXISTS(canbus)
-    
+
+    static uint8_t init_flag =0;
+
+    if (init_flag==0)
+    {
+        init_flag=1;
+        int ret = can_cb_priv_init();
+    }
+
     int ret;
+    ret = can_set_bitrate(can_dev, 500000); // 500 kb/s
+    if (ret) {LOG_ERR("Failed to set CAN nominal bitrate: [%d]", ret);}
+    else{LOG_INF("CAN nominal bitrate successfully set to 500kb/s");}
+
     ret = can_set_bitrate_data(can_dev, 500000); // 500 kb/s
     if (ret) {LOG_ERR("Failed to set CAN bitrate: [%d]", ret);}
     else{LOG_INF("CAN bitrate successfully set to 500kb/s");}
 
+    ret = can_start(can_dev);
+    if (ret) {LOG_ERR("Failed to start CAN: %d", ret);}
+    else{LOG_INF("CAN started");}
 
+
+    
     #endif
 
     while (true) {
         #if DT_ALIAS_EXISTS(canbus)
-        //can_tx_loki(can_dev, state);
+        can_tx_loki(can_dev, state);
         //can_tx_sigurd(state, can_dev);
         #endif
+
+        /*
+        LOG_INF("loki_state     : %d", can->loki_state);
+        LOG_INF("loki_sub_state : %d", can->loki_sub_state);
+        LOG_INF("loki_angle     : %f", can->loki_angle);
+        LOG_INF("battery_voltage: %f", can->battery_voltage);
+        */
 
         k_msleep(10); // 100 Hz
     }
