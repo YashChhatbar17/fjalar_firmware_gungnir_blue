@@ -15,7 +15,7 @@ This is the main script, its purpose is to:
 #include "fjalar.h"
 #include "sensors.h"
 #include "flight_state.h"
-#include "communication.h"
+#include "com_master.h"
 #include "actuation.h"
 #include "hello.h"
 #include "init.h"

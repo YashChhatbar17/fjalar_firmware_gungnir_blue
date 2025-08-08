@@ -37,6 +37,7 @@ message TelemetryPacket {
     bool pyro2_connected = 5;
     bool pyro3_connected = 6;
     FlightState flight_state = 7;
+    FlightEvent flight_event = 8
     float az = 10;
     float velocity = 11;
     float battery = 12;
@@ -86,13 +87,14 @@ message TriggerPyro {
     int32 pyro = 1;
 }
 
-enum Events {
+enum FlightEvent {
     launch = 0;
     burnout = 1;
     apogee = 2;
     main_deploy = 3;
     drogue_deploy = 4;
     touchdown = 5;
+    above_acs_threshold = 6
 }
 
 message EventHappened {
@@ -148,3 +150,4 @@ message FjalarMessage {
     int32 sequence_number = 2;
     FjalarData data = 3;
 }
+

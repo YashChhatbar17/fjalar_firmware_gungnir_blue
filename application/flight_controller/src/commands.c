@@ -16,7 +16,7 @@ translating incoming commands into state changes and actuator outputs.
 #include <protocol.h>
 
 #include "commands.h"
-#include "communication.h"
+#include "com_master.h"
 #include "fjalar.h"
 #include "actuation.h"
 #include "flight_state.h"
