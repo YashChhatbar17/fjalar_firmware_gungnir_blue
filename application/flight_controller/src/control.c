@@ -88,18 +88,6 @@ void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
             float theta = asinf(arg) * (180.0f / 3.14159f);
             control->control_output = theta;
 
-            LOG_INF("conttrol loop running");
-            LOG_INF("HELLOOOOOO");
-            LOG_INF("TARGET APOGEE: %f", TARGET_APOGEE_AGL);
-            LOG_INF("Sampling Rate: %f", SAMPLING_RATE_HZ);
-            LOG_INF("Sampling Time: %f", SAMPLING_TIME_S);
-            LOG_INF("Predicted Apogee: %f", predicted_apogee);
-            LOG_INF("ERROR: %f", error);
-            LOG_INF("Derivative: %f", derivative);
-            LOG_INF("Integral: %f", integral);
-            LOG_INF("Current State: %d", state->flight_state);
-            LOG_INF("Current Altitude: %f", altitude_AGL);
-            //LOG_INF("PID output: %f", output);
             LOG_INF("output: %f", control->control_output);
             LOG_INF("CONTROL ACTIVE: Alt=%.1f, Pred_Ap=%.1f, Err=%.1f, PID_Out=%.2f, Angle=%.2f",
                 altitude_AGL, predicted_apogee, error, output, control->control_output);
