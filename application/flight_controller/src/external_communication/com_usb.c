@@ -9,6 +9,8 @@
 
 #define USB_THREAD_PRIORITY 7
 #define USB_THREAD_STACK_SIZE 2048
+#define USB_MSG_ENQUEUE_THREAD_PRIORITY 7
+#define USB_MSG_ENQUEUE_THREAD_STACK_SIZE 2048
 
 LOG_MODULE_REGISTER(com_usb, CONFIG_APP_COMMUNICATION_LOG_LEVEL);
 K_MSGQ_DEFINE(usb_msgq, sizeof(struct padded_buf), 32, 4);
@@ -17,8 +19,12 @@ K_MSGQ_DEFINE(usb_msgq, sizeof(struct padded_buf), 32, 4);
 K_THREAD_STACK_DEFINE(usb_thread_stack, USB_THREAD_STACK_SIZE);
 struct k_thread usb_thread_data;
 k_tid_t usb_thread_id;
+K_THREAD_STACK_DEFINE(usb_msg_enqueue_thread_stack, USB_MSG_ENQUEUE_THREAD_STACK_SIZE);
+struct k_thread usb_msg_enqueue_thread_data;
+k_tid_t usb_msg_enqueue_thread_id;
 
 void usb_thread(fjalar_t *fjalar, void *p2, void *p3);
+void usb_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3);
 
 void init_com_usb(fjalar_t *fjalar){
     usb_thread_id = k_thread_create(
@@ -30,6 +36,17 @@ void init_com_usb(fjalar_t *fjalar){
         USB_THREAD_PRIORITY, 0, K_NO_WAIT
     );
     k_thread_name_set(usb_thread_id, "data usb");
+
+	usb_msg_enqueue_thread_id = k_thread_create(
+		&usb_msg_enqueue_thread_data,
+		usb_msg_enqueue_thread_stack,
+		K_THREAD_STACK_SIZEOF(usb_msg_enqueue_thread_stack),
+		(k_thread_entry_t) usb_msg_enqueue_thread,
+		fjalar, NULL, NULL,
+		USB_MSG_ENQUEUE_THREAD_PRIORITY, 0, K_NO_WAIT
+	);
+	k_thread_name_set(usb_msg_enqueue_thread_id, "usb enqueue");
+
 }
 
 void usb_thread(fjalar_t *fjalar, void *p2, void *p3) {
@@ -63,5 +80,27 @@ void usb_thread(fjalar_t *fjalar, void *p2, void *p3) {
 			}
 		} 
 		k_msleep(1);
+	}
+}
+
+void usb_msg_enqueue(fjalar_message_t *msg){
+	struct padded_buf pbuf;
+	int size = encode_fjalar_message(msg, pbuf.buf);
+	if (size < 0) {
+		LOG_ERR("encode_fjalar_message failed");
+		return;
+	}
+	LOG_DBG("sending message w/ size %d", size);
+	if (k_msgq_put(&usb_msgq, &pbuf, K_NO_WAIT)){LOG_ERR("could not insert into usb msgq");}
+}
+
+void usb_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
+	while (true){
+		// create msg
+		
+
+		// encode and put into msgq
+		//usb_msg_enqueue(&msg);
+		k_msleep(100);
 	}
 }

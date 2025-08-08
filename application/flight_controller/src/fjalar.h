@@ -11,27 +11,19 @@ typedef struct can can_t;
 
 
 
-typedef struct fjalar {
-    float altitude; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    float ground_level; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    float velocity; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    float ax; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    float ay; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    float az; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    bool drogue_deployed; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    bool main_deployed; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    uint32_t liftoff_at; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    uint32_t apogee_at; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    bool sudo; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    uint32_t flash_address; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    uint32_t flash_size; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    float battery_voltage; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    float latitude; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    float longitude; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    bool pyro1_sense; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    bool pyro2_sense; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-    bool pyro3_sense; // make update_fjalar function that updates these (to be sent with telemetry using communications.c)
-        
+typedef struct fjalar { // used in [comes from]
+    bool drogue_deployed;  // HIL, [fjalar]
+    bool main_deployed; // HIL [fjalar]
+    uint32_t liftoff_at; // state machine [state]
+    uint32_t apogee_at; // state machine [state]
+    bool sudo;
+    uint32_t flash_address;
+    uint32_t flash_size;
+    float battery_voltage;
+    bool pyro1_sense;
+    bool pyro2_sense;
+    bool pyro3_sense;
+
     init_t            *ptr_init;
     position_filter_t *ptr_pos_kf;
     attitude_filter_t *ptr_att_kf;

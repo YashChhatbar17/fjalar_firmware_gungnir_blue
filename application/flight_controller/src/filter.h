@@ -22,6 +22,15 @@ typedef struct position_filter {
     zsl_real_t Ptwosigma_data[9];
     struct zsl_mtx Ptwosigma;
 
+    float raw_imu_ax;
+    float raw_imu_ay;
+    float raw_imu_az;
+
+    float raw_baro_p;
+
+    float raw_gps_lat;
+    float raw_gps_lon;
+    float raw_gps_alt;
 
     float a_norm;
     float v_norm;
@@ -40,9 +49,13 @@ typedef struct attitude_filter {
     zsl_real_t R_data[9];
     struct zsl_mtx R;
 
-    float phi;
-    float theta;
-    float psi;
+    float phi; // remove? Not used 
+    float theta; // remove? Not used
+    float psi; // remove? Not used
+
+    float raw_imu_gx;
+    float raw_imu_gy;
+    float raw_imu_gz;
 
     uint32_t previous_update_gyroscope;
     bool seeded;

@@ -15,6 +15,27 @@ PB_BIND(PRESSURE_READING, pressure_reading_t, AUTO)
 PB_BIND(IMU_READING, imu_reading_t, AUTO)
 
 
+PB_BIND(STATE_ESTIMATE, state_estimate_t, AUTO)
+
+
+PB_BIND(CAN_BUS, can_bus_t, AUTO)
+
+
+PB_BIND(PYRO_STATUS, pyro_status_t, AUTO)
+
+
+PB_BIND(LOKI_TO_FJALAR, loki_to_fjalar_t, AUTO)
+
+
+PB_BIND(FJALAR_TO_LOKI, fjalar_to_loki_t, AUTO)
+
+
+PB_BIND(SIGURD_TO_FJALAR, sigurd_to_fjalar_t, AUTO)
+
+
+PB_BIND(FJALAR_TO_SIGURD, fjalar_to_sigurd_t, AUTO)
+
+
 PB_BIND(TELEMETRY_PACKET, telemetry_packet_t, AUTO)
 
 
@@ -43,9 +64,6 @@ PB_BIND(ENTER_IDLE, enter_idle_t, AUTO)
 
 
 PB_BIND(TRIGGER_PYRO, trigger_pyro_t, AUTO)
-
-
-PB_BIND(EVENT_HAPPENED, event_happened_t, AUTO)
 
 
 PB_BIND(HIL_IN, hil_in_t, AUTO)

@@ -21,14 +21,15 @@ typedef enum flight_state {
     FLIGHT_STATE_LANDED = 7
 } flight_state_t;
 
-typedef enum events {
-    EVENTS_LAUNCH = 0,
-    EVENTS_BURNOUT = 1,
-    EVENTS_APOGEE = 2,
-    EVENTS_MAIN_DEPLOY = 3,
-    EVENTS_DROGUE_DEPLOY = 4,
-    EVENTS_TOUCHDOWN = 5
-} events_t;
+typedef enum flight_event {
+    FLIGHT_EVENT_LAUNCH = 0,
+    FLIGHT_EVENT_BURNOUT = 1,
+    FLIGHT_EVENT_APOGEE = 2,
+    FLIGHT_EVENT_MAIN_DEPLOY = 3,
+    FLIGHT_EVENT_DROGUE_DEPLOY = 4,
+    FLIGHT_EVENT_TOUCHDOWN = 5,
+    FLIGHT_EVENT_ABOVE_ACS_THRESHOLD = 6
+} flight_event_t;
 
 /* Struct definitions */
 typedef struct acknowledge {
@@ -48,6 +49,54 @@ typedef struct imu_reading {
     float gz;
 } imu_reading_t;
 
+typedef struct state_estimate {
+    float x;
+    float y;
+    float z;
+    float vx;
+    float vy;
+    float vz;
+    float roll;
+    float pitch;
+    float yaw;
+} state_estimate_t;
+
+typedef struct can_bus {
+    bool can_started;
+    uint32_t loki_latest_rx_time;
+    uint32_t loki_latest_tx_time;
+    uint32_t sigurd_latest_rx_time;
+    uint32_t sigurd_latest_tx_time;
+} can_bus_t;
+
+typedef struct pyro_status {
+    bool pyro1_connected;
+    bool pyro2_connected;
+    bool pyro3_connected;
+} pyro_status_t;
+
+typedef struct loki_to_fjalar {
+    int32_t loki_state;
+    int32_t loki_substate;
+    float loki_current_angle;
+    float loki_battery_voltage;
+} loki_to_fjalar_t;
+
+typedef struct fjalar_to_loki {
+    flight_state_t flight_state;
+    flight_event_t flight_event;
+    bool enable_airbrakes;
+    float airbrakes_angle;
+} fjalar_to_loki_t;
+
+typedef struct sigurd_to_fjalar {
+    char dummy_field;
+} sigurd_to_fjalar_t;
+
+typedef struct fjalar_to_sigurd {
+    char dummy_field;
+} fjalar_to_sigurd_t;
+
 typedef struct telemetry_packet {
     float altitude;
     float longitude;
@@ -56,6 +105,7 @@ typedef struct telemetry_packet {
     bool pyro2_connected;
     bool pyro3_connected;
     flight_state_t flight_state;
+    flight_event_t flight_event;
     float az;
     float velocity;
     float battery;
@@ -66,6 +116,7 @@ typedef struct telemetry_packet {
 typedef struct gnss_position {
     float longitude;
     float latitude;
+    float altitude;
 } gnss_position_t;
 
 typedef struct gnss_status {
@@ -106,10 +157,6 @@ typedef struct trigger_pyro {
     int32_t pyro;
 } trigger_pyro_t;
 
-typedef struct event_happened {
-    events_t event;
-} event_happened_t;
-
 typedef struct hil_in {
     float ax;
     float ay;
@@ -148,6 +195,15 @@ typedef struct fjalar_data {
         trigger_pyro_t trigger_pyro;
         hil_in_t hil_in;
         hil_out_t hil_out;
+        state_estimate_t state_estimate;
+        flight_state_t flight_state;
+        flight_event_t flight_event;
+        can_bus_t can_bus;
+        pyro_status_t pyro_status;
+        loki_to_fjalar_t loki_to_fjalar;
+        fjalar_to_loki_t fjalar_to_loki;
+        sigurd_to_fjalar_t sigurd_to_fjalar;
+        fjalar_to_sigurd_t fjalar_to_sigurd;
     } data;
 } fjalar_data_t;
 
@@ -168,14 +224,24 @@ extern "C" {
 #define _FLIGHT_STATE_MAX FLIGHT_STATE_LANDED
 #define _FLIGHT_STATE_ARRAYSIZE ((flight_state_t)(FLIGHT_STATE_LANDED+1))
 
-#define _EVENTS_MIN EVENTS_LAUNCH
-#define _EVENTS_MAX EVENTS_TOUCHDOWN
-#define _EVENTS_ARRAYSIZE ((events_t)(EVENTS_TOUCHDOWN+1))
+#define _FLIGHT_EVENT_MIN FLIGHT_EVENT_LAUNCH
+#define _FLIGHT_EVENT_MAX FLIGHT_EVENT_ABOVE_ACS_THRESHOLD
+#define _FLIGHT_EVENT_ARRAYSIZE ((flight_event_t)(FLIGHT_EVENT_ABOVE_ACS_THRESHOLD+1))
 
+
+
+
+
+
+
+
+#define fjalar_to_loki_t_flight_state_ENUMTYPE flight_state_t
+#define fjalar_to_loki_t_flight_event_ENUMTYPE flight_event_t
 
 
 
 #define telemetry_packet_t_flight_state_ENUMTYPE flight_state_t
+#define telemetry_packet_t_flight_event_ENUMTYPE flight_event_t
 
 
 
@@ -186,10 +252,10 @@ extern "C" {
 
 
 
-#define event_happened_t_event_ENUMTYPE events_t
 
 
-
+#define fjalar_data_t_data_flight_state_ENUMTYPE flight_state_t
+#define fjalar_data_t_data_flight_event_ENUMTYPE flight_event_t
 
 
 
@@ -197,8 +263,15 @@ extern "C" {
 #define ACKNOWLEDGE_INIT_DEFAULT                 {0}
 #define PRESSURE_READING_INIT_DEFAULT            {0}
 #define IMU_READING_INIT_DEFAULT                 {0, 0, 0, 0, 0, 0}
-#define TELEMETRY_PACKET_INIT_DEFAULT            {0, 0, 0, 0, 0, 0, _FLIGHT_STATE_MIN, 0, 0, 0, 0, 0}
-#define GNSS_POSITION_INIT_DEFAULT               {0, 0}
+#define STATE_ESTIMATE_INIT_DEFAULT              {0, 0, 0, 0, 0, 0, 0, 0, 0}
+#define CAN_BUS_INIT_DEFAULT                     {0, 0, 0, 0, 0}
+#define PYRO_STATUS_INIT_DEFAULT                 {0, 0, 0}
+#define LOKI_TO_FJALAR_INIT_DEFAULT              {0, 0, 0, 0}
+#define FJALAR_TO_LOKI_INIT_DEFAULT              {_FLIGHT_STATE_MIN, _FLIGHT_EVENT_MIN, 0, 0}
+#define SIGURD_TO_FJALAR_INIT_DEFAULT            {0}
+#define FJALAR_TO_SIGURD_INIT_DEFAULT            {0}
+#define TELEMETRY_PACKET_INIT_DEFAULT            {0, 0, 0, 0, 0, 0, _FLIGHT_STATE_MIN, _FLIGHT_EVENT_MIN, 0, 0, 0, 0, 0}
+#define GNSS_POSITION_INIT_DEFAULT               {0, 0, 0}
 #define GNSS_STATUS_INIT_DEFAULT                 {0, 0, 0, 0}
 #define SET_SUDO_INIT_DEFAULT                    {0}
 #define CLEAR_FLASH_INIT_DEFAULT                 {0}
@@ -207,7 +280,6 @@ extern "C" {
 #define READY_UP_INIT_DEFAULT                    {0}
 #define ENTER_IDLE_INIT_DEFAULT                  {0}
 #define TRIGGER_PYRO_INIT_DEFAULT                {0}
-#define EVENT_HAPPENED_INIT_DEFAULT              {_EVENTS_MIN}
 #define HIL_IN_INIT_DEFAULT                      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define HIL_OUT_INIT_DEFAULT                     {0, 0, 0}
 #define FJALAR_DATA_INIT_DEFAULT                 {0, {ACKNOWLEDGE_INIT_DEFAULT}}
@@ -215,8 +287,15 @@ extern "C" {
 #define ACKNOWLEDGE_INIT_ZERO                    {0}
 #define PRESSURE_READING_INIT_ZERO               {0}
 #define IMU_READING_INIT_ZERO                    {0, 0, 0, 0, 0, 0}
-#define TELEMETRY_PACKET_INIT_ZERO               {0, 0, 0, 0, 0, 0, _FLIGHT_STATE_MIN, 0, 0, 0, 0, 0}
-#define GNSS_POSITION_INIT_ZERO                  {0, 0}
+#define STATE_ESTIMATE_INIT_ZERO                 {0, 0, 0, 0, 0, 0, 0, 0, 0}
+#define CAN_BUS_INIT_ZERO                        {0, 0, 0, 0, 0}
+#define PYRO_STATUS_INIT_ZERO                    {0, 0, 0}
+#define LOKI_TO_FJALAR_INIT_ZERO                 {0, 0, 0, 0}
+#define FJALAR_TO_LOKI_INIT_ZERO                 {_FLIGHT_STATE_MIN, _FLIGHT_EVENT_MIN, 0, 0}
+#define SIGURD_TO_FJALAR_INIT_ZERO               {0}
+#define FJALAR_TO_SIGURD_INIT_ZERO               {0}
+#define TELEMETRY_PACKET_INIT_ZERO               {0, 0, 0, 0, 0, 0, _FLIGHT_STATE_MIN, _FLIGHT_EVENT_MIN, 0, 0, 0, 0, 0}
+#define GNSS_POSITION_INIT_ZERO                  {0, 0, 0}
 #define GNSS_STATUS_INIT_ZERO                    {0, 0, 0, 0}
 #define SET_SUDO_INIT_ZERO                       {0}
 #define CLEAR_FLASH_INIT_ZERO                    {0}
@@ -225,7 +304,6 @@ extern "C" {
 #define READY_UP_INIT_ZERO                       {0}
 #define ENTER_IDLE_INIT_ZERO                     {0}
 #define TRIGGER_PYRO_INIT_ZERO                   {0}
-#define EVENT_HAPPENED_INIT_ZERO                 {_EVENTS_MIN}
 #define HIL_IN_INIT_ZERO                         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define HIL_OUT_INIT_ZERO                        {0, 0, 0}
 #define FJALAR_DATA_INIT_ZERO                    {0, {ACKNOWLEDGE_INIT_ZERO}}
@@ -240,6 +318,31 @@ extern "C" {
 #define IMU_READING_GX_TAG                       4
 #define IMU_READING_GY_TAG                       5
 #define IMU_READING_GZ_TAG                       6
+#define STATE_ESTIMATE_X_TAG                     1
+#define STATE_ESTIMATE_Y_TAG                     2
+#define STATE_ESTIMATE_Z_TAG                     3
+#define STATE_ESTIMATE_VX_TAG                    4
+#define STATE_ESTIMATE_VY_TAG                    5
+#define STATE_ESTIMATE_VZ_TAG                    6
+#define STATE_ESTIMATE_ROLL_TAG                  7
+#define STATE_ESTIMATE_PITCH_TAG                 8
+#define STATE_ESTIMATE_YAW_TAG                   9
+#define CAN_BUS_CAN_STARTED_TAG                  1
+#define CAN_BUS_LOKI_LATEST_RX_TIME_TAG          2
+#define CAN_BUS_LOKI_LATEST_TX_TIME_TAG          3
+#define CAN_BUS_SIGURD_LATEST_RX_TIME_TAG        4
+#define CAN_BUS_SIGURD_LATEST_TX_TIME_TAG        5
+#define PYRO_STATUS_PYRO1_CONNECTED_TAG          1
+#define PYRO_STATUS_PYRO2_CONNECTED_TAG          2
+#define PYRO_STATUS_PYRO3_CONNECTED_TAG          3
+#define LOKI_TO_FJALAR_LOKI_STATE_TAG            1
+#define LOKI_TO_FJALAR_LOKI_SUBSTATE_TAG         2
+#define LOKI_TO_FJALAR_LOKI_CURRENT_ANGLE_TAG    3
+#define LOKI_TO_FJALAR_LOKI_BATTERY_VOLTAGE_TAG  4
+#define FJALAR_TO_LOKI_FLIGHT_STATE_TAG          1
+#define FJALAR_TO_LOKI_FLIGHT_EVENT_TAG          2
+#define FJALAR_TO_LOKI_ENABLE_AIRBRAKES_TAG      3
+#define FJALAR_TO_LOKI_AIRBRAKES_ANGLE_TAG       4
 #define TELEMETRY_PACKET_ALTITUDE_TAG            1
 #define TELEMETRY_PACKET_LONGITUDE_TAG           2
 #define TELEMETRY_PACKET_LATITUDE_TAG            3
@@ -247,6 +350,7 @@ extern "C" {
 #define TELEMETRY_PACKET_PYRO2_CONNECTED_TAG     5
 #define TELEMETRY_PACKET_PYRO3_CONNECTED_TAG     6
 #define TELEMETRY_PACKET_FLIGHT_STATE_TAG        7
+#define TELEMETRY_PACKET_FLIGHT_EVENT_TAG        8
 #define TELEMETRY_PACKET_AZ_TAG                  10
 #define TELEMETRY_PACKET_VELOCITY_TAG            11
 #define TELEMETRY_PACKET_BATTERY_TAG             12
@@ -254,6 +358,7 @@ extern "C" {
 #define TELEMETRY_PACKET_SUDO_TAG                14
 #define GNSS_POSITION_LONGITUDE_TAG              1
 #define GNSS_POSITION_LATITUDE_TAG               2
+#define GNSS_POSITION_ALTITUDE_TAG               3
 #define GNSS_STATUS_FIX_TAG                      1
 #define GNSS_STATUS_NUM_SATELLITES_TAG           2
 #define GNSS_STATUS_HDOP_TAG                     3
@@ -264,7 +369,6 @@ extern "C" {
 #define FLASH_DATA_START_INDEX_TAG               1
 #define FLASH_DATA_DATA_TAG                      2
 #define TRIGGER_PYRO_PYRO_TAG                    1
-#define EVENT_HAPPENED_EVENT_TAG                 1
 #define HIL_IN_AX_TAG                            1
 #define HIL_IN_AY_TAG                            2
 #define HIL_IN_AZ_TAG                            3
@@ -294,6 +398,15 @@ extern "C" {
 #define FJALAR_DATA_TRIGGER_PYRO_TAG             14
 #define FJALAR_DATA_HIL_IN_TAG                   15
 #define FJALAR_DATA_HIL_OUT_TAG                  16
+#define FJALAR_DATA_STATE_ESTIMATE_TAG           17
+#define FJALAR_DATA_FLIGHT_STATE_TAG             18
+#define FJALAR_DATA_FLIGHT_EVENT_TAG             19
+#define FJALAR_DATA_CAN_BUS_TAG                  20
+#define FJALAR_DATA_PYRO_STATUS_TAG              21
+#define FJALAR_DATA_LOKI_TO_FJALAR_TAG           22
+#define FJALAR_DATA_FJALAR_TO_LOKI_TAG           23
+#define FJALAR_DATA_SIGURD_TO_FJALAR_TAG         24
+#define FJALAR_DATA_FJALAR_TO_SIGURD_TAG         25
 #define FJALAR_MESSAGE_TIME_TAG                  1
 #define FJALAR_MESSAGE_SEQUENCE_NUMBER_TAG       2
 #define FJALAR_MESSAGE_DATA_TAG                  3
@@ -319,6 +432,61 @@ X(a, STATIC,   SINGULAR, FLOAT,    gz,                6)
 #define IMU_READING_CALLBACK NULL
 #define IMU_READING_DEFAULT NULL
 
+#define STATE_ESTIMATE_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, FLOAT,    x,                 1) \
+X(a, STATIC,   SINGULAR, FLOAT,    y,                 2) \
+X(a, STATIC,   SINGULAR, FLOAT,    z,                 3) \
+X(a, STATIC,   SINGULAR, FLOAT,    vx,                4) \
+X(a, STATIC,   SINGULAR, FLOAT,    vy,                5) \
+X(a, STATIC,   SINGULAR, FLOAT,    vz,                6) \
+X(a, STATIC,   SINGULAR, FLOAT,    roll,              7) \
+X(a, STATIC,   SINGULAR, FLOAT,    pitch,             8) \
+X(a, STATIC,   SINGULAR, FLOAT,    yaw,               9)
+#define STATE_ESTIMATE_CALLBACK NULL
+#define STATE_ESTIMATE_DEFAULT NULL
+
+#define CAN_BUS_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, BOOL,     can_started,       1) \
+X(a, STATIC,   SINGULAR, FIXED32,  loki_latest_rx_time,   2) \
+X(a, STATIC,   SINGULAR, FIXED32,  loki_latest_tx_time,   3) \
+X(a, STATIC,   SINGULAR, FIXED32,  sigurd_latest_rx_time,   4) \
+X(a, STATIC,   SINGULAR, FIXED32,  sigurd_latest_tx_time,   5)
+#define CAN_BUS_CALLBACK NULL
+#define CAN_BUS_DEFAULT NULL
+
+#define PYRO_STATUS_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, BOOL,     pyro1_connected,   1) \
+X(a, STATIC,   SINGULAR, BOOL,     pyro2_connected,   2) \
+X(a, STATIC,   SINGULAR, BOOL,     pyro3_connected,   3)
+#define PYRO_STATUS_CALLBACK NULL
+#define PYRO_STATUS_DEFAULT NULL
+
+#define LOKI_TO_FJALAR_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, INT32,    loki_state,        1) \
+X(a, STATIC,   SINGULAR, INT32,    loki_substate,     2) \
+X(a, STATIC,   SINGULAR, FLOAT,    loki_current_angle,   3) \
+X(a, STATIC,   SINGULAR, FLOAT,    loki_battery_voltage,   4)
+#define LOKI_TO_FJALAR_CALLBACK NULL
+#define LOKI_TO_FJALAR_DEFAULT NULL
+
+#define FJALAR_TO_LOKI_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, UENUM,    flight_state,      1) \
+X(a, STATIC,   SINGULAR, UENUM,    flight_event,      2) \
+X(a, STATIC,   SINGULAR, BOOL,     enable_airbrakes,   3) \
+X(a, STATIC,   SINGULAR, FLOAT,    airbrakes_angle,   4)
+#define FJALAR_TO_LOKI_CALLBACK NULL
+#define FJALAR_TO_LOKI_DEFAULT NULL
+
+#define SIGURD_TO_FJALAR_FIELDLIST(X, a) \
+
+#define SIGURD_TO_FJALAR_CALLBACK NULL
+#define SIGURD_TO_FJALAR_DEFAULT NULL
+
+#define FJALAR_TO_SIGURD_FIELDLIST(X, a) \
+
+#define FJALAR_TO_SIGURD_CALLBACK NULL
+#define FJALAR_TO_SIGURD_DEFAULT NULL
+
 #define TELEMETRY_PACKET_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, FLOAT,    altitude,          1) \
 X(a, STATIC,   SINGULAR, FLOAT,    longitude,         2) \
@@ -327,6 +495,7 @@ X(a, STATIC,   SINGULAR, BOOL,     pyro1_connected,   4) \
 X(a, STATIC,   SINGULAR, BOOL,     pyro2_connected,   5) \
 X(a, STATIC,   SINGULAR, BOOL,     pyro3_connected,   6) \
 X(a, STATIC,   SINGULAR, UENUM,    flight_state,      7) \
+X(a, STATIC,   SINGULAR, UENUM,    flight_event,      8) \
 X(a, STATIC,   SINGULAR, FLOAT,    az,               10) \
 X(a, STATIC,   SINGULAR, FLOAT,    velocity,         11) \
 X(a, STATIC,   SINGULAR, FLOAT,    battery,          12) \
@@ -337,7 +506,8 @@ X(a, STATIC,   SINGULAR, BOOL,     sudo,             14)
 
 #define GNSS_POSITION_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, FLOAT,    longitude,         1) \
-X(a, STATIC,   SINGULAR, FLOAT,    latitude,          2)
+X(a, STATIC,   SINGULAR, FLOAT,    latitude,          2) \
+X(a, STATIC,   SINGULAR, FLOAT,    altitude,          3)
 #define GNSS_POSITION_CALLBACK NULL
 #define GNSS_POSITION_DEFAULT NULL
 
@@ -386,11 +556,6 @@ X(a, STATIC,   SINGULAR, INT32,    pyro,              1)
 #define TRIGGER_PYRO_CALLBACK NULL
 #define TRIGGER_PYRO_DEFAULT NULL
 
-#define EVENT_HAPPENED_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, UENUM,    event,             1)
-#define EVENT_HAPPENED_CALLBACK NULL
-#define EVENT_HAPPENED_DEFAULT NULL
-
 #define HIL_IN_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, FLOAT,    ax,                1) \
 X(a, STATIC,   SINGULAR, FLOAT,    ay,                2) \
@@ -428,7 +593,16 @@ X(a, STATIC,   ONEOF,    MESSAGE,  (data,ready_up,data.ready_up),  12) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,enter_idle,data.enter_idle),  13) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,trigger_pyro,data.trigger_pyro),  14) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,hil_in,data.hil_in),  15) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (data,hil_out,data.hil_out),  16)
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,hil_out,data.hil_out),  16) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,state_estimate,data.state_estimate),  17) \
+X(a, STATIC,   ONEOF,    UENUM,    (data,flight_state,data.flight_state),  18) \
+X(a, STATIC,   ONEOF,    UENUM,    (data,flight_event,data.flight_event),  19) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,can_bus,data.can_bus),  20) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,pyro_status,data.pyro_status),  21) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,loki_to_fjalar,data.loki_to_fjalar),  22) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,fjalar_to_loki,data.fjalar_to_loki),  23) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,sigurd_to_fjalar,data.sigurd_to_fjalar),  24) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,fjalar_to_sigurd,data.fjalar_to_sigurd),  25)
 #define FJALAR_DATA_CALLBACK NULL
 #define FJALAR_DATA_DEFAULT NULL
 #define fjalar_data_t_data_acknowledge_MSGTYPE acknowledge_t
@@ -446,6 +620,13 @@ X(a, STATIC,   ONEOF,    MESSAGE,  (data,hil_out,data.hil_out),  16)
 #define fjalar_data_t_data_trigger_pyro_MSGTYPE trigger_pyro_t
 #define fjalar_data_t_data_hil_in_MSGTYPE hil_in_t
 #define fjalar_data_t_data_hil_out_MSGTYPE hil_out_t
+#define fjalar_data_t_data_state_estimate_MSGTYPE state_estimate_t
+#define fjalar_data_t_data_can_bus_MSGTYPE can_bus_t
+#define fjalar_data_t_data_pyro_status_MSGTYPE pyro_status_t
+#define fjalar_data_t_data_loki_to_fjalar_MSGTYPE loki_to_fjalar_t
+#define fjalar_data_t_data_fjalar_to_loki_MSGTYPE fjalar_to_loki_t
+#define fjalar_data_t_data_sigurd_to_fjalar_MSGTYPE sigurd_to_fjalar_t
+#define fjalar_data_t_data_fjalar_to_sigurd_MSGTYPE fjalar_to_sigurd_t
 
 #define FJALAR_MESSAGE_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, FIXED32,  time,              1) \
@@ -458,6 +639,13 @@ X(a, STATIC,   OPTIONAL, MESSAGE,  data,              3)
 extern const pb_msgdesc_t acknowledge_t_msg;
 extern const pb_msgdesc_t pressure_reading_t_msg;
 extern const pb_msgdesc_t imu_reading_t_msg;
+extern const pb_msgdesc_t state_estimate_t_msg;
+extern const pb_msgdesc_t can_bus_t_msg;
+extern const pb_msgdesc_t pyro_status_t_msg;
+extern const pb_msgdesc_t loki_to_fjalar_t_msg;
+extern const pb_msgdesc_t fjalar_to_loki_t_msg;
+extern const pb_msgdesc_t sigurd_to_fjalar_t_msg;
+extern const pb_msgdesc_t fjalar_to_sigurd_t_msg;
 extern const pb_msgdesc_t telemetry_packet_t_msg;
 extern const pb_msgdesc_t gnss_position_t_msg;
 extern const pb_msgdesc_t gnss_status_t_msg;
@@ -468,7 +656,6 @@ extern const pb_msgdesc_t flash_data_t_msg;
 extern const pb_msgdesc_t ready_up_t_msg;
 extern const pb_msgdesc_t enter_idle_t_msg;
 extern const pb_msgdesc_t trigger_pyro_t_msg;
-extern const pb_msgdesc_t event_happened_t_msg;
 extern const pb_msgdesc_t hil_in_t_msg;
 extern const pb_msgdesc_t hil_out_t_msg;
 extern const pb_msgdesc_t fjalar_data_t_msg;
@@ -478,6 +665,13 @@ extern const pb_msgdesc_t fjalar_message_t_msg;
 #define ACKNOWLEDGE_FIELDS &acknowledge_t_msg
 #define PRESSURE_READING_FIELDS &pressure_reading_t_msg
 #define IMU_READING_FIELDS &imu_reading_t_msg
+#define STATE_ESTIMATE_FIELDS &state_estimate_t_msg
+#define CAN_BUS_FIELDS &can_bus_t_msg
+#define PYRO_STATUS_FIELDS &pyro_status_t_msg
+#define LOKI_TO_FJALAR_FIELDS &loki_to_fjalar_t_msg
+#define FJALAR_TO_LOKI_FIELDS &fjalar_to_loki_t_msg
+#define SIGURD_TO_FJALAR_FIELDS &sigurd_to_fjalar_t_msg
+#define FJALAR_TO_SIGURD_FIELDS &fjalar_to_sigurd_t_msg
 #define TELEMETRY_PACKET_FIELDS &telemetry_packet_t_msg
 #define GNSS_POSITION_FIELDS &gnss_position_t_msg
 #define GNSS_STATUS_FIELDS &gnss_status_t_msg
@@ -488,7 +682,6 @@ extern const pb_msgdesc_t fjalar_message_t_msg;
 #define READY_UP_FIELDS &ready_up_t_msg
 #define ENTER_IDLE_FIELDS &enter_idle_t_msg
 #define TRIGGER_PYRO_FIELDS &trigger_pyro_t_msg
-#define EVENT_HAPPENED_FIELDS &event_happened_t_msg
 #define HIL_IN_FIELDS &hil_in_t_msg
 #define HIL_OUT_FIELDS &hil_out_t_msg
 #define FJALAR_DATA_FIELDS &fjalar_data_t_msg
@@ -496,23 +689,29 @@ extern const pb_msgdesc_t fjalar_message_t_msg;
 
 /* Maximum encoded size of messages (where known) */
 #define ACKNOWLEDGE_SIZE                         2
+#define CAN_BUS_SIZE                             22
 #define CLEAR_FLASH_SIZE                         0
 #define ENTER_IDLE_SIZE                          0
-#define EVENT_HAPPENED_SIZE                      2
 #define FJALAR_DATA_SIZE                         79
 #define FJALAR_MESSAGE_SIZE                      97
+#define FJALAR_TO_LOKI_SIZE                      11
+#define FJALAR_TO_SIGURD_SIZE                    0
 #define FLASH_DATA_SIZE                          77
-#define GNSS_POSITION_SIZE                       10
+#define GNSS_POSITION_SIZE                       15
 #define GNSS_STATUS_SIZE                         32
 #define HIL_IN_SIZE                              56
 #define HIL_OUT_SIZE                             9
 #define IMU_READING_SIZE                         30
+#define LOKI_TO_FJALAR_SIZE                      32
 #define PRESSURE_READING_SIZE                    5
+#define PYRO_STATUS_SIZE                         6
 #define READY_UP_SIZE                            0
 #define READ_FLASH_SIZE                          22
 #define SCHEMA_PB_H_MAX_SIZE                     FJALAR_MESSAGE_SIZE
 #define SET_SUDO_SIZE                            2
-#define TELEMETRY_PACKET_SIZE                    51
+#define SIGURD_TO_FJALAR_SIZE                    0
+#define STATE_ESTIMATE_SIZE                      45
+#define TELEMETRY_PACKET_SIZE                    53
 #define TRIGGER_PYRO_SIZE                        11
 
 #ifdef __cplusplus

@@ -3,8 +3,8 @@
     };
 
     aliases {
-        imu = &hilsensor0;
-        barometer = &hilsensor0;
+        //imu = &hilsensor0;
+        //barometer = &hilsensor0;
         hilsensor = &hilsensor0; // no function
     };
 

@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0cschema.proto\x1a\x0cnanopb.proto\"\x1e\n\x0b\x41\x63knowledge\x12\x0f\n\x07success\x18\x01 \x01(\x08\"#\n\x0fPressureReading\x12\x10\n\x08pressure\x18\x01 \x01(\x02\"T\n\nImuReading\x12\n\n\x02\x61x\x18\x01 \x01(\x02\x12\n\n\x02\x61y\x18\x02 \x01(\x02\x12\n\n\x02\x61z\x18\x03 \x01(\x02\x12\n\n\x02gx\x18\x04 \x01(\x02\x12\n\n\x02gy\x18\x05 \x01(\x02\x12\n\n\x02gz\x18\x06 \x01(\x02\"\x8b\x02\n\x0fTelemetryPacket\x12\x10\n\x08\x61ltitude\x18\x01 \x01(\x02\x12\x11\n\tlongitude\x18\x02 \x01(\x02\x12\x10\n\x08latitude\x18\x03 \x01(\x02\x12\x17\n\x0fpyro1_connected\x18\x04 \x01(\x08\x12\x17\n\x0fpyro2_connected\x18\x05 \x01(\x08\x12\x17\n\x0fpyro3_connected\x18\x06 \x01(\x08\x12\"\n\x0c\x66light_state\x18\x07 \x01(\x0e\x32\x0c.FlightState\x12\n\n\x02\x61z\x18\n \x01(\x02\x12\x10\n\x08velocity\x18\x0b \x01(\x02\x12\x0f\n\x07\x62\x61ttery\x18\x0c \x01(\x02\x12\x15\n\rflash_address\x18\r \x01(\x05\x12\x0c\n\x04sudo\x18\x0e \x01(\x08\"3\n\x0cGnssPosition\x12\x11\n\tlongitude\x18\x01 \x01(\x02\x12\x10\n\x08latitude\x18\x02 \x01(\x02\"M\n\nGnssStatus\x12\x0b\n\x03\x66ix\x18\x01 \x01(\x05\x12\x16\n\x0enum_satellites\x18\x02 \x01(\x05\x12\x0c\n\x04hdop\x18\x03 \x01(\x02\x12\x0c\n\x04vdop\x18\x04 \x01(\x02\"\x1a\n\x07SetSudo\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\"\x0c\n\nClearFlash\"0\n\tReadFlash\x12\x13\n\x0bstart_index\x18\x01 \x01(\x05\x12\x0e\n\x06length\x18\x02 \x01(\x05\"5\n\tFlashData\x12\x13\n\x0bstart_index\x18\x01 \x01(\x05\x12\x13\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x42\x05\x92?\x02\x08@\"\t\n\x07ReadyUp\"\x0b\n\tEnterIdle\"\x1b\n\x0bTriggerPyro\x12\x0c\n\x04pyro\x18\x01 \x01(\x05\"\'\n\rEventHappened\x12\x16\n\x05\x65vent\x18\x01 \x01(\x0e\x32\x07.Events\"\x8f\x01\n\x05HilIn\x12\n\n\x02\x61x\x18\x01 \x01(\x02\x12\n\n\x02\x61y\x18\x02 \x01(\x02\x12\n\n\x02\x61z\x18\x03 \x01(\x02\x12\n\n\x02gx\x18\x04 \x01(\x02\x12\n\n\x02gy\x18\x05 \x01(\x02\x12\n\n\x02gz\x18\x06 \x01(\x02\x12\t\n\x01p\x18\x07 \x01(\x02\x12\x0b\n\x03lon\x18\x08 \x01(\x02\x12\x0b\n\x03lat\x18\t \x01(\x02\x12\x0b\n\x03\x61lt\x18\n \x01(\x02\x12\x0c\n\x04time\x18\x0b \x01(\r\"U\n\x06HilOut\x12\x1b\n\x13\x61irbrake_percentage\x18\x01 \x01(\x02\x12\x15\n\rmain_deployed\x18\x02 \x01(\x08\x12\x17\n\x0f\x64rogue_deployed\x18\x03 \x01(\x08\"\xa7\x04\n\nFjalarData\x12#\n\x0b\x61\x63knowledge\x18\x01 \x01(\x0b\x32\x0c.AcknowledgeH\x00\x12,\n\x10telemetry_packet\x18\x02 \x01(\x0b\x32\x10.TelemetryPacketH\x00\x12\"\n\x0bimu_reading\x18\x03 \x01(\x0b\x32\x0b.ImuReadingH\x00\x12,\n\x10pressure_reading\x18\x04 \x01(\x0b\x32\x10.PressureReadingH\x00\x12&\n\rgnss_position\x18\x05 \x01(\x0b\x32\r.GnssPositionH\x00\x12\"\n\x0bgnss_status\x18\x06 \x01(\x0b\x32\x0b.GnssStatusH\x00\x12\x1c\n\x08set_sudo\x18\x08 \x01(\x0b\x32\x08.SetSudoH\x00\x12\"\n\x0b\x63lear_flash\x18\t \x01(\x0b\x32\x0b.ClearFlashH\x00\x12 \n\nread_flash\x18\n \x01(\x0b\x32\n.ReadFlashH\x00\x12 \n\nflash_data\x18\x0b \x01(\x0b\x32\n.FlashDataH\x00\x12\x1c\n\x08ready_up\x18\x0c \x01(\x0b\x32\x08.ReadyUpH\x00\x12 \n\nenter_idle\x18\r \x01(\x0b\x32\n.EnterIdleH\x00\x12$\n\x0ctrigger_pyro\x18\x0e \x01(\x0b\x32\x0c.TriggerPyroH\x00\x12\x18\n\x06hil_in\x18\x0f \x01(\x0b\x32\x06.HilInH\x00\x12\x1a\n\x07hil_out\x18\x10 \x01(\x0b\x32\x07.HilOutH\x00\x42\x06\n\x04\x64\x61ta\"Q\n\rFjalarMessage\x12\x0c\n\x04time\x18\x01 \x01(\x07\x12\x17\n\x0fsequence_number\x18\x02 \x01(\x05\x12\x19\n\x04\x64\x61ta\x18\x03 \x01(\x0b\x32\x0b.FjalarData*}\n\x0b\x46lightState\x12\x08\n\x04idle\x10\x00\x12\r\n\tlaunchpad\x10\x01\x12\t\n\x05\x62oost\x10\x02\x12\t\n\x05\x63oast\x10\x03\x12\r\n\tfree_fall\x10\x04\x12\x12\n\x0e\x64rogue_descent\x10\x05\x12\x10\n\x0cmain_descent\x10\x06\x12\n\n\x06landed\x10\x07*`\n\x06\x45vents\x12\n\n\x06launch\x10\x00\x12\x0b\n\x07\x62urnout\x10\x01\x12\n\n\x06\x61pogee\x10\x02\x12\x0f\n\x0bmain_deploy\x10\x03\x12\x11\n\rdrogue_deploy\x10\x04\x12\r\n\ttouchdown\x10\x05\x62\x06proto3'
+  serialized_pb=b'\n\x0cschema.proto\x1a\x0cnanopb.proto\"\x1e\n\x0b\x41\x63knowledge\x12\x0f\n\x07success\x18\x01 \x01(\x08\"#\n\x0fPressureReading\x12\x10\n\x08pressure\x18\x01 \x01(\x02\"T\n\nImuReading\x12\n\n\x02\x61x\x18\x01 \x01(\x02\x12\n\n\x02\x61y\x18\x02 \x01(\x02\x12\n\n\x02\x61z\x18\x03 \x01(\x02\x12\n\n\x02gx\x18\x04 \x01(\x02\x12\n\n\x02gy\x18\x05 \x01(\x02\x12\n\n\x02gz\x18\x06 \x01(\x02\"~\n\rStateEstimate\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\t\n\x01z\x18\x03 \x01(\x02\x12\n\n\x02vx\x18\x04 \x01(\x02\x12\n\n\x02vy\x18\x05 \x01(\x02\x12\n\n\x02vz\x18\x06 \x01(\x02\x12\x0c\n\x04roll\x18\x07 \x01(\x02\x12\r\n\x05pitch\x18\x08 \x01(\x02\x12\x0b\n\x03yaw\x18\t \x01(\x02\"\x95\x01\n\x06\x43\x41NBus\x12\x13\n\x0b\x63\x61n_started\x18\x01 \x01(\x08\x12\x1b\n\x13loki_latest_rx_time\x18\x02 \x01(\x07\x12\x1b\n\x13loki_latest_tx_time\x18\x03 \x01(\x07\x12\x1d\n\x15sigurd_latest_rx_time\x18\x04 \x01(\x07\x12\x1d\n\x15sigurd_latest_tx_time\x18\x05 \x01(\x07\"W\n\nPyroStatus\x12\x17\n\x0fpyro1_connected\x18\x01 \x01(\x08\x12\x17\n\x0fpyro2_connected\x18\x02 \x01(\x08\x12\x17\n\x0fpyro3_connected\x18\x03 \x01(\x08\"s\n\x0cLokiToFjalar\x12\x12\n\nloki_state\x18\x01 \x01(\x05\x12\x15\n\rloki_substate\x18\x02 \x01(\x05\x12\x1a\n\x12loki_current_angle\x18\x03 \x01(\x02\x12\x1c\n\x14loki_battery_voltage\x18\x04 \x01(\x02\"\x89\x01\n\x0c\x46jalarToLoki\x12\"\n\x0c\x66light_state\x18\x01 \x01(\x0e\x32\x0c.FlightState\x12\"\n\x0c\x66light_event\x18\x02 \x01(\x0e\x32\x0c.FlightEvent\x12\x18\n\x10\x65nable_airbrakes\x18\x03 \x01(\x08\x12\x17\n\x0f\x61irbrakes_angle\x18\x04 \x01(\x02\"\x10\n\x0eSigurdToFjalar\"\x10\n\x0e\x46jalarToSigurd\"\xaf\x02\n\x0fTelemetryPacket\x12\x10\n\x08\x61ltitude\x18\x01 \x01(\x02\x12\x11\n\tlongitude\x18\x02 \x01(\x02\x12\x10\n\x08latitude\x18\x03 \x01(\x02\x12\x17\n\x0fpyro1_connected\x18\x04 \x01(\x08\x12\x17\n\x0fpyro2_connected\x18\x05 \x01(\x08\x12\x17\n\x0fpyro3_connected\x18\x06 \x01(\x08\x12\"\n\x0c\x66light_state\x18\x07 \x01(\x0e\x32\x0c.FlightState\x12\"\n\x0c\x66light_event\x18\x08 \x01(\x0e\x32\x0c.FlightEvent\x12\n\n\x02\x61z\x18\n \x01(\x02\x12\x10\n\x08velocity\x18\x0b \x01(\x02\x12\x0f\n\x07\x62\x61ttery\x18\x0c \x01(\x02\x12\x15\n\rflash_address\x18\r \x01(\x05\x12\x0c\n\x04sudo\x18\x0e \x01(\x08\"E\n\x0cGnssPosition\x12\x11\n\tlongitude\x18\x01 \x01(\x02\x12\x10\n\x08latitude\x18\x02 \x01(\x02\x12\x10\n\x08\x61ltitude\x18\x03 \x01(\x02\"M\n\nGnssStatus\x12\x0b\n\x03\x66ix\x18\x01 \x01(\x05\x12\x16\n\x0enum_satellites\x18\x02 \x01(\x05\x12\x0c\n\x04hdop\x18\x03 \x01(\x02\x12\x0c\n\x04vdop\x18\x04 \x01(\x02\"\x1a\n\x07SetSudo\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\"\x0c\n\nClearFlash\"0\n\tReadFlash\x12\x13\n\x0bstart_index\x18\x01 \x01(\x05\x12\x0e\n\x06length\x18\x02 \x01(\x05\"5\n\tFlashData\x12\x13\n\x0bstart_index\x18\x01 \x01(\x05\x12\x13\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x42\x05\x92?\x02\x08@\"\t\n\x07ReadyUp\"\x0b\n\tEnterIdle\"\x1b\n\x0bTriggerPyro\x12\x0c\n\x04pyro\x18\x01 \x01(\x05\"\x8f\x01\n\x05HilIn\x12\n\n\x02\x61x\x18\x01 \x01(\x02\x12\n\n\x02\x61y\x18\x02 \x01(\x02\x12\n\n\x02\x61z\x18\x03 \x01(\x02\x12\n\n\x02gx\x18\x04 \x01(\x02\x12\n\n\x02gy\x18\x05 \x01(\x02\x12\n\n\x02gz\x18\x06 \x01(\x02\x12\t\n\x01p\x18\x07 \x01(\x02\x12\x0b\n\x03lon\x18\x08 \x01(\x02\x12\x0b\n\x03lat\x18\t \x01(\x02\x12\x0b\n\x03\x61lt\x18\n \x01(\x02\x12\x0c\n\x04time\x18\x0b \x01(\r\"U\n\x06HilOut\x12\x1b\n\x13\x61irbrake_percentage\x18\x01 \x01(\x02\x12\x15\n\rmain_deployed\x18\x02 \x01(\x08\x12\x17\n\x0f\x64rogue_deployed\x18\x03 \x01(\x08\"\x89\x07\n\nFjalarData\x12#\n\x0b\x61\x63knowledge\x18\x01 \x01(\x0b\x32\x0c.AcknowledgeH\x00\x12,\n\x10telemetry_packet\x18\x02 \x01(\x0b\x32\x10.TelemetryPacketH\x00\x12\"\n\x0bimu_reading\x18\x03 \x01(\x0b\x32\x0b.ImuReadingH\x00\x12,\n\x10pressure_reading\x18\x04 \x01(\x0b\x32\x10.PressureReadingH\x00\x12&\n\rgnss_position\x18\x05 \x01(\x0b\x32\r.GnssPositionH\x00\x12\"\n\x0bgnss_status\x18\x06 \x01(\x0b\x32\x0b.GnssStatusH\x00\x12\x1c\n\x08set_sudo\x18\x08 \x01(\x0b\x32\x08.SetSudoH\x00\x12\"\n\x0b\x63lear_flash\x18\t \x01(\x0b\x32\x0b.ClearFlashH\x00\x12 \n\nread_flash\x18\n \x01(\x0b\x32\n.ReadFlashH\x00\x12 \n\nflash_data\x18\x0b \x01(\x0b\x32\n.FlashDataH\x00\x12\x1c\n\x08ready_up\x18\x0c \x01(\x0b\x32\x08.ReadyUpH\x00\x12 \n\nenter_idle\x18\r \x01(\x0b\x32\n.EnterIdleH\x00\x12$\n\x0ctrigger_pyro\x18\x0e \x01(\x0b\x32\x0c.TriggerPyroH\x00\x12\x18\n\x06hil_in\x18\x0f \x01(\x0b\x32\x06.HilInH\x00\x12\x1a\n\x07hil_out\x18\x10 \x01(\x0b\x32\x07.HilOutH\x00\x12(\n\x0estate_estimate\x18\x11 \x01(\x0b\x32\x0e.StateEstimateH\x00\x12$\n\x0c\x66light_state\x18\x12 \x01(\x0e\x32\x0c.FlightStateH\x00\x12$\n\x0c\x66light_event\x18\x13 \x01(\x0e\x32\x0c.FlightEventH\x00\x12\x1a\n\x07\x63\x61n_bus\x18\x14 \x01(\x0b\x32\x07.CANBusH\x00\x12\"\n\x0bpyro_status\x18\x15 \x01(\x0b\x32\x0b.PyroStatusH\x00\x12\'\n\x0eloki_to_fjalar\x18\x16 \x01(\x0b\x32\r.LokiToFjalarH\x00\x12\'\n\x0e\x66jalar_to_loki\x18\x17 \x01(\x0b\x32\r.FjalarToLokiH\x00\x12+\n\x10sigurd_to_fjalar\x18\x18 \x01(\x0b\x32\x0f.SigurdToFjalarH\x00\x12+\n\x10\x66jalar_to_sigurd\x18\x19 \x01(\x0b\x32\x0f.FjalarToSigurdH\x00\x42\x06\n\x04\x64\x61ta\"Q\n\rFjalarMessage\x12\x0c\n\x04time\x18\x01 \x01(\x07\x12\x17\n\x0fsequence_number\x18\x02 \x01(\x05\x12\x19\n\x04\x64\x61ta\x18\x03 \x01(\x0b\x32\x0b.FjalarData*}\n\x0b\x46lightState\x12\x08\n\x04idle\x10\x00\x12\r\n\tlaunchpad\x10\x01\x12\t\n\x05\x62oost\x10\x02\x12\t\n\x05\x63oast\x10\x03\x12\r\n\tfree_fall\x10\x04\x12\x12\n\x0e\x64rogue_descent\x10\x05\x12\x10\n\x0cmain_descent\x10\x06\x12\n\n\x06landed\x10\x07*~\n\x0b\x46lightEvent\x12\n\n\x06launch\x10\x00\x12\x0b\n\x07\x62urnout\x10\x01\x12\n\n\x06\x61pogee\x10\x02\x12\x0f\n\x0bmain_deploy\x10\x03\x12\x11\n\rdrogue_deploy\x10\x04\x12\r\n\ttouchdown\x10\x05\x12\x17\n\x13\x61\x62ove_acs_threshold\x10\x06\x62\x06proto3'
   ,
   dependencies=[nanopb__pb2.DESCRIPTOR,])
 
@@ -75,15 +75,15 @@ _FLIGHTSTATE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1698,
-  serialized_end=1823,
+  serialized_start=2727,
+  serialized_end=2852,
 )
 _sym_db.RegisterEnumDescriptor(_FLIGHTSTATE)
 
 FlightState = enum_type_wrapper.EnumTypeWrapper(_FLIGHTSTATE)
-_EVENTS = _descriptor.EnumDescriptor(
-  name='Events',
-  full_name='Events',
+_FLIGHTEVENT = _descriptor.EnumDescriptor(
+  name='FlightEvent',
+  full_name='FlightEvent',
   filename=None,
   file=DESCRIPTOR,
   create_key=_descriptor._internal_create_key,
@@ -118,15 +118,20 @@ _EVENTS = _descriptor.EnumDescriptor(
       serialized_options=None,
       type=None,
       create_key=_descriptor._internal_create_key),
+    _descriptor.EnumValueDescriptor(
+      name='above_acs_threshold', index=6, number=6,
+      serialized_options=None,
+      type=None,
+      create_key=_descriptor._internal_create_key),
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=1825,
-  serialized_end=1921,
+  serialized_start=2854,
+  serialized_end=2980,
 )
-_sym_db.RegisterEnumDescriptor(_EVENTS)
+_sym_db.RegisterEnumDescriptor(_FLIGHTEVENT)
 
-Events = enum_type_wrapper.EnumTypeWrapper(_EVENTS)
+FlightEvent = enum_type_wrapper.EnumTypeWrapper(_FLIGHTEVENT)
 idle = 0
 launchpad = 1
 boost = 2
@@ -141,6 +146,7 @@ apogee = 2
 main_deploy = 3
 drogue_deploy = 4
 touchdown = 5
+above_acs_threshold = 6
 
 
 
@@ -275,6 +281,356 @@ _IMUREADING = _descriptor.Descriptor(
 )
 
 
+_STATEESTIMATE = _descriptor.Descriptor(
+  name='StateEstimate',
+  full_name='StateEstimate',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='x', full_name='StateEstimate.x', index=0,
+      number=1, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='y', full_name='StateEstimate.y', index=1,
+      number=2, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='z', full_name='StateEstimate.z', index=2,
+      number=3, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='vx', full_name='StateEstimate.vx', index=3,
+      number=4, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='vy', full_name='StateEstimate.vy', index=4,
+      number=5, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='vz', full_name='StateEstimate.vz', index=5,
+      number=6, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='roll', full_name='StateEstimate.roll', index=6,
+      number=7, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='pitch', full_name='StateEstimate.pitch', index=7,
+      number=8, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='yaw', full_name='StateEstimate.yaw', index=8,
+      number=9, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=185,
+  serialized_end=311,
+)
+
+
+_CANBUS = _descriptor.Descriptor(
+  name='CANBus',
+  full_name='CANBus',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='can_started', full_name='CANBus.can_started', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='loki_latest_rx_time', full_name='CANBus.loki_latest_rx_time', index=1,
+      number=2, type=7, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='loki_latest_tx_time', full_name='CANBus.loki_latest_tx_time', index=2,
+      number=3, type=7, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='sigurd_latest_rx_time', full_name='CANBus.sigurd_latest_rx_time', index=3,
+      number=4, type=7, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='sigurd_latest_tx_time', full_name='CANBus.sigurd_latest_tx_time', index=4,
+      number=5, type=7, cpp_type=3, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=314,
+  serialized_end=463,
+)
+
+
+_PYROSTATUS = _descriptor.Descriptor(
+  name='PyroStatus',
+  full_name='PyroStatus',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='pyro1_connected', full_name='PyroStatus.pyro1_connected', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='pyro2_connected', full_name='PyroStatus.pyro2_connected', index=1,
+      number=2, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='pyro3_connected', full_name='PyroStatus.pyro3_connected', index=2,
+      number=3, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=465,
+  serialized_end=552,
+)
+
+
+_LOKITOFJALAR = _descriptor.Descriptor(
+  name='LokiToFjalar',
+  full_name='LokiToFjalar',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='loki_state', full_name='LokiToFjalar.loki_state', index=0,
+      number=1, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='loki_substate', full_name='LokiToFjalar.loki_substate', index=1,
+      number=2, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='loki_current_angle', full_name='LokiToFjalar.loki_current_angle', index=2,
+      number=3, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='loki_battery_voltage', full_name='LokiToFjalar.loki_battery_voltage', index=3,
+      number=4, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=554,
+  serialized_end=669,
+)
+
+
+_FJALARTOLOKI = _descriptor.Descriptor(
+  name='FjalarToLoki',
+  full_name='FjalarToLoki',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='flight_state', full_name='FjalarToLoki.flight_state', index=0,
+      number=1, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='flight_event', full_name='FjalarToLoki.flight_event', index=1,
+      number=2, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='enable_airbrakes', full_name='FjalarToLoki.enable_airbrakes', index=2,
+      number=3, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='airbrakes_angle', full_name='FjalarToLoki.airbrakes_angle', index=3,
+      number=4, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=672,
+  serialized_end=809,
+)
+
+
+_SIGURDTOFJALAR = _descriptor.Descriptor(
+  name='SigurdToFjalar',
+  full_name='SigurdToFjalar',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=811,
+  serialized_end=827,
+)
+
+
+_FJALARTOSIGURD = _descriptor.Descriptor(
+  name='FjalarToSigurd',
+  full_name='FjalarToSigurd',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=829,
+  serialized_end=845,
+)
+
+
 _TELEMETRYPACKET = _descriptor.Descriptor(
   name='TelemetryPacket',
   full_name='TelemetryPacket',
@@ -333,35 +689,42 @@ _TELEMETRYPACKET = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='az', full_name='TelemetryPacket.az', index=7,
+      name='flight_event', full_name='TelemetryPacket.flight_event', index=7,
+      number=8, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='az', full_name='TelemetryPacket.az', index=8,
       number=10, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='velocity', full_name='TelemetryPacket.velocity', index=8,
+      name='velocity', full_name='TelemetryPacket.velocity', index=9,
       number=11, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='battery', full_name='TelemetryPacket.battery', index=9,
+      name='battery', full_name='TelemetryPacket.battery', index=10,
       number=12, type=2, cpp_type=6, label=1,
       has_default_value=False, default_value=float(0),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='flash_address', full_name='TelemetryPacket.flash_address', index=10,
+      name='flash_address', full_name='TelemetryPacket.flash_address', index=11,
       number=13, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
-      name='sudo', full_name='TelemetryPacket.sudo', index=11,
+      name='sudo', full_name='TelemetryPacket.sudo', index=12,
       number=14, type=8, cpp_type=7, label=1,
       has_default_value=False, default_value=False,
       message_type=None, enum_type=None, containing_type=None,
@@ -379,8 +742,8 @@ _TELEMETRYPACKET = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=186,
-  serialized_end=453,
+  serialized_start=848,
+  serialized_end=1151,
 )
 
 
@@ -406,6 +769,13 @@ _GNSSPOSITION = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='altitude', full_name='GnssPosition.altitude', index=2,
+      number=3, type=2, cpp_type=6, label=1,
+      has_default_value=False, default_value=float(0),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -418,8 +788,8 @@ _GNSSPOSITION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=455,
-  serialized_end=506,
+  serialized_start=1153,
+  serialized_end=1222,
 )
 
 
@@ -471,8 +841,8 @@ _GNSSSTATUS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=508,
-  serialized_end=585,
+  serialized_start=1224,
+  serialized_end=1301,
 )
 
 
@@ -503,8 +873,8 @@ _SETSUDO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=587,
-  serialized_end=613,
+  serialized_start=1303,
+  serialized_end=1329,
 )
 
 
@@ -528,8 +898,8 @@ _CLEARFLASH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=615,
-  serialized_end=627,
+  serialized_start=1331,
+  serialized_end=1343,
 )
 
 
@@ -567,8 +937,8 @@ _READFLASH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=629,
-  serialized_end=677,
+  serialized_start=1345,
+  serialized_end=1393,
 )
 
 
@@ -606,8 +976,8 @@ _FLASHDATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=679,
-  serialized_end=732,
+  serialized_start=1395,
+  serialized_end=1448,
 )
 
 
@@ -631,8 +1001,8 @@ _READYUP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=734,
-  serialized_end=743,
+  serialized_start=1450,
+  serialized_end=1459,
 )
 
 
@@ -656,8 +1026,8 @@ _ENTERIDLE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=745,
-  serialized_end=756,
+  serialized_start=1461,
+  serialized_end=1472,
 )
 
 
@@ -688,40 +1058,8 @@ _TRIGGERPYRO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=758,
-  serialized_end=785,
-)
-
-
-_EVENTHAPPENED = _descriptor.Descriptor(
-  name='EventHappened',
-  full_name='EventHappened',
-  filename=None,
-  file=DESCRIPTOR,
-  containing_type=None,
-  create_key=_descriptor._internal_create_key,
-  fields=[
-    _descriptor.FieldDescriptor(
-      name='event', full_name='EventHappened.event', index=0,
-      number=1, type=14, cpp_type=8, label=1,
-      has_default_value=False, default_value=0,
-      message_type=None, enum_type=None, containing_type=None,
-      is_extension=False, extension_scope=None,
-      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
-  ],
-  extensions=[
-  ],
-  nested_types=[],
-  enum_types=[
-  ],
-  serialized_options=None,
-  is_extendable=False,
-  syntax='proto3',
-  extension_ranges=[],
-  oneofs=[
-  ],
-  serialized_start=787,
-  serialized_end=826,
+  serialized_start=1474,
+  serialized_end=1501,
 )
 
 
@@ -822,8 +1160,8 @@ _HILIN = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=829,
-  serialized_end=972,
+  serialized_start=1504,
+  serialized_end=1647,
 )
 
 
@@ -868,8 +1206,8 @@ _HILOUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=974,
-  serialized_end=1059,
+  serialized_start=1649,
+  serialized_end=1734,
 )
 
 
@@ -986,6 +1324,69 @@ _FJALARDATA = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='state_estimate', full_name='FjalarData.state_estimate', index=15,
+      number=17, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='flight_state', full_name='FjalarData.flight_state', index=16,
+      number=18, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='flight_event', full_name='FjalarData.flight_event', index=17,
+      number=19, type=14, cpp_type=8, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='can_bus', full_name='FjalarData.can_bus', index=18,
+      number=20, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='pyro_status', full_name='FjalarData.pyro_status', index=19,
+      number=21, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='loki_to_fjalar', full_name='FjalarData.loki_to_fjalar', index=20,
+      number=22, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='fjalar_to_loki', full_name='FjalarData.fjalar_to_loki', index=21,
+      number=23, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='sigurd_to_fjalar', full_name='FjalarData.sigurd_to_fjalar', index=22,
+      number=24, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='fjalar_to_sigurd', full_name='FjalarData.fjalar_to_sigurd', index=23,
+      number=25, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
   ],
   extensions=[
   ],
@@ -1003,8 +1404,8 @@ _FJALARDATA = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=1062,
-  serialized_end=1613,
+  serialized_start=1737,
+  serialized_end=2642,
 )
 
 
@@ -1049,12 +1450,14 @@ _FJALARMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1615,
-  serialized_end=1696,
+  serialized_start=2644,
+  serialized_end=2725,
 )
 
+_FJALARTOLOKI.fields_by_name['flight_state'].enum_type = _FLIGHTSTATE
+_FJALARTOLOKI.fields_by_name['flight_event'].enum_type = _FLIGHTEVENT
 _TELEMETRYPACKET.fields_by_name['flight_state'].enum_type = _FLIGHTSTATE
-_EVENTHAPPENED.fields_by_name['event'].enum_type = _EVENTS
+_TELEMETRYPACKET.fields_by_name['flight_event'].enum_type = _FLIGHTEVENT
 _FJALARDATA.fields_by_name['acknowledge'].message_type = _ACKNOWLEDGE
 _FJALARDATA.fields_by_name['telemetry_packet'].message_type = _TELEMETRYPACKET
 _FJALARDATA.fields_by_name['imu_reading'].message_type = _IMUREADING
@@ -1070,6 +1473,15 @@ _FJALARDATA.fields_by_name['enter_idle'].message_type = _ENTERIDLE
 _FJALARDATA.fields_by_name['trigger_pyro'].message_type = _TRIGGERPYRO
 _FJALARDATA.fields_by_name['hil_in'].message_type = _HILIN
 _FJALARDATA.fields_by_name['hil_out'].message_type = _HILOUT
+_FJALARDATA.fields_by_name['state_estimate'].message_type = _STATEESTIMATE
+_FJALARDATA.fields_by_name['flight_state'].enum_type = _FLIGHTSTATE
+_FJALARDATA.fields_by_name['flight_event'].enum_type = _FLIGHTEVENT
+_FJALARDATA.fields_by_name['can_bus'].message_type = _CANBUS
+_FJALARDATA.fields_by_name['pyro_status'].message_type = _PYROSTATUS
+_FJALARDATA.fields_by_name['loki_to_fjalar'].message_type = _LOKITOFJALAR
+_FJALARDATA.fields_by_name['fjalar_to_loki'].message_type = _FJALARTOLOKI
+_FJALARDATA.fields_by_name['sigurd_to_fjalar'].message_type = _SIGURDTOFJALAR
+_FJALARDATA.fields_by_name['fjalar_to_sigurd'].message_type = _FJALARTOSIGURD
 _FJALARDATA.oneofs_by_name['data'].fields.append(
   _FJALARDATA.fields_by_name['acknowledge'])
 _FJALARDATA.fields_by_name['acknowledge'].containing_oneof = _FJALARDATA.oneofs_by_name['data']
@@ -1115,10 +1527,44 @@ _FJALARDATA.fields_by_name['hil_in'].containing_oneof = _FJALARDATA.oneofs_by_na
 _FJALARDATA.oneofs_by_name['data'].fields.append(
   _FJALARDATA.fields_by_name['hil_out'])
 _FJALARDATA.fields_by_name['hil_out'].containing_oneof = _FJALARDATA.oneofs_by_name['data']
+_FJALARDATA.oneofs_by_name['data'].fields.append(
+  _FJALARDATA.fields_by_name['state_estimate'])
+_FJALARDATA.fields_by_name['state_estimate'].containing_oneof = _FJALARDATA.oneofs_by_name['data']
+_FJALARDATA.oneofs_by_name['data'].fields.append(
+  _FJALARDATA.fields_by_name['flight_state'])
+_FJALARDATA.fields_by_name['flight_state'].containing_oneof = _FJALARDATA.oneofs_by_name['data']
+_FJALARDATA.oneofs_by_name['data'].fields.append(
+  _FJALARDATA.fields_by_name['flight_event'])
+_FJALARDATA.fields_by_name['flight_event'].containing_oneof = _FJALARDATA.oneofs_by_name['data']
+_FJALARDATA.oneofs_by_name['data'].fields.append(
+  _FJALARDATA.fields_by_name['can_bus'])
+_FJALARDATA.fields_by_name['can_bus'].containing_oneof = _FJALARDATA.oneofs_by_name['data']
+_FJALARDATA.oneofs_by_name['data'].fields.append(
+  _FJALARDATA.fields_by_name['pyro_status'])
+_FJALARDATA.fields_by_name['pyro_status'].containing_oneof = _FJALARDATA.oneofs_by_name['data']
+_FJALARDATA.oneofs_by_name['data'].fields.append(
+  _FJALARDATA.fields_by_name['loki_to_fjalar'])
+_FJALARDATA.fields_by_name['loki_to_fjalar'].containing_oneof = _FJALARDATA.oneofs_by_name['data']
+_FJALARDATA.oneofs_by_name['data'].fields.append(
+  _FJALARDATA.fields_by_name['fjalar_to_loki'])
+_FJALARDATA.fields_by_name['fjalar_to_loki'].containing_oneof = _FJALARDATA.oneofs_by_name['data']
+_FJALARDATA.oneofs_by_name['data'].fields.append(
+  _FJALARDATA.fields_by_name['sigurd_to_fjalar'])
+_FJALARDATA.fields_by_name['sigurd_to_fjalar'].containing_oneof = _FJALARDATA.oneofs_by_name['data']
+_FJALARDATA.oneofs_by_name['data'].fields.append(
+  _FJALARDATA.fields_by_name['fjalar_to_sigurd'])
+_FJALARDATA.fields_by_name['fjalar_to_sigurd'].containing_oneof = _FJALARDATA.oneofs_by_name['data']
 _FJALARMESSAGE.fields_by_name['data'].message_type = _FJALARDATA
 DESCRIPTOR.message_types_by_name['Acknowledge'] = _ACKNOWLEDGE
 DESCRIPTOR.message_types_by_name['PressureReading'] = _PRESSUREREADING
 DESCRIPTOR.message_types_by_name['ImuReading'] = _IMUREADING
+DESCRIPTOR.message_types_by_name['StateEstimate'] = _STATEESTIMATE
+DESCRIPTOR.message_types_by_name['CANBus'] = _CANBUS
+DESCRIPTOR.message_types_by_name['PyroStatus'] = _PYROSTATUS
+DESCRIPTOR.message_types_by_name['LokiToFjalar'] = _LOKITOFJALAR
+DESCRIPTOR.message_types_by_name['FjalarToLoki'] = _FJALARTOLOKI
+DESCRIPTOR.message_types_by_name['SigurdToFjalar'] = _SIGURDTOFJALAR
+DESCRIPTOR.message_types_by_name['FjalarToSigurd'] = _FJALARTOSIGURD
 DESCRIPTOR.message_types_by_name['TelemetryPacket'] = _TELEMETRYPACKET
 DESCRIPTOR.message_types_by_name['GnssPosition'] = _GNSSPOSITION
 DESCRIPTOR.message_types_by_name['GnssStatus'] = _GNSSSTATUS
@@ -1129,13 +1575,12 @@ DESCRIPTOR.message_types_by_name['FlashData'] = _FLASHDATA
 DESCRIPTOR.message_types_by_name['ReadyUp'] = _READYUP
 DESCRIPTOR.message_types_by_name['EnterIdle'] = _ENTERIDLE
 DESCRIPTOR.message_types_by_name['TriggerPyro'] = _TRIGGERPYRO
-DESCRIPTOR.message_types_by_name['EventHappened'] = _EVENTHAPPENED
 DESCRIPTOR.message_types_by_name['HilIn'] = _HILIN
 DESCRIPTOR.message_types_by_name['HilOut'] = _HILOUT
 DESCRIPTOR.message_types_by_name['FjalarData'] = _FJALARDATA
 DESCRIPTOR.message_types_by_name['FjalarMessage'] = _FJALARMESSAGE
 DESCRIPTOR.enum_types_by_name['FlightState'] = _FLIGHTSTATE
-DESCRIPTOR.enum_types_by_name['Events'] = _EVENTS
+DESCRIPTOR.enum_types_by_name['FlightEvent'] = _FLIGHTEVENT
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 Acknowledge = _reflection.GeneratedProtocolMessageType('Acknowledge', (_message.Message,), {
@@ -1158,6 +1603,55 @@ ImuReading = _reflection.GeneratedProtocolMessageType('ImuReading', (_message.Me
   # @@protoc_insertion_point(class_scope:ImuReading)
   })
 _sym_db.RegisterMessage(ImuReading)
+
+StateEstimate = _reflection.GeneratedProtocolMessageType('StateEstimate', (_message.Message,), {
+  'DESCRIPTOR' : _STATEESTIMATE,
+  '__module__' : 'schema_pb2'
+  # @@protoc_insertion_point(class_scope:StateEstimate)
+  })
+_sym_db.RegisterMessage(StateEstimate)
+
+CANBus = _reflection.GeneratedProtocolMessageType('CANBus', (_message.Message,), {
+  'DESCRIPTOR' : _CANBUS,
+  '__module__' : 'schema_pb2'
+  # @@protoc_insertion_point(class_scope:CANBus)
+  })
+_sym_db.RegisterMessage(CANBus)
+
+PyroStatus = _reflection.GeneratedProtocolMessageType('PyroStatus', (_message.Message,), {
+  'DESCRIPTOR' : _PYROSTATUS,
+  '__module__' : 'schema_pb2'
+  # @@protoc_insertion_point(class_scope:PyroStatus)
+  })
+_sym_db.RegisterMessage(PyroStatus)
+
+LokiToFjalar = _reflection.GeneratedProtocolMessageType('LokiToFjalar', (_message.Message,), {
+  'DESCRIPTOR' : _LOKITOFJALAR,
+  '__module__' : 'schema_pb2'
+  # @@protoc_insertion_point(class_scope:LokiToFjalar)
+  })
+_sym_db.RegisterMessage(LokiToFjalar)
+
+FjalarToLoki = _reflection.GeneratedProtocolMessageType('FjalarToLoki', (_message.Message,), {
+  'DESCRIPTOR' : _FJALARTOLOKI,
+  '__module__' : 'schema_pb2'
+  # @@protoc_insertion_point(class_scope:FjalarToLoki)
+  })
+_sym_db.RegisterMessage(FjalarToLoki)
+
+SigurdToFjalar = _reflection.GeneratedProtocolMessageType('SigurdToFjalar', (_message.Message,), {
+  'DESCRIPTOR' : _SIGURDTOFJALAR,
+  '__module__' : 'schema_pb2'
+  # @@protoc_insertion_point(class_scope:SigurdToFjalar)
+  })
+_sym_db.RegisterMessage(SigurdToFjalar)
+
+FjalarToSigurd = _reflection.GeneratedProtocolMessageType('FjalarToSigurd', (_message.Message,), {
+  'DESCRIPTOR' : _FJALARTOSIGURD,
+  '__module__' : 'schema_pb2'
+  # @@protoc_insertion_point(class_scope:FjalarToSigurd)
+  })
+_sym_db.RegisterMessage(FjalarToSigurd)
 
 TelemetryPacket = _reflection.GeneratedProtocolMessageType('TelemetryPacket', (_message.Message,), {
   'DESCRIPTOR' : _TELEMETRYPACKET,
@@ -1228,13 +1722,6 @@ TriggerPyro = _reflection.GeneratedProtocolMessageType('TriggerPyro', (_message.
   # @@protoc_insertion_point(class_scope:TriggerPyro)
   })
 _sym_db.RegisterMessage(TriggerPyro)
-
-EventHappened = _reflection.GeneratedProtocolMessageType('EventHappened', (_message.Message,), {
-  'DESCRIPTOR' : _EVENTHAPPENED,
-  '__module__' : 'schema_pb2'
-  # @@protoc_insertion_point(class_scope:EventHappened)
-  })
-_sym_db.RegisterMessage(EventHappened)
 
 HilIn = _reflection.GeneratedProtocolMessageType('HilIn', (_message.Message,), {
   'DESCRIPTOR' : _HILIN,

@@ -290,7 +290,6 @@ void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
             }
         }
         #endif
-
         k_msleep(10); // 100 Hz
     }
 

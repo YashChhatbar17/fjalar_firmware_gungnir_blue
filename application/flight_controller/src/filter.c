@@ -793,6 +793,13 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         if (k_msgq_get(&imu_msgq, &imu, K_NO_WAIT) == 0) {
             events[1].state = K_POLL_STATE_NOT_READY;
+            // for external communication
+            pos_kf->raw_imu_ax = imu.ax;
+            pos_kf->raw_imu_ay = imu.ay;
+            pos_kf->raw_imu_az = imu.az;
+            att_kf->raw_imu_gx = imu.gx;
+            att_kf->raw_imu_gy = imu.gy;
+            att_kf->raw_imu_gz = imu.gz;
 
             // correct for IMU mounting inside of rocket - works for any number of rotations of 90 degrees.
             float a_array[3] = {imu.ax, imu.ay, imu.az};
@@ -820,10 +827,10 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         if (k_msgq_get(&pressure_msgq, &pressure, K_NO_WAIT) == 0) {
             events[0].state = K_POLL_STATE_NOT_READY;            
-            LOG_INF("p : %f", pressure.pressure*1000);
+            pos_kf->raw_baro_p = pressure.pressure*1000;
             // use state machine
             if (state->velocity_class == VELOCITY_SUBSONIC){ // baro bad in native
-                //position_filter_barometer(init, pos_kf, pressure.pressure, pressure.t); // Ask other team about barometer solution on bad data
+                position_filter_barometer(init, pos_kf, pressure.pressure, pressure.t); // Ask other team about barometer solution on bad data
             }          
         }
 
@@ -832,7 +839,9 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         {
             struct gps_queue_entry gps;
             if (k_msgq_get(&gps_msgq, &gps, K_NO_WAIT) == 0 && !isnan(gps.lat) && !isnan(gps.lon) && !isnan(gps.alt)) {
-
+                pos_kf->raw_gps_lat = gps.lat;
+                pos_kf->raw_gps_lon = gps.lon;
+                pos_kf->raw_gps_alt = gps.alt;
                 position_filter_gps(init, pos_kf, gps.lat, gps.lon, gps.alt, gps.t);
 
 

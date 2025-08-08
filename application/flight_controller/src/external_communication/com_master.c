@@ -198,7 +198,7 @@ void store_message(fjalar_t *fjalar, fjalar_message_t *msg) {
 
 void sampler_thread(fjalar_t *fjalar, state_t *state, void *p2, void *p3) { // remove state ptr?
 	while (true) {
-		k_msleep(1000);
+		/*
 		fjalar_message_t msg;
 		msg.time = k_uptime_get_32();
 		msg.has_data = true;
@@ -220,5 +220,7 @@ void sampler_thread(fjalar_t *fjalar, state_t *state, void *p2, void *p3) { // r
 		msg.data.data.hil_out.main_deployed = fjalar->main_deployed;
 		msg.data.data.hil_out.drogue_deployed = fjalar->drogue_deployed;
 		send_message(fjalar, fjalar->ptr_state, &msg, MSG_PRIO_HIGH);
+		*/
+		k_msleep(1000);
 	}
 }

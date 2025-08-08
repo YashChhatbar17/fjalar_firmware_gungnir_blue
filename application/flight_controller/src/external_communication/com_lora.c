@@ -3,6 +3,12 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/lora.h>
 
+#include "init.h"
+#include "filter.h"
+#include "aerodynamics.h"
+#include "flight_state.h"
+#include "control.h"
+#include "com_can.h"
 #include "com_master.h"
 #include "com_lora.h"
 
@@ -10,6 +16,8 @@ K_MSGQ_DEFINE(lora_msgq, sizeof(struct padded_buf), 5, 4);
 
 #define LORA_THREAD_PRIORITY 7
 #define LORA_THREAD_STACK_SIZE 2048
+#define LORA_MSG_ENQUEUE_THREAD_PRIORITY 7
+#define LORA_MSG_ENQUEUE_THREAD_STACK_SIZE 2048
 
 #define LORA_TRANSMIT true
 #define LORA_RECEIVE false
@@ -19,8 +27,12 @@ LOG_MODULE_REGISTER(com_lora, CONFIG_APP_COMMUNICATION_LOG_LEVEL);
 K_THREAD_STACK_DEFINE(lora_thread_stack, LORA_THREAD_STACK_SIZE);
 struct k_thread lora_thread_data;
 k_tid_t lora_thread_id;
+K_THREAD_STACK_DEFINE(lora_msg_enqueue_thread_stack, LORA_MSG_ENQUEUE_THREAD_STACK_SIZE);
+struct k_thread lora_msg_enqueue_thread_data;
+k_tid_t lora_msg_enqueue_thread_id;
 
 void lora_thread(fjalar_t *fjalar, void *p2, void *p3);
+void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3);
 
 void init_com_lora(fjalar_t *fjalar){
     lora_thread_id = k_thread_create(
@@ -32,6 +44,16 @@ void init_com_lora(fjalar_t *fjalar){
         LORA_THREAD_PRIORITY, 0, K_NO_WAIT
     );
     k_thread_name_set(lora_thread_id, "lora");
+
+    lora_msg_enqueue_thread_id = k_thread_create(
+        &lora_msg_enqueue_thread_data,
+        lora_msg_enqueue_thread_stack,
+        K_THREAD_STACK_SIZEOF(lora_msg_enqueue_thread_stack),
+        (k_thread_entry_t) lora_msg_enqueue_thread,
+        fjalar, NULL, NULL,
+        LORA_MSG_ENQUEUE_THREAD_PRIORITY, 0, K_NO_WAIT
+    );
+    k_thread_name_set(lora_msg_enqueue_thread_id, "lora enqueue");
 } 
 
 int lora_configure(const struct device *dev, bool transmit) {
@@ -132,5 +154,37 @@ void lora_thread(fjalar_t *fjalar, void* p2, void* p3) {
 				LOG_DBG("Sent lora packet with size %d", size);
 			}
 		}
+	}
+}
+
+void lora_msg_enqueue(fjalar_message_t *msg){
+	struct padded_buf pbuf;
+	int size = encode_fjalar_message(msg, pbuf.buf);
+	if (size < 0) {
+		LOG_ERR("encode_fjalar_message failed");
+		return;
+	}
+	LOG_DBG("sending message w/ size %d", size);
+	if (k_msgq_put(&lora_msgq, &pbuf, K_NO_WAIT)){LOG_ERR("could not insert into lora msgq");}
+}
+
+void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
+	init_t            *init  = fjalar->ptr_init;
+    position_filter_t *pos_kf = fjalar->ptr_pos_kf;
+    attitude_filter_t *att_kf = fjalar->ptr_att_kf;
+    aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
+    state_t           *state = fjalar->ptr_state;
+    control_t         *control = fjalar->ptr_control;
+    can_t             *can = fjalar->ptr_can;
+
+	while (true){
+		fjalar_message_t msg;
+		msg.time = k_uptime_get_32();
+		msg.has_data = true;
+		msg.data.which_data = FJALAR_DATA_IMU_READING_TAG; // change tag
+
+		// encode and put into msgq
+		lora_msg_enqueue(&msg);
+		k_msleep(1000);
 	}
 }

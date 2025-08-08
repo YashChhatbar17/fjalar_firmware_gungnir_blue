@@ -30,7 +30,11 @@ K_THREAD_STACK_DEFINE(can_thread_stack, CAN_THREAD_STACK_SIZE);
 struct k_thread can_thread_data;
 k_tid_t can_thread_id;
 
+static loki_context_t loki_context;
+
 void init_can(fjalar_t *fjalar) {
+    fjalar->ptr_can->ptr_loki_context = &loki_context; // ptr defined early so that things doesn't crash
+
     can_thread_id = k_thread_create(
 		&can_thread_data,
 		can_thread_stack,
@@ -44,7 +48,6 @@ void init_can(fjalar_t *fjalar) {
 
 #if DT_ALIAS_EXISTS(canbus)
 
-static loki_context_t loki_context;
 struct can_timing timing;
 
 const struct can_filter filter_rx_loki = {
@@ -63,7 +66,7 @@ const struct can_filter filter_rx_sigurd = {
 
 const struct device *const can_dev = DEVICE_DT_GET(DT_ALIAS(canbus));
 
-void can_tx_loki(const struct device *can_dev, state_t *state, control_t *control)
+void can_tx_loki(const struct device *can_dev, state_t *state, control_t *control, can_t *can)
 {
     const size_t DLC = 4;
     uint8_t data[DLC];
@@ -96,6 +99,8 @@ void can_tx_loki(const struct device *can_dev, state_t *state, control_t *contro
 
     ret = can_send(can_dev, &frame, K_MSEC(100), NULL, NULL);
     if (ret) {LOG_ERR("CAN TX Loki failed [%d]", ret);}
+
+    can->loki_latest_tx_time = k_uptime_get_32();
 }
 
 void can_tx_sigurd(state_t *state, const struct device *const can_dev){
@@ -116,7 +121,6 @@ void can_tx_sigurd(state_t *state, const struct device *const can_dev){
 }
 
 void can_rx_loki(const struct device *const can_dev, struct can_frame *frame, void *user_data){
-    LOG_INF("RX Loki recieved");
     loki_context_t *context = user_data;
     const uint8_t *data = frame->data;
 
@@ -131,7 +135,9 @@ void can_rx_loki(const struct device *const can_dev, struct can_frame *frame, vo
     context->loki_angle    = raw_angle / 100.0f;
 
     // byte 3: battery, gain=10 
-    context->battery_voltage = data[3] / 10.0f;
+    context->loki_battery_voltage = data[3] / 10.0f;
+
+    context->loki_latest_rx_time = k_uptime_get_32();
 }
 
 void can_rx_sigurd(const struct device *const can_dev, struct can_frame *frame, void *user_data){
@@ -162,8 +168,9 @@ void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
     can_t             *can = fjalar->ptr_can;
     control_t         *control = fjalar->ptr_control;
 
+    can->ptr_loki_context = &loki_context;
+    //can->ptr_sigurd_context = sigurd_context;
     #if DT_ALIAS_EXISTS(canbus)
-
     static uint8_t init_flag =0;
 
     if (init_flag==0)
@@ -183,7 +190,10 @@ void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
     ret = can_start(can_dev);
     if (ret) {LOG_ERR("Failed to start CAN: %d", ret);}
-    else{LOG_INF("CAN started");}
+    else{
+        LOG_INF("CAN started");
+        can->can_started = true;
+    }
 
 
     
@@ -191,7 +201,7 @@ void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
     while (true) {
         #if DT_ALIAS_EXISTS(canbus)
-        can_tx_loki(can_dev, state, control);
+        can_tx_loki(can_dev, state, control, can);
         //can_tx_sigurd(state, can_dev);
         #endif
 
@@ -199,7 +209,7 @@ void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
         LOG_INF("loki_state     : %d", can->loki_state);
         LOG_INF("loki_sub_state : %d", can->loki_sub_state);
         LOG_INF("loki_angle     : %f", can->loki_angle);
-        LOG_INF("battery_voltage: %f", can->battery_voltage);
+        LOG_INF("loki_battery_voltage: %f", can->loki_battery_voltage);
         */
 
         k_msleep(10); // 100 Hz
