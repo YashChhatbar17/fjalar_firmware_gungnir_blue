@@ -252,9 +252,8 @@ void position_filter_accelerometer(init_t *init, position_filter_t *pos_kf, atti
     // rotate u given an attitude
     ZSL_MATRIX_DEF(u_rot, 3, 1);
     zsl_mtx_mult(&rotation, &u, &u_rot);
-    //LOG_INF("az: %f", u_rot.data[2]);
     u_rot.data[2] = u_rot.data[2] - init->g_accelerometer; // correct for gravity (accelerometers gravity)
-    //LOG_INF("az: %f", u_rot.data[2]);
+
     // X
     ZSL_MATRIX_DEF(AX, 9, 1);
     ZSL_MATRIX_DEF(BU, 9, 1);
@@ -391,7 +390,7 @@ void position_filter_gps(init_t *init, position_filter_t *pos_kf, float lat, flo
     zsl_real_t Hoffset_data[3] = {
         phi0, // lon
         theta0, // lat
-        0 // potential ASL to AGL difference here
+        alt0 // conversion from ASL to AGL
     };
 
     struct zsl_mtx Hoffset = {
