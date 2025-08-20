@@ -369,6 +369,7 @@ void position_filter_barometer(init_t *init, position_filter_t *pos_kf, float pr
 void position_filter_gps(init_t *init, position_filter_t *pos_kf, float lat, float lon, float alt, uint32_t time){
     float phi0 = init->lon0; // longitude of launchpad
     float theta0 = init->lat0; // Latitude of launchpad
+    float alt0 = init->alt0;
     float R = 6370000; // Radius earth placeholder
 
     // H matrix

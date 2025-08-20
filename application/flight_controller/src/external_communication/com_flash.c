@@ -166,9 +166,6 @@ void flash_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
     control_t         *control = fjalar->ptr_control;
     can_t             *can = fjalar->ptr_can;
 	
-	loki_context_t *loki_context = can->ptr_loki_context;
-	//sigurd_context_t sigurd_context = can->ptr_sigurd_context;
-
 	while (true){
 		// imu 
 		fjalar_message_t msg_imu = {
@@ -267,7 +264,7 @@ void flash_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 				.which_data = FJALAR_DATA_CAN_BUS_TAG,
 				.data.can_bus = {
 					.can_started           = can->can_started,
-					.loki_latest_rx_time   = loki_context->loki_latest_rx_time,
+					.loki_latest_rx_time   = can->loki_latest_rx_time,
 					.loki_latest_tx_time   = can->loki_latest_tx_time,
 					//.sigurd_latest_rx_time = sigurd_context->sigurd_latest_rx_time,
 					//.sigurd_latest_tx_time = can->loki_latest_tx_time,
@@ -298,10 +295,10 @@ void flash_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 			.data = {
 				.which_data         = FJALAR_DATA_LOKI_TO_FJALAR_TAG,
 				.data.loki_to_fjalar = {
-					.loki_state           = loki_context->loki_state,
-					.loki_substate        = loki_context->loki_sub_state,
-					.loki_current_angle   = loki_context->loki_angle,
-					.loki_battery_voltage = loki_context->loki_battery_voltage,
+					.loki_state           = can->loki_state,
+					.loki_substate        = can->loki_sub_state,
+					.loki_current_angle   = can->loki_angle,
+					.loki_battery_voltage = can->loki_battery_voltage,
 				},
 			},
 		};

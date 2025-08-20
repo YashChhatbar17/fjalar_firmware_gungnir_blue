@@ -1,8 +1,8 @@
 #pragma once
 
-#define IMU_INIT_N 3
-#define BARO_INIT_N 1
-#define GPS_INIT_N 0
+#define IMU_INIT_N 10
+#define BARO_INIT_N 10
+#define GPS_INIT_N 10
 
 typedef struct fjalar fjalar_t;
 typedef struct position_filter position_filter_t;

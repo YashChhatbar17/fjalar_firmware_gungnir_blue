@@ -30,11 +30,7 @@ K_THREAD_STACK_DEFINE(can_thread_stack, CAN_THREAD_STACK_SIZE);
 struct k_thread can_thread_data;
 k_tid_t can_thread_id;
 
-static loki_context_t loki_context;
-
 void init_can(fjalar_t *fjalar) {
-    fjalar->ptr_can->ptr_loki_context = &loki_context; // ptr defined early so that things doesn't crash
-
     can_thread_id = k_thread_create(
 		&can_thread_data,
 		can_thread_stack,
@@ -121,23 +117,23 @@ void can_tx_sigurd(state_t *state, const struct device *const can_dev){
 }
 
 void can_rx_loki(const struct device *const can_dev, struct can_frame *frame, void *user_data){
-    loki_context_t *context = user_data;
+    can_t *can = user_data;
     const uint8_t *data = frame->data;
 
     if (frame->dlc != 4) {LOG_ERR("Wrong dlc can rx loki");}
 
     // byte 0: low nibble = state, high nibble = substate
-    context->loki_state     =  data[0] & 0x0F;
-    context->loki_sub_state = (data[0] >> 4) & 0x0F;
+    can->loki_state     =  data[0] & 0x0F;
+    can->loki_sub_state = (data[0] >> 4) & 0x0F;
 
     // bytes 1–2: 16-bit angle, gain=100 
     uint16_t raw_angle = (data[1] << 8) | data[2];
-    context->loki_angle    = raw_angle / 100.0f;
+    can->loki_angle    = raw_angle / 100.0f;
 
     // byte 3: battery, gain=10 
-    context->loki_battery_voltage = data[3] / 10.0f;
+    can->loki_battery_voltage = data[3] / 10.0f;
 
-    context->loki_latest_rx_time = k_uptime_get_32();
+    can->loki_latest_rx_time = k_uptime_get_32();
 }
 
 void can_rx_sigurd(const struct device *const can_dev, struct can_frame *frame, void *user_data){
@@ -147,12 +143,12 @@ void can_rx_sigurd(const struct device *const can_dev, struct can_frame *frame, 
 
 
 // Give privilage to RX callbacks
-static int can_cb_priv_init(void){
+static int can_cb_priv_init(can_t *can){
     int err;
-    err = can_add_rx_filter(can_dev, can_rx_loki, &loki_context, &filter_rx_loki);
+    err = can_add_rx_filter(can_dev, can_rx_loki, &can, &filter_rx_loki);
     if (err < 0) {LOG_ERR("adding loki filter failed: %d", err);}
 
-    //err = can_add_rx_filter(can_dev, can_rx_sigurd, &sigurd_context, &filter_rx_sigurd);
+    //err = can_add_rx_filter(can_dev, can_rx_sigurd, &can, &filter_rx_sigurd);
     //if (err < 0) {LOG_ERR("adding sigurd filter failed: %d", err);}
     return 0;
 }
@@ -168,15 +164,13 @@ void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
     can_t             *can = fjalar->ptr_can;
     control_t         *control = fjalar->ptr_control;
 
-    can->ptr_loki_context = &loki_context;
-    //can->ptr_sigurd_context = sigurd_context;
     #if DT_ALIAS_EXISTS(canbus)
     static uint8_t init_flag =0;
 
     if (init_flag==0)
     {
         init_flag=1;
-        int ret = can_cb_priv_init();
+        int ret = can_cb_priv_init(can);
     }
 
     int ret;
