@@ -251,7 +251,15 @@ void flash_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 			.has_data = true,
 			.data = {
 				.which_data = FJALAR_DATA_FLIGHT_EVENT_TAG,
-				.data.flight_event = state->flight_event
+				.data.flight_event = {
+					.launch              = state->event_launch,
+					.burnout             = state->event_burnout,
+					.apogee              = state->event_apogee,
+					.drogue_deploy       = state->event_drogue_deployed,
+					.main_deploy         = state->event_main_deployed,
+					.landed              = state->event_landed,
+					.above_acs_threshold = state->event_above_acs_threshold,
+				},
 			},
 		};
 		flash_msg_enqueue(&msg_flight_event);

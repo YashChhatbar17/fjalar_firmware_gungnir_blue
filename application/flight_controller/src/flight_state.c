@@ -90,11 +90,13 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
     case STATE_LAUNCHPAD:
         if (a_norm > BOOST_ACCEL_THRESHOLD && z > 10) {
             state->flight_state = STATE_BOOST;
+            state->event_launch = true;
             state->liftoff_time = k_uptime_get_32();
             LOG_WRN("Changing state to BOOST due to acceleration");
         }
         if (v_norm > BOOST_SPEED_THRESHOLD) {
             state->flight_state = STATE_BOOST;
+            state->event_launch = true;
             state->liftoff_time = k_uptime_get_32();
             LOG_WRN("Changing state to BOOST due to speed");
         }
@@ -102,6 +104,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
     case STATE_BOOST:
         if (az < COAST_ACCEL_THRESHOLD && !aerodynamics->thrust_bool) {
             state->flight_state = STATE_COAST;
+            state->event_burnout = true;
             LOG_WRN("Changing state to COAST due to acceleration");
         }
         if (vz < 0) {
@@ -115,6 +118,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
 
             deploy_drogue(fjalar, init, state, pos_kf);
             state->flight_state = STATE_DROGUE_DESCENT;
+            state->event_apogee = true;
             LOG_WRN("Changing state to FREE_FALL due to speed");
         }
         break;
@@ -127,6 +131,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
     case STATE_MAIN_DESCENT:
         if (a_norm > init->g_accelerometer-2 && a_norm<init->g_accelerometer+2){
             state->flight_state = STATE_LANDED;
+            state->event_landed = true;
         }
         break;
     case STATE_LANDED:
@@ -138,50 +143,9 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
 static void evaluate_event(fjalar_t *fjalar, state_t *state, position_filter_t *pos_kf) {
     float z  = pos_kf->X_data[2];
 
-    switch (state->flight_event) {
-    if (state->flight_state == STATE_BOOST){
-        state->flight_event = EVENT_LAUNCH;
-    }
-    case EVENT_LAUNCH:
-        if (state->flight_state == STATE_COAST){
-            state->flight_event = EVENT_BURNOUT;
-        }
-        break;
-
-    case EVENT_BURNOUT:
-        break;
-        if (z > 1500){
-            state->flight_event = EVENT_ABOVE_ACS_THRESHOLD;
-        }
-
-    case EVENT_ABOVE_ACS_THRESHOLD:
-        if (state->flight_state == STATE_DROGUE_DESCENT){
-            state->flight_event = EVENT_APOGEE;
-        }
-        break;
-
-    case EVENT_APOGEE:
-        if (fjalar->pyro1_sense == 0){
-            state->flight_event = EVENT_PRIMARY_DEPLOY;
-        }
-        break;
-
-    case EVENT_PRIMARY_DEPLOY:
-        if (fjalar->pyro2_sense == 0){
-            state->flight_event = EVENT_SECONDARY_DEPLOY;
-        }
-        break;
-
-    case EVENT_SECONDARY_DEPLOY:
-        if (state->flight_state == STATE_LANDED){
-            state->flight_event = EVENT_LANDED;
-        }
-        break;
-
-    case EVENT_LANDED:
-        // chilling
-        break;
-    }
+    state->event_above_acs_threshold = (z > 1500);
+    state->event_drogue_deployed = (fjalar->pyro1_sense);
+    state->event_main_deployed = (fjalar->pyro2_sense);
 }
 
 static void evaluate_velocity(aerodynamics_t *aerodynamics, state_t *state) {

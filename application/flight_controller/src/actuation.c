@@ -131,7 +131,7 @@ void pyro_thread(fjalar_t *fjalar, void *p2, void *p3) {
     ret |= gpio_pin_set_dt(&pyro1_dt, 0);
     ret |= gpio_pin_set_dt(&pyro2_dt, 0);
     ret |= gpio_pin_set_dt(&pyro3_dt, 0);
-    ret |= gpio_pin_configure_dt(&pyro1_dt, GPIO_OUTPUT_INACTIVE); // dangerous (ACTIVE), i switched it to inactive?
+    ret |= gpio_pin_configure_dt(&pyro1_dt, GPIO_OUTPUT_INACTIVE); // dangerous (ACTIVE), i switched it to inactive
     ret |= gpio_pin_configure_dt(&pyro2_dt, GPIO_OUTPUT_INACTIVE); // dangerous (ACTIVE)?
     ret |= gpio_pin_configure_dt(&pyro3_dt, GPIO_OUTPUT_INACTIVE); // dangerous (ACTIVE)?
     ret |= gpio_pin_set_dt(&pyro1_dt, 0);

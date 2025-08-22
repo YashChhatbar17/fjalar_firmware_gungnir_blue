@@ -6,6 +6,9 @@
 #error Regenerate this file with the current version of nanopb generator.
 #endif
 
+PB_BIND(FLIGHT_EVENT, flight_event_t, AUTO)
+
+
 PB_BIND(ACKNOWLEDGE, acknowledge_t, AUTO)
 
 
@@ -88,8 +91,6 @@ PB_BIND(FJALAR_DATA, fjalar_data_t, AUTO)
 
 
 PB_BIND(FJALAR_MESSAGE, fjalar_message_t, AUTO)
-
-
 
 
 

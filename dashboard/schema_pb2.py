@@ -21,7 +21,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   syntax='proto3',
   serialized_options=None,
   create_key=_descriptor._internal_create_key,
-  serialized_pb=b'\n\x0cschema.proto\x1a\x0cnanopb.proto\"\x1e\n\x0b\x41\x63knowledge\x12\x0f\n\x07success\x18\x01 \x01(\x08\"#\n\x0fPressureReading\x12\x10\n\x08pressure\x18\x01 \x01(\x02\"T\n\nImuReading\x12\n\n\x02\x61x\x18\x01 \x01(\x02\x12\n\n\x02\x61y\x18\x02 \x01(\x02\x12\n\n\x02\x61z\x18\x03 \x01(\x02\x12\n\n\x02gx\x18\x04 \x01(\x02\x12\n\n\x02gy\x18\x05 \x01(\x02\x12\n\n\x02gz\x18\x06 \x01(\x02\"~\n\rStateEstimate\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\t\n\x01z\x18\x03 \x01(\x02\x12\n\n\x02vx\x18\x04 \x01(\x02\x12\n\n\x02vy\x18\x05 \x01(\x02\x12\n\n\x02vz\x18\x06 \x01(\x02\x12\x0c\n\x04roll\x18\x07 \x01(\x02\x12\r\n\x05pitch\x18\x08 \x01(\x02\x12\x0b\n\x03yaw\x18\t \x01(\x02\"\x95\x01\n\x06\x43\x41NBus\x12\x13\n\x0b\x63\x61n_started\x18\x01 \x01(\x08\x12\x1b\n\x13loki_latest_rx_time\x18\x02 \x01(\x07\x12\x1b\n\x13loki_latest_tx_time\x18\x03 \x01(\x07\x12\x1d\n\x15sigurd_latest_rx_time\x18\x04 \x01(\x07\x12\x1d\n\x15sigurd_latest_tx_time\x18\x05 \x01(\x07\"W\n\nPyroStatus\x12\x17\n\x0fpyro1_connected\x18\x01 \x01(\x08\x12\x17\n\x0fpyro2_connected\x18\x02 \x01(\x08\x12\x17\n\x0fpyro3_connected\x18\x03 \x01(\x08\"w\n\x10\x43\x41N_LokiToFjalar\x12\x12\n\nloki_state\x18\x01 \x01(\x05\x12\x15\n\rloki_substate\x18\x02 \x01(\x05\x12\x1a\n\x12loki_current_angle\x18\x03 \x01(\x02\x12\x1c\n\x14loki_battery_voltage\x18\x04 \x01(\x02\"\x8d\x01\n\x10\x43\x41N_FjalarToLoki\x12\"\n\x0c\x66light_state\x18\x01 \x01(\x0e\x32\x0c.FlightState\x12\"\n\x0c\x66light_event\x18\x02 \x01(\x0e\x32\x0c.FlightEvent\x12\x18\n\x10\x65nable_airbrakes\x18\x03 \x01(\x08\x12\x17\n\x0f\x61irbrakes_angle\x18\x04 \x01(\x02\"p\n\x12\x43\x41N_SigurdToFjalar\x12\x15\n\rsensor_data_1\x18\x01 \x01(\x02\x12\x15\n\rsensor_data_2\x18\x02 \x01(\x02\x12\x15\n\rsensor_data_3\x18\x03 \x01(\x02\x12\x15\n\rsensor_data_4\x18\x04 \x01(\x02\"\x14\n\x12\x43\x41N_FjalarToSigurd\"\x14\n\x12\x43\x41N_FafnirToFjalar\"\x91\x01\n\x12\x43\x41N_FjalarToFafnir\x12\x17\n\x0fopen_solenoid_1\x18\x01 \x01(\x08\x12\x17\n\x0fopen_solenoid_2\x18\x02 \x01(\x08\x12\x17\n\x0fopen_solenoid_3\x18\x03 \x01(\x08\x12\x17\n\x0fopen_solenoid_4\x18\x04 \x01(\x08\x12\x17\n\x0fopen_main_valve\x18\x05 \x01(\x08\"1\n\x10LORA_GcbToFjalar\x12\r\n\x05ready\x18\x01 \x01(\x08\x12\x0e\n\x06launch\x18\x02 \x01(\x08\"\x12\n\x10LORA_FjalarToGcb\"R\n\x0b\x46jalar_Info\x12\x1e\n\x16\x66jalar_battery_voltage\x18\x01 \x01(\x02\x12\x15\n\rflash_address\x18\x02 \x01(\x05\x12\x0c\n\x04sudo\x18\x03 \x01(\x08\"E\n\x0cGnssPosition\x12\x11\n\tlongitude\x18\x01 \x01(\x02\x12\x10\n\x08latitude\x18\x02 \x01(\x02\x12\x10\n\x08\x61ltitude\x18\x03 \x01(\x02\"M\n\nGnssStatus\x12\x0b\n\x03\x66ix\x18\x01 \x01(\x05\x12\x16\n\x0enum_satellites\x18\x02 \x01(\x05\x12\x0c\n\x04hdop\x18\x03 \x01(\x02\x12\x0c\n\x04vdop\x18\x04 \x01(\x02\"\x1a\n\x07SetSudo\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\"\x0c\n\nClearFlash\"0\n\tReadFlash\x12\x13\n\x0bstart_index\x18\x01 \x01(\x05\x12\x0e\n\x06length\x18\x02 \x01(\x05\"5\n\tFlashData\x12\x13\n\x0bstart_index\x18\x01 \x01(\x05\x12\x13\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x42\x05\x92?\x02\x08@\"\t\n\x07ReadyUp\"\x0b\n\tEnterIdle\"\x1b\n\x0bTriggerPyro\x12\x0c\n\x04pyro\x18\x01 \x01(\x05\"\x8f\x01\n\x05HilIn\x12\n\n\x02\x61x\x18\x01 \x01(\x02\x12\n\n\x02\x61y\x18\x02 \x01(\x02\x12\n\n\x02\x61z\x18\x03 \x01(\x02\x12\n\n\x02gx\x18\x04 \x01(\x02\x12\n\n\x02gy\x18\x05 \x01(\x02\x12\n\n\x02gz\x18\x06 \x01(\x02\x12\t\n\x01p\x18\x07 \x01(\x02\x12\x0b\n\x03lon\x18\x08 \x01(\x02\x12\x0b\n\x03lat\x18\t \x01(\x02\x12\x0b\n\x03\x61lt\x18\n \x01(\x02\x12\x0c\n\x04time\x18\x0b \x01(\r\"U\n\x06HilOut\x12\x1b\n\x13\x61irbrake_percentage\x18\x01 \x01(\x02\x12\x15\n\rmain_deployed\x18\x02 \x01(\x08\x12\x17\n\x0f\x64rogue_deployed\x18\x03 \x01(\x08\"\xc7\x08\n\nFjalarData\x12#\n\x0b\x61\x63knowledge\x18\x01 \x01(\x0b\x32\x0c.AcknowledgeH\x00\x12\"\n\x0bimu_reading\x18\x03 \x01(\x0b\x32\x0b.ImuReadingH\x00\x12,\n\x10pressure_reading\x18\x04 \x01(\x0b\x32\x10.PressureReadingH\x00\x12&\n\rgnss_position\x18\x05 \x01(\x0b\x32\r.GnssPositionH\x00\x12\"\n\x0bgnss_status\x18\x06 \x01(\x0b\x32\x0b.GnssStatusH\x00\x12\x1c\n\x08set_sudo\x18\x08 \x01(\x0b\x32\x08.SetSudoH\x00\x12\"\n\x0b\x63lear_flash\x18\t \x01(\x0b\x32\x0b.ClearFlashH\x00\x12 \n\nread_flash\x18\n \x01(\x0b\x32\n.ReadFlashH\x00\x12 \n\nflash_data\x18\x0b \x01(\x0b\x32\n.FlashDataH\x00\x12\x1c\n\x08ready_up\x18\x0c \x01(\x0b\x32\x08.ReadyUpH\x00\x12 \n\nenter_idle\x18\r \x01(\x0b\x32\n.EnterIdleH\x00\x12$\n\x0ctrigger_pyro\x18\x0e \x01(\x0b\x32\x0c.TriggerPyroH\x00\x12\x18\n\x06hil_in\x18\x0f \x01(\x0b\x32\x06.HilInH\x00\x12\x1a\n\x07hil_out\x18\x10 \x01(\x0b\x32\x07.HilOutH\x00\x12(\n\x0estate_estimate\x18\x11 \x01(\x0b\x32\x0e.StateEstimateH\x00\x12$\n\x0c\x66light_state\x18\x12 \x01(\x0e\x32\x0c.FlightStateH\x00\x12$\n\x0c\x66light_event\x18\x13 \x01(\x0e\x32\x0c.FlightEventH\x00\x12\x1a\n\x07\x63\x61n_bus\x18\x14 \x01(\x0b\x32\x07.CANBusH\x00\x12\"\n\x0bpyro_status\x18\x15 \x01(\x0b\x32\x0b.PyroStatusH\x00\x12/\n\x12\x63\x61n_loki_to_fjalar\x18\x16 \x01(\x0b\x32\x11.CAN_LokiToFjalarH\x00\x12/\n\x12\x63\x61n_fjalar_to_loki\x18\x17 \x01(\x0b\x32\x11.CAN_FjalarToLokiH\x00\x12\x33\n\x14\x63\x61n_sigurd_to_fjalar\x18\x18 \x01(\x0b\x32\x13.CAN_SigurdToFjalarH\x00\x12\x33\n\x14\x63\x61n_fjalar_to_sigurd\x18\x19 \x01(\x0b\x32\x13.CAN_FjalarToSigurdH\x00\x12\x33\n\x14\x63\x61n_fafnir_to_fjalar\x18\x1a \x01(\x0b\x32\x13.CAN_FafnirToFjalarH\x00\x12\x33\n\x14\x63\x61n_fjalar_to_fafnir\x18\x1b \x01(\x0b\x32\x13.CAN_FjalarToFafnirH\x00\x12/\n\x12lora_gcb_to_fjalar\x18\x1c \x01(\x0b\x32\x11.LORA_GcbToFjalarH\x00\x12/\n\x12lora_fjalar_to_gcb\x18\x1d \x01(\x0b\x32\x11.LORA_FjalarToGcbH\x00\x42\x06\n\x04\x64\x61ta\"Q\n\rFjalarMessage\x12\x0c\n\x04time\x18\x01 \x01(\x07\x12\x17\n\x0fsequence_number\x18\x02 \x01(\x05\x12\x19\n\x04\x64\x61ta\x18\x03 \x01(\x0b\x32\x0b.FjalarData*}\n\x0b\x46lightState\x12\x08\n\x04idle\x10\x00\x12\r\n\tlaunchpad\x10\x01\x12\t\n\x05\x62oost\x10\x02\x12\t\n\x05\x63oast\x10\x03\x12\r\n\tfree_fall\x10\x04\x12\x12\n\x0e\x64rogue_descent\x10\x05\x12\x10\n\x0cmain_descent\x10\x06\x12\n\n\x06landed\x10\x07*~\n\x0b\x46lightEvent\x12\n\n\x06launch\x10\x00\x12\x0b\n\x07\x62urnout\x10\x01\x12\n\n\x06\x61pogee\x10\x02\x12\x0f\n\x0bmain_deploy\x10\x03\x12\x11\n\rdrogue_deploy\x10\x04\x12\r\n\ttouchdown\x10\x05\x12\x17\n\x13\x61\x62ove_acs_threshold\x10\x06\x62\x06proto3'
+  serialized_pb=b'\n\x0cschema.proto\x1a\x0cnanopb.proto\"\x97\x01\n\x0b\x46lightEvent\x12\x0e\n\x06launch\x18\x01 \x01(\x08\x12\x0f\n\x07\x62urnout\x18\x02 \x01(\x08\x12\x0e\n\x06\x61pogee\x18\x03 \x01(\x08\x12\x13\n\x0bmain_deploy\x18\x04 \x01(\x08\x12\x15\n\rdrogue_deploy\x18\x05 \x01(\x08\x12\x0e\n\x06landed\x18\x06 \x01(\x08\x12\x1b\n\x13\x61\x62ove_acs_threshold\x18\x07 \x01(\x08\"\x1e\n\x0b\x41\x63knowledge\x12\x0f\n\x07success\x18\x01 \x01(\x08\"#\n\x0fPressureReading\x12\x10\n\x08pressure\x18\x01 \x01(\x02\"T\n\nImuReading\x12\n\n\x02\x61x\x18\x01 \x01(\x02\x12\n\n\x02\x61y\x18\x02 \x01(\x02\x12\n\n\x02\x61z\x18\x03 \x01(\x02\x12\n\n\x02gx\x18\x04 \x01(\x02\x12\n\n\x02gy\x18\x05 \x01(\x02\x12\n\n\x02gz\x18\x06 \x01(\x02\"~\n\rStateEstimate\x12\t\n\x01x\x18\x01 \x01(\x02\x12\t\n\x01y\x18\x02 \x01(\x02\x12\t\n\x01z\x18\x03 \x01(\x02\x12\n\n\x02vx\x18\x04 \x01(\x02\x12\n\n\x02vy\x18\x05 \x01(\x02\x12\n\n\x02vz\x18\x06 \x01(\x02\x12\x0c\n\x04roll\x18\x07 \x01(\x02\x12\r\n\x05pitch\x18\x08 \x01(\x02\x12\x0b\n\x03yaw\x18\t \x01(\x02\"\x95\x01\n\x06\x43\x41NBus\x12\x13\n\x0b\x63\x61n_started\x18\x01 \x01(\x08\x12\x1b\n\x13loki_latest_rx_time\x18\x02 \x01(\x07\x12\x1b\n\x13loki_latest_tx_time\x18\x03 \x01(\x07\x12\x1d\n\x15sigurd_latest_rx_time\x18\x04 \x01(\x07\x12\x1d\n\x15sigurd_latest_tx_time\x18\x05 \x01(\x07\"W\n\nPyroStatus\x12\x17\n\x0fpyro1_connected\x18\x01 \x01(\x08\x12\x17\n\x0fpyro2_connected\x18\x02 \x01(\x08\x12\x17\n\x0fpyro3_connected\x18\x03 \x01(\x08\"w\n\x10\x43\x41N_LokiToFjalar\x12\x12\n\nloki_state\x18\x01 \x01(\x05\x12\x15\n\rloki_substate\x18\x02 \x01(\x05\x12\x1a\n\x12loki_current_angle\x18\x03 \x01(\x02\x12\x1c\n\x14loki_battery_voltage\x18\x04 \x01(\x02\"\x8d\x01\n\x10\x43\x41N_FjalarToLoki\x12\"\n\x0c\x66light_state\x18\x01 \x01(\x0e\x32\x0c.FlightState\x12\"\n\x0c\x66light_event\x18\x02 \x01(\x0b\x32\x0c.FlightEvent\x12\x18\n\x10\x65nable_airbrakes\x18\x03 \x01(\x08\x12\x17\n\x0f\x61irbrakes_angle\x18\x04 \x01(\x02\"p\n\x12\x43\x41N_SigurdToFjalar\x12\x15\n\rsensor_data_1\x18\x01 \x01(\x02\x12\x15\n\rsensor_data_2\x18\x02 \x01(\x02\x12\x15\n\rsensor_data_3\x18\x03 \x01(\x02\x12\x15\n\rsensor_data_4\x18\x04 \x01(\x02\"\x14\n\x12\x43\x41N_FjalarToSigurd\"\x14\n\x12\x43\x41N_FafnirToFjalar\"\x91\x01\n\x12\x43\x41N_FjalarToFafnir\x12\x17\n\x0fopen_solenoid_1\x18\x01 \x01(\x08\x12\x17\n\x0fopen_solenoid_2\x18\x02 \x01(\x08\x12\x17\n\x0fopen_solenoid_3\x18\x03 \x01(\x08\x12\x17\n\x0fopen_solenoid_4\x18\x04 \x01(\x08\x12\x17\n\x0fopen_main_valve\x18\x05 \x01(\x08\"1\n\x10LORA_GcbToFjalar\x12\r\n\x05ready\x18\x01 \x01(\x08\x12\x0e\n\x06launch\x18\x02 \x01(\x08\"\x12\n\x10LORA_FjalarToGcb\"R\n\x0b\x46jalar_Info\x12\x1e\n\x16\x66jalar_battery_voltage\x18\x01 \x01(\x02\x12\x15\n\rflash_address\x18\x02 \x01(\x05\x12\x0c\n\x04sudo\x18\x03 \x01(\x08\"E\n\x0cGnssPosition\x12\x11\n\tlongitude\x18\x01 \x01(\x02\x12\x10\n\x08latitude\x18\x02 \x01(\x02\x12\x10\n\x08\x61ltitude\x18\x03 \x01(\x02\"M\n\nGnssStatus\x12\x0b\n\x03\x66ix\x18\x01 \x01(\x05\x12\x16\n\x0enum_satellites\x18\x02 \x01(\x05\x12\x0c\n\x04hdop\x18\x03 \x01(\x02\x12\x0c\n\x04vdop\x18\x04 \x01(\x02\"\x1a\n\x07SetSudo\x12\x0f\n\x07\x65nabled\x18\x01 \x01(\x08\"\x0c\n\nClearFlash\"0\n\tReadFlash\x12\x13\n\x0bstart_index\x18\x01 \x01(\x05\x12\x0e\n\x06length\x18\x02 \x01(\x05\"5\n\tFlashData\x12\x13\n\x0bstart_index\x18\x01 \x01(\x05\x12\x13\n\x04\x64\x61ta\x18\x02 \x01(\x0c\x42\x05\x92?\x02\x08@\"\t\n\x07ReadyUp\"\x0b\n\tEnterIdle\"\x1b\n\x0bTriggerPyro\x12\x0c\n\x04pyro\x18\x01 \x01(\x05\"\x8f\x01\n\x05HilIn\x12\n\n\x02\x61x\x18\x01 \x01(\x02\x12\n\n\x02\x61y\x18\x02 \x01(\x02\x12\n\n\x02\x61z\x18\x03 \x01(\x02\x12\n\n\x02gx\x18\x04 \x01(\x02\x12\n\n\x02gy\x18\x05 \x01(\x02\x12\n\n\x02gz\x18\x06 \x01(\x02\x12\t\n\x01p\x18\x07 \x01(\x02\x12\x0b\n\x03lon\x18\x08 \x01(\x02\x12\x0b\n\x03lat\x18\t \x01(\x02\x12\x0b\n\x03\x61lt\x18\n \x01(\x02\x12\x0c\n\x04time\x18\x0b \x01(\r\"U\n\x06HilOut\x12\x1b\n\x13\x61irbrake_percentage\x18\x01 \x01(\x02\x12\x15\n\rmain_deployed\x18\x02 \x01(\x08\x12\x17\n\x0f\x64rogue_deployed\x18\x03 \x01(\x08\"\xc7\x08\n\nFjalarData\x12#\n\x0b\x61\x63knowledge\x18\x01 \x01(\x0b\x32\x0c.AcknowledgeH\x00\x12\"\n\x0bimu_reading\x18\x03 \x01(\x0b\x32\x0b.ImuReadingH\x00\x12,\n\x10pressure_reading\x18\x04 \x01(\x0b\x32\x10.PressureReadingH\x00\x12&\n\rgnss_position\x18\x05 \x01(\x0b\x32\r.GnssPositionH\x00\x12\"\n\x0bgnss_status\x18\x06 \x01(\x0b\x32\x0b.GnssStatusH\x00\x12\x1c\n\x08set_sudo\x18\x08 \x01(\x0b\x32\x08.SetSudoH\x00\x12\"\n\x0b\x63lear_flash\x18\t \x01(\x0b\x32\x0b.ClearFlashH\x00\x12 \n\nread_flash\x18\n \x01(\x0b\x32\n.ReadFlashH\x00\x12 \n\nflash_data\x18\x0b \x01(\x0b\x32\n.FlashDataH\x00\x12\x1c\n\x08ready_up\x18\x0c \x01(\x0b\x32\x08.ReadyUpH\x00\x12 \n\nenter_idle\x18\r \x01(\x0b\x32\n.EnterIdleH\x00\x12$\n\x0ctrigger_pyro\x18\x0e \x01(\x0b\x32\x0c.TriggerPyroH\x00\x12\x18\n\x06hil_in\x18\x0f \x01(\x0b\x32\x06.HilInH\x00\x12\x1a\n\x07hil_out\x18\x10 \x01(\x0b\x32\x07.HilOutH\x00\x12(\n\x0estate_estimate\x18\x11 \x01(\x0b\x32\x0e.StateEstimateH\x00\x12$\n\x0c\x66light_state\x18\x12 \x01(\x0e\x32\x0c.FlightStateH\x00\x12$\n\x0c\x66light_event\x18\x13 \x01(\x0b\x32\x0c.FlightEventH\x00\x12\x1a\n\x07\x63\x61n_bus\x18\x14 \x01(\x0b\x32\x07.CANBusH\x00\x12\"\n\x0bpyro_status\x18\x15 \x01(\x0b\x32\x0b.PyroStatusH\x00\x12/\n\x12\x63\x61n_loki_to_fjalar\x18\x16 \x01(\x0b\x32\x11.CAN_LokiToFjalarH\x00\x12/\n\x12\x63\x61n_fjalar_to_loki\x18\x17 \x01(\x0b\x32\x11.CAN_FjalarToLokiH\x00\x12\x33\n\x14\x63\x61n_sigurd_to_fjalar\x18\x18 \x01(\x0b\x32\x13.CAN_SigurdToFjalarH\x00\x12\x33\n\x14\x63\x61n_fjalar_to_sigurd\x18\x19 \x01(\x0b\x32\x13.CAN_FjalarToSigurdH\x00\x12\x33\n\x14\x63\x61n_fafnir_to_fjalar\x18\x1a \x01(\x0b\x32\x13.CAN_FafnirToFjalarH\x00\x12\x33\n\x14\x63\x61n_fjalar_to_fafnir\x18\x1b \x01(\x0b\x32\x13.CAN_FjalarToFafnirH\x00\x12/\n\x12lora_gcb_to_fjalar\x18\x1c \x01(\x0b\x32\x11.LORA_GcbToFjalarH\x00\x12/\n\x12lora_fjalar_to_gcb\x18\x1d \x01(\x0b\x32\x11.LORA_FjalarToGcbH\x00\x42\x06\n\x04\x64\x61ta\"Q\n\rFjalarMessage\x12\x0c\n\x04time\x18\x01 \x01(\x07\x12\x17\n\x0fsequence_number\x18\x02 \x01(\x05\x12\x19\n\x04\x64\x61ta\x18\x03 \x01(\x0b\x32\x0b.FjalarData*}\n\x0b\x46lightState\x12\x08\n\x04idle\x10\x00\x12\r\n\tlaunchpad\x10\x01\x12\t\n\x05\x62oost\x10\x02\x12\t\n\x05\x63oast\x10\x03\x12\r\n\tfree_fall\x10\x04\x12\x12\n\x0e\x64rogue_descent\x10\x05\x12\x10\n\x0cmain_descent\x10\x06\x12\n\n\x06landed\x10\x07\x62\x06proto3'
   ,
   dependencies=[nanopb__pb2.DESCRIPTOR,])
 
@@ -75,63 +75,12 @@ _FLIGHTSTATE = _descriptor.EnumDescriptor(
   ],
   containing_type=None,
   serialized_options=None,
-  serialized_start=3044,
-  serialized_end=3169,
+  serialized_start=3198,
+  serialized_end=3323,
 )
 _sym_db.RegisterEnumDescriptor(_FLIGHTSTATE)
 
 FlightState = enum_type_wrapper.EnumTypeWrapper(_FLIGHTSTATE)
-_FLIGHTEVENT = _descriptor.EnumDescriptor(
-  name='FlightEvent',
-  full_name='FlightEvent',
-  filename=None,
-  file=DESCRIPTOR,
-  create_key=_descriptor._internal_create_key,
-  values=[
-    _descriptor.EnumValueDescriptor(
-      name='launch', index=0, number=0,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='burnout', index=1, number=1,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='apogee', index=2, number=2,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='main_deploy', index=3, number=3,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='drogue_deploy', index=4, number=4,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='touchdown', index=5, number=5,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-    _descriptor.EnumValueDescriptor(
-      name='above_acs_threshold', index=6, number=6,
-      serialized_options=None,
-      type=None,
-      create_key=_descriptor._internal_create_key),
-  ],
-  containing_type=None,
-  serialized_options=None,
-  serialized_start=3171,
-  serialized_end=3297,
-)
-_sym_db.RegisterEnumDescriptor(_FLIGHTEVENT)
-
-FlightEvent = enum_type_wrapper.EnumTypeWrapper(_FLIGHTEVENT)
 idle = 0
 launchpad = 1
 boost = 2
@@ -140,14 +89,81 @@ free_fall = 4
 drogue_descent = 5
 main_descent = 6
 landed = 7
-launch = 0
-burnout = 1
-apogee = 2
-main_deploy = 3
-drogue_deploy = 4
-touchdown = 5
-above_acs_threshold = 6
 
+
+
+_FLIGHTEVENT = _descriptor.Descriptor(
+  name='FlightEvent',
+  full_name='FlightEvent',
+  filename=None,
+  file=DESCRIPTOR,
+  containing_type=None,
+  create_key=_descriptor._internal_create_key,
+  fields=[
+    _descriptor.FieldDescriptor(
+      name='launch', full_name='FlightEvent.launch', index=0,
+      number=1, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='burnout', full_name='FlightEvent.burnout', index=1,
+      number=2, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='apogee', full_name='FlightEvent.apogee', index=2,
+      number=3, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='main_deploy', full_name='FlightEvent.main_deploy', index=3,
+      number=4, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='drogue_deploy', full_name='FlightEvent.drogue_deploy', index=4,
+      number=5, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='landed', full_name='FlightEvent.landed', index=5,
+      number=6, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+    _descriptor.FieldDescriptor(
+      name='above_acs_threshold', full_name='FlightEvent.above_acs_threshold', index=6,
+      number=7, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
+  ],
+  extensions=[
+  ],
+  nested_types=[],
+  enum_types=[
+  ],
+  serialized_options=None,
+  is_extendable=False,
+  syntax='proto3',
+  extension_ranges=[],
+  oneofs=[
+  ],
+  serialized_start=31,
+  serialized_end=182,
+)
 
 
 _ACKNOWLEDGE = _descriptor.Descriptor(
@@ -177,8 +193,8 @@ _ACKNOWLEDGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=30,
-  serialized_end=60,
+  serialized_start=184,
+  serialized_end=214,
 )
 
 
@@ -209,8 +225,8 @@ _PRESSUREREADING = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=62,
-  serialized_end=97,
+  serialized_start=216,
+  serialized_end=251,
 )
 
 
@@ -276,8 +292,8 @@ _IMUREADING = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=99,
-  serialized_end=183,
+  serialized_start=253,
+  serialized_end=337,
 )
 
 
@@ -364,8 +380,8 @@ _STATEESTIMATE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=185,
-  serialized_end=311,
+  serialized_start=339,
+  serialized_end=465,
 )
 
 
@@ -424,8 +440,8 @@ _CANBUS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=314,
-  serialized_end=463,
+  serialized_start=468,
+  serialized_end=617,
 )
 
 
@@ -470,8 +486,8 @@ _PYROSTATUS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=465,
-  serialized_end=552,
+  serialized_start=619,
+  serialized_end=706,
 )
 
 
@@ -523,8 +539,8 @@ _CAN_LOKITOFJALAR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=554,
-  serialized_end=673,
+  serialized_start=708,
+  serialized_end=827,
 )
 
 
@@ -545,8 +561,8 @@ _CAN_FJALARTOLOKI = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
       name='flight_event', full_name='CAN_FjalarToLoki.flight_event', index=1,
-      number=2, type=14, cpp_type=8, label=1,
-      has_default_value=False, default_value=0,
+      number=2, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -576,8 +592,8 @@ _CAN_FJALARTOLOKI = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=676,
-  serialized_end=817,
+  serialized_start=830,
+  serialized_end=971,
 )
 
 
@@ -629,8 +645,8 @@ _CAN_SIGURDTOFJALAR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=819,
-  serialized_end=931,
+  serialized_start=973,
+  serialized_end=1085,
 )
 
 
@@ -654,8 +670,8 @@ _CAN_FJALARTOSIGURD = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=933,
-  serialized_end=953,
+  serialized_start=1087,
+  serialized_end=1107,
 )
 
 
@@ -679,8 +695,8 @@ _CAN_FAFNIRTOFJALAR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=955,
-  serialized_end=975,
+  serialized_start=1109,
+  serialized_end=1129,
 )
 
 
@@ -739,8 +755,8 @@ _CAN_FJALARTOFAFNIR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=978,
-  serialized_end=1123,
+  serialized_start=1132,
+  serialized_end=1277,
 )
 
 
@@ -778,8 +794,8 @@ _LORA_GCBTOFJALAR = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1125,
-  serialized_end=1174,
+  serialized_start=1279,
+  serialized_end=1328,
 )
 
 
@@ -803,8 +819,8 @@ _LORA_FJALARTOGCB = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1176,
-  serialized_end=1194,
+  serialized_start=1330,
+  serialized_end=1348,
 )
 
 
@@ -849,8 +865,8 @@ _FJALAR_INFO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1196,
-  serialized_end=1278,
+  serialized_start=1350,
+  serialized_end=1432,
 )
 
 
@@ -895,8 +911,8 @@ _GNSSPOSITION = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1280,
-  serialized_end=1349,
+  serialized_start=1434,
+  serialized_end=1503,
 )
 
 
@@ -948,8 +964,8 @@ _GNSSSTATUS = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1351,
-  serialized_end=1428,
+  serialized_start=1505,
+  serialized_end=1582,
 )
 
 
@@ -980,8 +996,8 @@ _SETSUDO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1430,
-  serialized_end=1456,
+  serialized_start=1584,
+  serialized_end=1610,
 )
 
 
@@ -1005,8 +1021,8 @@ _CLEARFLASH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1458,
-  serialized_end=1470,
+  serialized_start=1612,
+  serialized_end=1624,
 )
 
 
@@ -1044,8 +1060,8 @@ _READFLASH = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1472,
-  serialized_end=1520,
+  serialized_start=1626,
+  serialized_end=1674,
 )
 
 
@@ -1083,8 +1099,8 @@ _FLASHDATA = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1522,
-  serialized_end=1575,
+  serialized_start=1676,
+  serialized_end=1729,
 )
 
 
@@ -1108,8 +1124,8 @@ _READYUP = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1577,
-  serialized_end=1586,
+  serialized_start=1731,
+  serialized_end=1740,
 )
 
 
@@ -1133,8 +1149,8 @@ _ENTERIDLE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1588,
-  serialized_end=1599,
+  serialized_start=1742,
+  serialized_end=1753,
 )
 
 
@@ -1165,8 +1181,8 @@ _TRIGGERPYRO = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1601,
-  serialized_end=1628,
+  serialized_start=1755,
+  serialized_end=1782,
 )
 
 
@@ -1267,8 +1283,8 @@ _HILIN = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1631,
-  serialized_end=1774,
+  serialized_start=1785,
+  serialized_end=1928,
 )
 
 
@@ -1313,8 +1329,8 @@ _HILOUT = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=1776,
-  serialized_end=1861,
+  serialized_start=1930,
+  serialized_end=2015,
 )
 
 
@@ -1440,8 +1456,8 @@ _FJALARDATA = _descriptor.Descriptor(
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
     _descriptor.FieldDescriptor(
       name='flight_event', full_name='FjalarData.flight_event', index=16,
-      number=19, type=14, cpp_type=8, label=1,
-      has_default_value=False, default_value=0,
+      number=19, type=11, cpp_type=10, label=1,
+      has_default_value=False, default_value=None,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR,  create_key=_descriptor._internal_create_key),
@@ -1532,8 +1548,8 @@ _FJALARDATA = _descriptor.Descriptor(
       create_key=_descriptor._internal_create_key,
     fields=[]),
   ],
-  serialized_start=1864,
-  serialized_end=2959,
+  serialized_start=2018,
+  serialized_end=3113,
 )
 
 
@@ -1578,12 +1594,12 @@ _FJALARMESSAGE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=2961,
-  serialized_end=3042,
+  serialized_start=3115,
+  serialized_end=3196,
 )
 
 _CAN_FJALARTOLOKI.fields_by_name['flight_state'].enum_type = _FLIGHTSTATE
-_CAN_FJALARTOLOKI.fields_by_name['flight_event'].enum_type = _FLIGHTEVENT
+_CAN_FJALARTOLOKI.fields_by_name['flight_event'].message_type = _FLIGHTEVENT
 _FJALARDATA.fields_by_name['acknowledge'].message_type = _ACKNOWLEDGE
 _FJALARDATA.fields_by_name['imu_reading'].message_type = _IMUREADING
 _FJALARDATA.fields_by_name['pressure_reading'].message_type = _PRESSUREREADING
@@ -1600,7 +1616,7 @@ _FJALARDATA.fields_by_name['hil_in'].message_type = _HILIN
 _FJALARDATA.fields_by_name['hil_out'].message_type = _HILOUT
 _FJALARDATA.fields_by_name['state_estimate'].message_type = _STATEESTIMATE
 _FJALARDATA.fields_by_name['flight_state'].enum_type = _FLIGHTSTATE
-_FJALARDATA.fields_by_name['flight_event'].enum_type = _FLIGHTEVENT
+_FJALARDATA.fields_by_name['flight_event'].message_type = _FLIGHTEVENT
 _FJALARDATA.fields_by_name['can_bus'].message_type = _CANBUS
 _FJALARDATA.fields_by_name['pyro_status'].message_type = _PYROSTATUS
 _FJALARDATA.fields_by_name['can_loki_to_fjalar'].message_type = _CAN_LOKITOFJALAR
@@ -1693,6 +1709,7 @@ _FJALARDATA.oneofs_by_name['data'].fields.append(
   _FJALARDATA.fields_by_name['lora_fjalar_to_gcb'])
 _FJALARDATA.fields_by_name['lora_fjalar_to_gcb'].containing_oneof = _FJALARDATA.oneofs_by_name['data']
 _FJALARMESSAGE.fields_by_name['data'].message_type = _FJALARDATA
+DESCRIPTOR.message_types_by_name['FlightEvent'] = _FLIGHTEVENT
 DESCRIPTOR.message_types_by_name['Acknowledge'] = _ACKNOWLEDGE
 DESCRIPTOR.message_types_by_name['PressureReading'] = _PRESSUREREADING
 DESCRIPTOR.message_types_by_name['ImuReading'] = _IMUREADING
@@ -1722,8 +1739,14 @@ DESCRIPTOR.message_types_by_name['HilOut'] = _HILOUT
 DESCRIPTOR.message_types_by_name['FjalarData'] = _FJALARDATA
 DESCRIPTOR.message_types_by_name['FjalarMessage'] = _FJALARMESSAGE
 DESCRIPTOR.enum_types_by_name['FlightState'] = _FLIGHTSTATE
-DESCRIPTOR.enum_types_by_name['FlightEvent'] = _FLIGHTEVENT
 _sym_db.RegisterFileDescriptor(DESCRIPTOR)
+
+FlightEvent = _reflection.GeneratedProtocolMessageType('FlightEvent', (_message.Message,), {
+  'DESCRIPTOR' : _FLIGHTEVENT,
+  '__module__' : 'schema_pb2'
+  # @@protoc_insertion_point(class_scope:FlightEvent)
+  })
+_sym_db.RegisterMessage(FlightEvent)
 
 Acknowledge = _reflection.GeneratedProtocolMessageType('Acknowledge', (_message.Message,), {
   'DESCRIPTOR' : _ACKNOWLEDGE,

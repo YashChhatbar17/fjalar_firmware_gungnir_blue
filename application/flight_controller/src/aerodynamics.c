@@ -138,7 +138,7 @@ void update_thrust(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodyn
 
 
     float N; // normal force induced acceleration
-    if (state->flight_state == STATE_IDLE || state->flight_event == STATE_LAUNCHPAD){
+    if (state->flight_state == STATE_IDLE || state->flight_state == STATE_LAUNCHPAD){
         N = aerodynamics->g_physics;
     } else{N = 0;}
     float g = -(aerodynamics->g_physics); // gravitational acceleration

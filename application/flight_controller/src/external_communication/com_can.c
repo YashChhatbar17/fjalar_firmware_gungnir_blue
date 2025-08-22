@@ -70,14 +70,16 @@ void can_tx_loki(const struct device *can_dev, state_t *state, control_t *contro
 
     // byte 0: high nibble=state, low nibble=substate 
     uint8_t st = (uint8_t)state->flight_state;
-    uint8_t ev = (uint8_t)state->flight_event;
-    if (st > 0x0F || ev > 0x0F) {
-        LOG_ERR("state/event out of range");
+    if (st > 0x0F) {
+        LOG_ERR("state out of range");
     }
+
+    uint8_t ev = (state->event_above_acs_threshold) ? 0xA : 0x5; // choose 0xA (1010) or 0x5 (0101)
+    
     data[0] = (st << 4) | (ev & 0x0F);
 
     // byte 1: event marker 
-    data[1] = (state->flight_event == EVENT_ABOVE_ACS_THRESHOLD && state->flight_state == STATE_COAST) ? 0xAA : 0x55;
+    data[1] = (state->event_above_acs_threshold && state->flight_state == STATE_COAST) ? 0xAA : 0x55;
 
     // bytes 2–3: angle ×100 
     float  airbrake_angle = control->airbrakes_angle; // from control script (PID algo)
@@ -88,7 +90,7 @@ void can_tx_loki(const struct device *can_dev, state_t *state, control_t *contro
 
     struct can_frame frame = {
         .flags = 0,
-        .id    = 0x67F, // 0x67F = Fjalar 1, 0x57F = Fjalar 2 put this as #define in header
+        .id    = 0x67F, // 0x67F = Fjalar 1, 0x57F = Fjalar 2. Put this as #define in header
         .dlc   = DLC,
     };
     memcpy(frame.data, data, DLC);

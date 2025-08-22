@@ -21,17 +21,17 @@ typedef enum flight_state {
     FLIGHT_STATE_LANDED = 7
 } flight_state_t;
 
-typedef enum flight_event {
-    FLIGHT_EVENT_LAUNCH = 0,
-    FLIGHT_EVENT_BURNOUT = 1,
-    FLIGHT_EVENT_APOGEE = 2,
-    FLIGHT_EVENT_MAIN_DEPLOY = 3,
-    FLIGHT_EVENT_DROGUE_DEPLOY = 4,
-    FLIGHT_EVENT_TOUCHDOWN = 5,
-    FLIGHT_EVENT_ABOVE_ACS_THRESHOLD = 6
+/* Struct definitions */
+typedef struct flight_event {
+    bool launch;
+    bool burnout;
+    bool apogee;
+    bool main_deploy;
+    bool drogue_deploy;
+    bool landed;
+    bool above_acs_threshold;
 } flight_event_t;
 
-/* Struct definitions */
 typedef struct acknowledge {
     bool success;
 } acknowledge_t;
@@ -84,6 +84,7 @@ typedef struct can_loki_to_fjalar {
 
 typedef struct can_fjalar_to_loki {
     flight_state_t flight_state;
+    bool has_flight_event;
     flight_event_t flight_event;
     bool enable_airbrakes;
     float airbrakes_angle;
@@ -241,9 +242,6 @@ extern "C" {
 #define _FLIGHT_STATE_MAX FLIGHT_STATE_LANDED
 #define _FLIGHT_STATE_ARRAYSIZE ((flight_state_t)(FLIGHT_STATE_LANDED+1))
 
-#define _FLIGHT_EVENT_MIN FLIGHT_EVENT_LAUNCH
-#define _FLIGHT_EVENT_MAX FLIGHT_EVENT_ABOVE_ACS_THRESHOLD
-#define _FLIGHT_EVENT_ARRAYSIZE ((flight_event_t)(FLIGHT_EVENT_ABOVE_ACS_THRESHOLD+1))
 
 
 
@@ -253,7 +251,6 @@ extern "C" {
 
 
 #define can_fjalar_to_loki_t_flight_state_ENUMTYPE flight_state_t
-#define can_fjalar_to_loki_t_flight_event_ENUMTYPE flight_event_t
 
 
 
@@ -274,11 +271,11 @@ extern "C" {
 
 
 #define fjalar_data_t_data_flight_state_ENUMTYPE flight_state_t
-#define fjalar_data_t_data_flight_event_ENUMTYPE flight_event_t
 
 
 
 /* Initializer values for message structs */
+#define FLIGHT_EVENT_INIT_DEFAULT                {0, 0, 0, 0, 0, 0, 0}
 #define ACKNOWLEDGE_INIT_DEFAULT                 {0}
 #define PRESSURE_READING_INIT_DEFAULT            {0}
 #define IMU_READING_INIT_DEFAULT                 {0, 0, 0, 0, 0, 0}
@@ -286,7 +283,7 @@ extern "C" {
 #define CAN_BUS_INIT_DEFAULT                     {0, 0, 0, 0, 0}
 #define PYRO_STATUS_INIT_DEFAULT                 {0, 0, 0}
 #define CAN_LOKI_TO_FJALAR_INIT_DEFAULT          {0, 0, 0, 0}
-#define CAN_FJALAR_TO_LOKI_INIT_DEFAULT          {_FLIGHT_STATE_MIN, _FLIGHT_EVENT_MIN, 0, 0}
+#define CAN_FJALAR_TO_LOKI_INIT_DEFAULT          {_FLIGHT_STATE_MIN, false, FLIGHT_EVENT_INIT_DEFAULT, 0, 0}
 #define CAN_SIGURD_TO_FJALAR_INIT_DEFAULT        {0, 0, 0, 0}
 #define CAN_FJALAR_TO_SIGURD_INIT_DEFAULT        {0}
 #define CAN_FAFNIR_TO_FJALAR_INIT_DEFAULT        {0}
@@ -307,6 +304,7 @@ extern "C" {
 #define HIL_OUT_INIT_DEFAULT                     {0, 0, 0}
 #define FJALAR_DATA_INIT_DEFAULT                 {0, {ACKNOWLEDGE_INIT_DEFAULT}}
 #define FJALAR_MESSAGE_INIT_DEFAULT              {0, 0, false, FJALAR_DATA_INIT_DEFAULT}
+#define FLIGHT_EVENT_INIT_ZERO                   {0, 0, 0, 0, 0, 0, 0}
 #define ACKNOWLEDGE_INIT_ZERO                    {0}
 #define PRESSURE_READING_INIT_ZERO               {0}
 #define IMU_READING_INIT_ZERO                    {0, 0, 0, 0, 0, 0}
@@ -314,7 +312,7 @@ extern "C" {
 #define CAN_BUS_INIT_ZERO                        {0, 0, 0, 0, 0}
 #define PYRO_STATUS_INIT_ZERO                    {0, 0, 0}
 #define CAN_LOKI_TO_FJALAR_INIT_ZERO             {0, 0, 0, 0}
-#define CAN_FJALAR_TO_LOKI_INIT_ZERO             {_FLIGHT_STATE_MIN, _FLIGHT_EVENT_MIN, 0, 0}
+#define CAN_FJALAR_TO_LOKI_INIT_ZERO             {_FLIGHT_STATE_MIN, false, FLIGHT_EVENT_INIT_ZERO, 0, 0}
 #define CAN_SIGURD_TO_FJALAR_INIT_ZERO           {0, 0, 0, 0}
 #define CAN_FJALAR_TO_SIGURD_INIT_ZERO           {0}
 #define CAN_FAFNIR_TO_FJALAR_INIT_ZERO           {0}
@@ -337,6 +335,13 @@ extern "C" {
 #define FJALAR_MESSAGE_INIT_ZERO                 {0, 0, false, FJALAR_DATA_INIT_ZERO}
 
 /* Field tags (for use in manual encoding/decoding) */
+#define FLIGHT_EVENT_LAUNCH_TAG                  1
+#define FLIGHT_EVENT_BURNOUT_TAG                 2
+#define FLIGHT_EVENT_APOGEE_TAG                  3
+#define FLIGHT_EVENT_MAIN_DEPLOY_TAG             4
+#define FLIGHT_EVENT_DROGUE_DEPLOY_TAG           5
+#define FLIGHT_EVENT_LANDED_TAG                  6
+#define FLIGHT_EVENT_ABOVE_ACS_THRESHOLD_TAG     7
 #define ACKNOWLEDGE_SUCCESS_TAG                  1
 #define PRESSURE_READING_PRESSURE_TAG            1
 #define IMU_READING_AX_TAG                       1
@@ -443,6 +448,17 @@ extern "C" {
 #define FJALAR_MESSAGE_DATA_TAG                  3
 
 /* Struct field encoding specification for nanopb */
+#define FLIGHT_EVENT_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, BOOL,     launch,            1) \
+X(a, STATIC,   SINGULAR, BOOL,     burnout,           2) \
+X(a, STATIC,   SINGULAR, BOOL,     apogee,            3) \
+X(a, STATIC,   SINGULAR, BOOL,     main_deploy,       4) \
+X(a, STATIC,   SINGULAR, BOOL,     drogue_deploy,     5) \
+X(a, STATIC,   SINGULAR, BOOL,     landed,            6) \
+X(a, STATIC,   SINGULAR, BOOL,     above_acs_threshold,   7)
+#define FLIGHT_EVENT_CALLBACK NULL
+#define FLIGHT_EVENT_DEFAULT NULL
+
 #define ACKNOWLEDGE_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, BOOL,     success,           1)
 #define ACKNOWLEDGE_CALLBACK NULL
@@ -502,11 +518,12 @@ X(a, STATIC,   SINGULAR, FLOAT,    loki_battery_voltage,   4)
 
 #define CAN_FJALAR_TO_LOKI_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UENUM,    flight_state,      1) \
-X(a, STATIC,   SINGULAR, UENUM,    flight_event,      2) \
+X(a, STATIC,   OPTIONAL, MESSAGE,  flight_event,      2) \
 X(a, STATIC,   SINGULAR, BOOL,     enable_airbrakes,   3) \
 X(a, STATIC,   SINGULAR, FLOAT,    airbrakes_angle,   4)
 #define CAN_FJALAR_TO_LOKI_CALLBACK NULL
 #define CAN_FJALAR_TO_LOKI_DEFAULT NULL
+#define can_fjalar_to_loki_t_flight_event_MSGTYPE flight_event_t
 
 #define CAN_SIGURD_TO_FJALAR_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, FLOAT,    sensor_data_1,     1) \
@@ -644,7 +661,7 @@ X(a, STATIC,   ONEOF,    MESSAGE,  (data,hil_in,data.hil_in),  15) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,hil_out,data.hil_out),  16) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,state_estimate,data.state_estimate),  17) \
 X(a, STATIC,   ONEOF,    UENUM,    (data,flight_state,data.flight_state),  18) \
-X(a, STATIC,   ONEOF,    UENUM,    (data,flight_event,data.flight_event),  19) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,flight_event,data.flight_event),  19) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,can_bus,data.can_bus),  20) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,pyro_status,data.pyro_status),  21) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,can_loki_to_fjalar,data.can_loki_to_fjalar),  22) \
@@ -672,6 +689,7 @@ X(a, STATIC,   ONEOF,    MESSAGE,  (data,lora_fjalar_to_gcb,data.lora_fjalar_to_
 #define fjalar_data_t_data_hil_in_MSGTYPE hil_in_t
 #define fjalar_data_t_data_hil_out_MSGTYPE hil_out_t
 #define fjalar_data_t_data_state_estimate_MSGTYPE state_estimate_t
+#define fjalar_data_t_data_flight_event_MSGTYPE flight_event_t
 #define fjalar_data_t_data_can_bus_MSGTYPE can_bus_t
 #define fjalar_data_t_data_pyro_status_MSGTYPE pyro_status_t
 #define fjalar_data_t_data_can_loki_to_fjalar_MSGTYPE can_loki_to_fjalar_t
@@ -691,6 +709,7 @@ X(a, STATIC,   OPTIONAL, MESSAGE,  data,              3)
 #define FJALAR_MESSAGE_DEFAULT NULL
 #define fjalar_message_t_data_MSGTYPE fjalar_data_t
 
+extern const pb_msgdesc_t flight_event_t_msg;
 extern const pb_msgdesc_t acknowledge_t_msg;
 extern const pb_msgdesc_t pressure_reading_t_msg;
 extern const pb_msgdesc_t imu_reading_t_msg;
@@ -721,6 +740,7 @@ extern const pb_msgdesc_t fjalar_data_t_msg;
 extern const pb_msgdesc_t fjalar_message_t_msg;
 
 /* Defines for backwards compatibility with code written before nanopb-0.4.0 */
+#define FLIGHT_EVENT_FIELDS &flight_event_t_msg
 #define ACKNOWLEDGE_FIELDS &acknowledge_t_msg
 #define PRESSURE_READING_FIELDS &pressure_reading_t_msg
 #define IMU_READING_FIELDS &imu_reading_t_msg
@@ -755,7 +775,7 @@ extern const pb_msgdesc_t fjalar_message_t_msg;
 #define CAN_BUS_SIZE                             22
 #define CAN_FAFNIR_TO_FJALAR_SIZE                0
 #define CAN_FJALAR_TO_FAFNIR_SIZE                10
-#define CAN_FJALAR_TO_LOKI_SIZE                  11
+#define CAN_FJALAR_TO_LOKI_SIZE                  25
 #define CAN_FJALAR_TO_SIGURD_SIZE                0
 #define CAN_LOKI_TO_FJALAR_SIZE                  32
 #define CAN_SIGURD_TO_FJALAR_SIZE                20
@@ -765,6 +785,7 @@ extern const pb_msgdesc_t fjalar_message_t_msg;
 #define FJALAR_INFO_SIZE                         18
 #define FJALAR_MESSAGE_SIZE                      97
 #define FLASH_DATA_SIZE                          77
+#define FLIGHT_EVENT_SIZE                        14
 #define GNSS_POSITION_SIZE                       15
 #define GNSS_STATUS_SIZE                         32
 #define HIL_IN_SIZE                              56

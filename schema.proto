@@ -12,14 +12,14 @@ enum FlightState {
     landed = 7;
 }
 
-enum FlightEvent {
-    launch = 0;
-    burnout = 1;
-    apogee = 2;
-    main_deploy = 3;
-    drogue_deploy = 4;
-    touchdown = 5;
-    above_acs_threshold = 6;
+message FlightEvent {
+    bool launch = 1;
+    bool burnout = 2;
+    bool apogee = 3;
+    bool main_deploy = 4;
+    bool drogue_deploy = 5;
+    bool landed = 6;
+    bool above_acs_threshold = 7;
 }
 
 message Acknowledge {
