@@ -293,8 +293,8 @@ void flash_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 			.time = k_uptime_get_32(),
 			.has_data = true,
 			.data = {
-				.which_data         = FJALAR_DATA_LOKI_TO_FJALAR_TAG,
-				.data.loki_to_fjalar = {
+				.which_data         = FJALAR_DATA_CAN_LOKI_TO_FJALAR_TAG,
+				.data.can_loki_to_fjalar = {
 					.loki_state           = can->loki_state,
 					.loki_substate        = can->loki_sub_state,
 					.loki_current_angle   = can->loki_angle,

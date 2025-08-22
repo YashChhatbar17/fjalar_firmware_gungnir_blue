@@ -66,42 +66,56 @@ message PyroStatus {
     bool pyro3_connected = 3;
 }
 
-message LokiToFjalar {
+message CAN_LokiToFjalar {
     int32 loki_state = 1;
     int32 loki_substate = 2;
     float loki_current_angle = 3;
     float loki_battery_voltage = 4;
 }
 
-message FjalarToLoki {
+message CAN_FjalarToLoki {
     FlightState flight_state = 1;
     FlightEvent flight_event = 2;
     bool enable_airbrakes = 3;
     float airbrakes_angle = 4;
 }
 
-message SigurdToFjalar{
+message CAN_SigurdToFjalar{
+    float sensor_data_1 = 1; //?
+    float sensor_data_2 = 2; //?
+    float sensor_data_3 = 3; //?
+    float sensor_data_4 = 4; //?
+}
+
+message CAN_FjalarToSigurd{
 
 }
 
-message FjalarToSigurd{
+message CAN_FafnirToFjalar{
 
 }
 
-message TelemetryPacket {
-    float altitude = 1;
-    float longitude = 2;
-    float latitude = 3;
-    bool pyro1_connected = 4;
-    bool pyro2_connected = 5;
-    bool pyro3_connected = 6;
-    FlightState flight_state = 7;
-    FlightEvent flight_event = 8;
-    float az = 10;
-    float velocity = 11;
-    float battery = 12;
-    int32 flash_address = 13;
-    bool sudo = 14;
+message CAN_FjalarToFafnir{
+    bool open_solenoid_1 = 1; //?
+    bool open_solenoid_2 = 2; //?
+    bool open_solenoid_3 = 3; //?
+    bool open_solenoid_4 = 4; //?
+    bool open_main_valve = 5; //?
+}
+
+message LORA_GcbToFjalar{
+    bool ready = 1; //?
+    bool launch = 2; //?
+}
+
+message LORA_FjalarToGcb{
+    // ig this is same as FjalarData
+}
+
+message Fjalar_Info {
+    float fjalar_battery_voltage = 1;
+    int32 flash_address = 2;
+    bool sudo = 3;
 }
 
 message GnssPosition {
@@ -174,7 +188,6 @@ message HilOut{
 message FjalarData {
     oneof data {
         Acknowledge acknowledge = 1;
-        TelemetryPacket telemetry_packet = 2;
         ImuReading imu_reading = 3;
         PressureReading pressure_reading = 4;
         GnssPosition gnss_position = 5;
@@ -193,11 +206,14 @@ message FjalarData {
         FlightEvent flight_event = 19;
         CANBus can_bus = 20;
         PyroStatus pyro_status = 21;
-        LokiToFjalar loki_to_fjalar = 22;
-        FjalarToLoki fjalar_to_loki = 23;
-        SigurdToFjalar sigurd_to_fjalar = 24;
-        FjalarToSigurd fjalar_to_sigurd = 25;
-
+        CAN_LokiToFjalar can_loki_to_fjalar = 22;
+        CAN_FjalarToLoki can_fjalar_to_loki = 23;
+        CAN_SigurdToFjalar can_sigurd_to_fjalar = 24;
+        CAN_FjalarToSigurd can_fjalar_to_sigurd = 25;
+        CAN_FafnirToFjalar can_fafnir_to_fjalar = 26;
+        CAN_FjalarToFafnir can_fjalar_to_fafnir = 27;
+        LORA_GcbToFjalar lora_gcb_to_fjalar = 28;
+        LORA_FjalarToGcb lora_fjalar_to_gcb = 29;
     };
 }
 

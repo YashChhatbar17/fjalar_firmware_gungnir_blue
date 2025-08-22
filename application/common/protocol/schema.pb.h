@@ -75,43 +75,57 @@ typedef struct pyro_status {
     bool pyro3_connected;
 } pyro_status_t;
 
-typedef struct loki_to_fjalar {
+typedef struct can_loki_to_fjalar {
     int32_t loki_state;
     int32_t loki_substate;
     float loki_current_angle;
     float loki_battery_voltage;
-} loki_to_fjalar_t;
+} can_loki_to_fjalar_t;
 
-typedef struct fjalar_to_loki {
+typedef struct can_fjalar_to_loki {
     flight_state_t flight_state;
     flight_event_t flight_event;
     bool enable_airbrakes;
     float airbrakes_angle;
-} fjalar_to_loki_t;
+} can_fjalar_to_loki_t;
 
-typedef struct sigurd_to_fjalar {
+typedef struct can_sigurd_to_fjalar {
+    float sensor_data_1; /* ? */
+    float sensor_data_2; /* ? */
+    float sensor_data_3; /* ? */
+    float sensor_data_4; /* ? */
+} can_sigurd_to_fjalar_t;
+
+typedef struct can_fjalar_to_sigurd {
     char dummy_field;
-} sigurd_to_fjalar_t;
+} can_fjalar_to_sigurd_t;
 
-typedef struct fjalar_to_sigurd {
+typedef struct can_fafnir_to_fjalar {
     char dummy_field;
-} fjalar_to_sigurd_t;
+} can_fafnir_to_fjalar_t;
 
-typedef struct telemetry_packet {
-    float altitude;
-    float longitude;
-    float latitude;
-    bool pyro1_connected;
-    bool pyro2_connected;
-    bool pyro3_connected;
-    flight_state_t flight_state;
-    flight_event_t flight_event;
-    float az;
-    float velocity;
-    float battery;
+typedef struct can_fjalar_to_fafnir {
+    bool open_solenoid_1; /* ? */
+    bool open_solenoid_2; /* ? */
+    bool open_solenoid_3; /* ? */
+    bool open_solenoid_4; /* ? */
+    bool open_main_valve; /* ? */
+} can_fjalar_to_fafnir_t;
+
+typedef struct lora_gcb_to_fjalar {
+    bool ready; /* ? */
+    bool launch; /* ? */
+} lora_gcb_to_fjalar_t;
+
+typedef struct lora_fjalar_to_gcb { /* ig this is same as FjalarData */
+    char dummy_field;
+} lora_fjalar_to_gcb_t;
+
+typedef struct fjalar_info {
+    float fjalar_battery_voltage;
     int32_t flash_address;
     bool sudo;
-} telemetry_packet_t;
+} fjalar_info_t;
 
 typedef struct gnss_position {
     float longitude;
@@ -181,7 +195,6 @@ typedef struct fjalar_data {
     pb_size_t which_data;
     union {
         acknowledge_t acknowledge;
-        telemetry_packet_t telemetry_packet;
         imu_reading_t imu_reading;
         pressure_reading_t pressure_reading;
         gnss_position_t gnss_position;
@@ -200,10 +213,14 @@ typedef struct fjalar_data {
         flight_event_t flight_event;
         can_bus_t can_bus;
         pyro_status_t pyro_status;
-        loki_to_fjalar_t loki_to_fjalar;
-        fjalar_to_loki_t fjalar_to_loki;
-        sigurd_to_fjalar_t sigurd_to_fjalar;
-        fjalar_to_sigurd_t fjalar_to_sigurd;
+        can_loki_to_fjalar_t can_loki_to_fjalar;
+        can_fjalar_to_loki_t can_fjalar_to_loki;
+        can_sigurd_to_fjalar_t can_sigurd_to_fjalar;
+        can_fjalar_to_sigurd_t can_fjalar_to_sigurd;
+        can_fafnir_to_fjalar_t can_fafnir_to_fjalar;
+        can_fjalar_to_fafnir_t can_fjalar_to_fafnir;
+        lora_gcb_to_fjalar_t lora_gcb_to_fjalar;
+        lora_fjalar_to_gcb_t lora_fjalar_to_gcb;
     } data;
 } fjalar_data_t;
 
@@ -235,13 +252,15 @@ extern "C" {
 
 
 
-#define fjalar_to_loki_t_flight_state_ENUMTYPE flight_state_t
-#define fjalar_to_loki_t_flight_event_ENUMTYPE flight_event_t
+#define can_fjalar_to_loki_t_flight_state_ENUMTYPE flight_state_t
+#define can_fjalar_to_loki_t_flight_event_ENUMTYPE flight_event_t
 
 
 
-#define telemetry_packet_t_flight_state_ENUMTYPE flight_state_t
-#define telemetry_packet_t_flight_event_ENUMTYPE flight_event_t
+
+
+
+
 
 
 
@@ -266,11 +285,15 @@ extern "C" {
 #define STATE_ESTIMATE_INIT_DEFAULT              {0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define CAN_BUS_INIT_DEFAULT                     {0, 0, 0, 0, 0}
 #define PYRO_STATUS_INIT_DEFAULT                 {0, 0, 0}
-#define LOKI_TO_FJALAR_INIT_DEFAULT              {0, 0, 0, 0}
-#define FJALAR_TO_LOKI_INIT_DEFAULT              {_FLIGHT_STATE_MIN, _FLIGHT_EVENT_MIN, 0, 0}
-#define SIGURD_TO_FJALAR_INIT_DEFAULT            {0}
-#define FJALAR_TO_SIGURD_INIT_DEFAULT            {0}
-#define TELEMETRY_PACKET_INIT_DEFAULT            {0, 0, 0, 0, 0, 0, _FLIGHT_STATE_MIN, _FLIGHT_EVENT_MIN, 0, 0, 0, 0, 0}
+#define CAN_LOKI_TO_FJALAR_INIT_DEFAULT          {0, 0, 0, 0}
+#define CAN_FJALAR_TO_LOKI_INIT_DEFAULT          {_FLIGHT_STATE_MIN, _FLIGHT_EVENT_MIN, 0, 0}
+#define CAN_SIGURD_TO_FJALAR_INIT_DEFAULT        {0, 0, 0, 0}
+#define CAN_FJALAR_TO_SIGURD_INIT_DEFAULT        {0}
+#define CAN_FAFNIR_TO_FJALAR_INIT_DEFAULT        {0}
+#define CAN_FJALAR_TO_FAFNIR_INIT_DEFAULT        {0, 0, 0, 0, 0}
+#define LORA_GCB_TO_FJALAR_INIT_DEFAULT          {0, 0}
+#define LORA_FJALAR_TO_GCB_INIT_DEFAULT          {0}
+#define FJALAR_INFO_INIT_DEFAULT                 {0, 0, 0}
 #define GNSS_POSITION_INIT_DEFAULT               {0, 0, 0}
 #define GNSS_STATUS_INIT_DEFAULT                 {0, 0, 0, 0}
 #define SET_SUDO_INIT_DEFAULT                    {0}
@@ -290,11 +313,15 @@ extern "C" {
 #define STATE_ESTIMATE_INIT_ZERO                 {0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define CAN_BUS_INIT_ZERO                        {0, 0, 0, 0, 0}
 #define PYRO_STATUS_INIT_ZERO                    {0, 0, 0}
-#define LOKI_TO_FJALAR_INIT_ZERO                 {0, 0, 0, 0}
-#define FJALAR_TO_LOKI_INIT_ZERO                 {_FLIGHT_STATE_MIN, _FLIGHT_EVENT_MIN, 0, 0}
-#define SIGURD_TO_FJALAR_INIT_ZERO               {0}
-#define FJALAR_TO_SIGURD_INIT_ZERO               {0}
-#define TELEMETRY_PACKET_INIT_ZERO               {0, 0, 0, 0, 0, 0, _FLIGHT_STATE_MIN, _FLIGHT_EVENT_MIN, 0, 0, 0, 0, 0}
+#define CAN_LOKI_TO_FJALAR_INIT_ZERO             {0, 0, 0, 0}
+#define CAN_FJALAR_TO_LOKI_INIT_ZERO             {_FLIGHT_STATE_MIN, _FLIGHT_EVENT_MIN, 0, 0}
+#define CAN_SIGURD_TO_FJALAR_INIT_ZERO           {0, 0, 0, 0}
+#define CAN_FJALAR_TO_SIGURD_INIT_ZERO           {0}
+#define CAN_FAFNIR_TO_FJALAR_INIT_ZERO           {0}
+#define CAN_FJALAR_TO_FAFNIR_INIT_ZERO           {0, 0, 0, 0, 0}
+#define LORA_GCB_TO_FJALAR_INIT_ZERO             {0, 0}
+#define LORA_FJALAR_TO_GCB_INIT_ZERO             {0}
+#define FJALAR_INFO_INIT_ZERO                    {0, 0, 0}
 #define GNSS_POSITION_INIT_ZERO                  {0, 0, 0}
 #define GNSS_STATUS_INIT_ZERO                    {0, 0, 0, 0}
 #define SET_SUDO_INIT_ZERO                       {0}
@@ -335,27 +362,28 @@ extern "C" {
 #define PYRO_STATUS_PYRO1_CONNECTED_TAG          1
 #define PYRO_STATUS_PYRO2_CONNECTED_TAG          2
 #define PYRO_STATUS_PYRO3_CONNECTED_TAG          3
-#define LOKI_TO_FJALAR_LOKI_STATE_TAG            1
-#define LOKI_TO_FJALAR_LOKI_SUBSTATE_TAG         2
-#define LOKI_TO_FJALAR_LOKI_CURRENT_ANGLE_TAG    3
-#define LOKI_TO_FJALAR_LOKI_BATTERY_VOLTAGE_TAG  4
-#define FJALAR_TO_LOKI_FLIGHT_STATE_TAG          1
-#define FJALAR_TO_LOKI_FLIGHT_EVENT_TAG          2
-#define FJALAR_TO_LOKI_ENABLE_AIRBRAKES_TAG      3
-#define FJALAR_TO_LOKI_AIRBRAKES_ANGLE_TAG       4
-#define TELEMETRY_PACKET_ALTITUDE_TAG            1
-#define TELEMETRY_PACKET_LONGITUDE_TAG           2
-#define TELEMETRY_PACKET_LATITUDE_TAG            3
-#define TELEMETRY_PACKET_PYRO1_CONNECTED_TAG     4
-#define TELEMETRY_PACKET_PYRO2_CONNECTED_TAG     5
-#define TELEMETRY_PACKET_PYRO3_CONNECTED_TAG     6
-#define TELEMETRY_PACKET_FLIGHT_STATE_TAG        7
-#define TELEMETRY_PACKET_FLIGHT_EVENT_TAG        8
-#define TELEMETRY_PACKET_AZ_TAG                  10
-#define TELEMETRY_PACKET_VELOCITY_TAG            11
-#define TELEMETRY_PACKET_BATTERY_TAG             12
-#define TELEMETRY_PACKET_FLASH_ADDRESS_TAG       13
-#define TELEMETRY_PACKET_SUDO_TAG                14
+#define CAN_LOKI_TO_FJALAR_LOKI_STATE_TAG        1
+#define CAN_LOKI_TO_FJALAR_LOKI_SUBSTATE_TAG     2
+#define CAN_LOKI_TO_FJALAR_LOKI_CURRENT_ANGLE_TAG 3
+#define CAN_LOKI_TO_FJALAR_LOKI_BATTERY_VOLTAGE_TAG 4
+#define CAN_FJALAR_TO_LOKI_FLIGHT_STATE_TAG      1
+#define CAN_FJALAR_TO_LOKI_FLIGHT_EVENT_TAG      2
+#define CAN_FJALAR_TO_LOKI_ENABLE_AIRBRAKES_TAG  3
+#define CAN_FJALAR_TO_LOKI_AIRBRAKES_ANGLE_TAG   4
+#define CAN_SIGURD_TO_FJALAR_SENSOR_DATA_1_TAG   1
+#define CAN_SIGURD_TO_FJALAR_SENSOR_DATA_2_TAG   2
+#define CAN_SIGURD_TO_FJALAR_SENSOR_DATA_3_TAG   3
+#define CAN_SIGURD_TO_FJALAR_SENSOR_DATA_4_TAG   4
+#define CAN_FJALAR_TO_FAFNIR_OPEN_SOLENOID_1_TAG 1
+#define CAN_FJALAR_TO_FAFNIR_OPEN_SOLENOID_2_TAG 2
+#define CAN_FJALAR_TO_FAFNIR_OPEN_SOLENOID_3_TAG 3
+#define CAN_FJALAR_TO_FAFNIR_OPEN_SOLENOID_4_TAG 4
+#define CAN_FJALAR_TO_FAFNIR_OPEN_MAIN_VALVE_TAG 5
+#define LORA_GCB_TO_FJALAR_READY_TAG             1
+#define LORA_GCB_TO_FJALAR_LAUNCH_TAG            2
+#define FJALAR_INFO_FJALAR_BATTERY_VOLTAGE_TAG   1
+#define FJALAR_INFO_FLASH_ADDRESS_TAG            2
+#define FJALAR_INFO_SUDO_TAG                     3
 #define GNSS_POSITION_LONGITUDE_TAG              1
 #define GNSS_POSITION_LATITUDE_TAG               2
 #define GNSS_POSITION_ALTITUDE_TAG               3
@@ -384,7 +412,6 @@ extern "C" {
 #define HIL_OUT_MAIN_DEPLOYED_TAG                2
 #define HIL_OUT_DROGUE_DEPLOYED_TAG              3
 #define FJALAR_DATA_ACKNOWLEDGE_TAG              1
-#define FJALAR_DATA_TELEMETRY_PACKET_TAG         2
 #define FJALAR_DATA_IMU_READING_TAG              3
 #define FJALAR_DATA_PRESSURE_READING_TAG         4
 #define FJALAR_DATA_GNSS_POSITION_TAG            5
@@ -403,10 +430,14 @@ extern "C" {
 #define FJALAR_DATA_FLIGHT_EVENT_TAG             19
 #define FJALAR_DATA_CAN_BUS_TAG                  20
 #define FJALAR_DATA_PYRO_STATUS_TAG              21
-#define FJALAR_DATA_LOKI_TO_FJALAR_TAG           22
-#define FJALAR_DATA_FJALAR_TO_LOKI_TAG           23
-#define FJALAR_DATA_SIGURD_TO_FJALAR_TAG         24
-#define FJALAR_DATA_FJALAR_TO_SIGURD_TAG         25
+#define FJALAR_DATA_CAN_LOKI_TO_FJALAR_TAG       22
+#define FJALAR_DATA_CAN_FJALAR_TO_LOKI_TAG       23
+#define FJALAR_DATA_CAN_SIGURD_TO_FJALAR_TAG     24
+#define FJALAR_DATA_CAN_FJALAR_TO_SIGURD_TAG     25
+#define FJALAR_DATA_CAN_FAFNIR_TO_FJALAR_TAG     26
+#define FJALAR_DATA_CAN_FJALAR_TO_FAFNIR_TAG     27
+#define FJALAR_DATA_LORA_GCB_TO_FJALAR_TAG       28
+#define FJALAR_DATA_LORA_FJALAR_TO_GCB_TAG       29
 #define FJALAR_MESSAGE_TIME_TAG                  1
 #define FJALAR_MESSAGE_SEQUENCE_NUMBER_TAG       2
 #define FJALAR_MESSAGE_DATA_TAG                  3
@@ -461,48 +492,66 @@ X(a, STATIC,   SINGULAR, BOOL,     pyro3_connected,   3)
 #define PYRO_STATUS_CALLBACK NULL
 #define PYRO_STATUS_DEFAULT NULL
 
-#define LOKI_TO_FJALAR_FIELDLIST(X, a) \
+#define CAN_LOKI_TO_FJALAR_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, INT32,    loki_state,        1) \
 X(a, STATIC,   SINGULAR, INT32,    loki_substate,     2) \
 X(a, STATIC,   SINGULAR, FLOAT,    loki_current_angle,   3) \
 X(a, STATIC,   SINGULAR, FLOAT,    loki_battery_voltage,   4)
-#define LOKI_TO_FJALAR_CALLBACK NULL
-#define LOKI_TO_FJALAR_DEFAULT NULL
+#define CAN_LOKI_TO_FJALAR_CALLBACK NULL
+#define CAN_LOKI_TO_FJALAR_DEFAULT NULL
 
-#define FJALAR_TO_LOKI_FIELDLIST(X, a) \
+#define CAN_FJALAR_TO_LOKI_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, UENUM,    flight_state,      1) \
 X(a, STATIC,   SINGULAR, UENUM,    flight_event,      2) \
 X(a, STATIC,   SINGULAR, BOOL,     enable_airbrakes,   3) \
 X(a, STATIC,   SINGULAR, FLOAT,    airbrakes_angle,   4)
-#define FJALAR_TO_LOKI_CALLBACK NULL
-#define FJALAR_TO_LOKI_DEFAULT NULL
+#define CAN_FJALAR_TO_LOKI_CALLBACK NULL
+#define CAN_FJALAR_TO_LOKI_DEFAULT NULL
 
-#define SIGURD_TO_FJALAR_FIELDLIST(X, a) \
+#define CAN_SIGURD_TO_FJALAR_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, FLOAT,    sensor_data_1,     1) \
+X(a, STATIC,   SINGULAR, FLOAT,    sensor_data_2,     2) \
+X(a, STATIC,   SINGULAR, FLOAT,    sensor_data_3,     3) \
+X(a, STATIC,   SINGULAR, FLOAT,    sensor_data_4,     4)
+#define CAN_SIGURD_TO_FJALAR_CALLBACK NULL
+#define CAN_SIGURD_TO_FJALAR_DEFAULT NULL
 
-#define SIGURD_TO_FJALAR_CALLBACK NULL
-#define SIGURD_TO_FJALAR_DEFAULT NULL
+#define CAN_FJALAR_TO_SIGURD_FIELDLIST(X, a) \
 
-#define FJALAR_TO_SIGURD_FIELDLIST(X, a) \
+#define CAN_FJALAR_TO_SIGURD_CALLBACK NULL
+#define CAN_FJALAR_TO_SIGURD_DEFAULT NULL
 
-#define FJALAR_TO_SIGURD_CALLBACK NULL
-#define FJALAR_TO_SIGURD_DEFAULT NULL
+#define CAN_FAFNIR_TO_FJALAR_FIELDLIST(X, a) \
 
-#define TELEMETRY_PACKET_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, FLOAT,    altitude,          1) \
-X(a, STATIC,   SINGULAR, FLOAT,    longitude,         2) \
-X(a, STATIC,   SINGULAR, FLOAT,    latitude,          3) \
-X(a, STATIC,   SINGULAR, BOOL,     pyro1_connected,   4) \
-X(a, STATIC,   SINGULAR, BOOL,     pyro2_connected,   5) \
-X(a, STATIC,   SINGULAR, BOOL,     pyro3_connected,   6) \
-X(a, STATIC,   SINGULAR, UENUM,    flight_state,      7) \
-X(a, STATIC,   SINGULAR, UENUM,    flight_event,      8) \
-X(a, STATIC,   SINGULAR, FLOAT,    az,               10) \
-X(a, STATIC,   SINGULAR, FLOAT,    velocity,         11) \
-X(a, STATIC,   SINGULAR, FLOAT,    battery,          12) \
-X(a, STATIC,   SINGULAR, INT32,    flash_address,    13) \
-X(a, STATIC,   SINGULAR, BOOL,     sudo,             14)
-#define TELEMETRY_PACKET_CALLBACK NULL
-#define TELEMETRY_PACKET_DEFAULT NULL
+#define CAN_FAFNIR_TO_FJALAR_CALLBACK NULL
+#define CAN_FAFNIR_TO_FJALAR_DEFAULT NULL
+
+#define CAN_FJALAR_TO_FAFNIR_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, BOOL,     open_solenoid_1,   1) \
+X(a, STATIC,   SINGULAR, BOOL,     open_solenoid_2,   2) \
+X(a, STATIC,   SINGULAR, BOOL,     open_solenoid_3,   3) \
+X(a, STATIC,   SINGULAR, BOOL,     open_solenoid_4,   4) \
+X(a, STATIC,   SINGULAR, BOOL,     open_main_valve,   5)
+#define CAN_FJALAR_TO_FAFNIR_CALLBACK NULL
+#define CAN_FJALAR_TO_FAFNIR_DEFAULT NULL
+
+#define LORA_GCB_TO_FJALAR_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, BOOL,     ready,             1) \
+X(a, STATIC,   SINGULAR, BOOL,     launch,            2)
+#define LORA_GCB_TO_FJALAR_CALLBACK NULL
+#define LORA_GCB_TO_FJALAR_DEFAULT NULL
+
+#define LORA_FJALAR_TO_GCB_FIELDLIST(X, a) \
+
+#define LORA_FJALAR_TO_GCB_CALLBACK NULL
+#define LORA_FJALAR_TO_GCB_DEFAULT NULL
+
+#define FJALAR_INFO_FIELDLIST(X, a) \
+X(a, STATIC,   SINGULAR, FLOAT,    fjalar_battery_voltage,   1) \
+X(a, STATIC,   SINGULAR, INT32,    flash_address,     2) \
+X(a, STATIC,   SINGULAR, BOOL,     sudo,              3)
+#define FJALAR_INFO_CALLBACK NULL
+#define FJALAR_INFO_DEFAULT NULL
 
 #define GNSS_POSITION_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, FLOAT,    longitude,         1) \
@@ -580,7 +629,6 @@ X(a, STATIC,   SINGULAR, BOOL,     drogue_deployed,   3)
 
 #define FJALAR_DATA_FIELDLIST(X, a) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,acknowledge,data.acknowledge),   1) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (data,telemetry_packet,data.telemetry_packet),   2) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,imu_reading,data.imu_reading),   3) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,pressure_reading,data.pressure_reading),   4) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,gnss_position,data.gnss_position),   5) \
@@ -599,14 +647,17 @@ X(a, STATIC,   ONEOF,    UENUM,    (data,flight_state,data.flight_state),  18) \
 X(a, STATIC,   ONEOF,    UENUM,    (data,flight_event,data.flight_event),  19) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,can_bus,data.can_bus),  20) \
 X(a, STATIC,   ONEOF,    MESSAGE,  (data,pyro_status,data.pyro_status),  21) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (data,loki_to_fjalar,data.loki_to_fjalar),  22) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (data,fjalar_to_loki,data.fjalar_to_loki),  23) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (data,sigurd_to_fjalar,data.sigurd_to_fjalar),  24) \
-X(a, STATIC,   ONEOF,    MESSAGE,  (data,fjalar_to_sigurd,data.fjalar_to_sigurd),  25)
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,can_loki_to_fjalar,data.can_loki_to_fjalar),  22) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,can_fjalar_to_loki,data.can_fjalar_to_loki),  23) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,can_sigurd_to_fjalar,data.can_sigurd_to_fjalar),  24) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,can_fjalar_to_sigurd,data.can_fjalar_to_sigurd),  25) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,can_fafnir_to_fjalar,data.can_fafnir_to_fjalar),  26) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,can_fjalar_to_fafnir,data.can_fjalar_to_fafnir),  27) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,lora_gcb_to_fjalar,data.lora_gcb_to_fjalar),  28) \
+X(a, STATIC,   ONEOF,    MESSAGE,  (data,lora_fjalar_to_gcb,data.lora_fjalar_to_gcb),  29)
 #define FJALAR_DATA_CALLBACK NULL
 #define FJALAR_DATA_DEFAULT NULL
 #define fjalar_data_t_data_acknowledge_MSGTYPE acknowledge_t
-#define fjalar_data_t_data_telemetry_packet_MSGTYPE telemetry_packet_t
 #define fjalar_data_t_data_imu_reading_MSGTYPE imu_reading_t
 #define fjalar_data_t_data_pressure_reading_MSGTYPE pressure_reading_t
 #define fjalar_data_t_data_gnss_position_MSGTYPE gnss_position_t
@@ -623,10 +674,14 @@ X(a, STATIC,   ONEOF,    MESSAGE,  (data,fjalar_to_sigurd,data.fjalar_to_sigurd)
 #define fjalar_data_t_data_state_estimate_MSGTYPE state_estimate_t
 #define fjalar_data_t_data_can_bus_MSGTYPE can_bus_t
 #define fjalar_data_t_data_pyro_status_MSGTYPE pyro_status_t
-#define fjalar_data_t_data_loki_to_fjalar_MSGTYPE loki_to_fjalar_t
-#define fjalar_data_t_data_fjalar_to_loki_MSGTYPE fjalar_to_loki_t
-#define fjalar_data_t_data_sigurd_to_fjalar_MSGTYPE sigurd_to_fjalar_t
-#define fjalar_data_t_data_fjalar_to_sigurd_MSGTYPE fjalar_to_sigurd_t
+#define fjalar_data_t_data_can_loki_to_fjalar_MSGTYPE can_loki_to_fjalar_t
+#define fjalar_data_t_data_can_fjalar_to_loki_MSGTYPE can_fjalar_to_loki_t
+#define fjalar_data_t_data_can_sigurd_to_fjalar_MSGTYPE can_sigurd_to_fjalar_t
+#define fjalar_data_t_data_can_fjalar_to_sigurd_MSGTYPE can_fjalar_to_sigurd_t
+#define fjalar_data_t_data_can_fafnir_to_fjalar_MSGTYPE can_fafnir_to_fjalar_t
+#define fjalar_data_t_data_can_fjalar_to_fafnir_MSGTYPE can_fjalar_to_fafnir_t
+#define fjalar_data_t_data_lora_gcb_to_fjalar_MSGTYPE lora_gcb_to_fjalar_t
+#define fjalar_data_t_data_lora_fjalar_to_gcb_MSGTYPE lora_fjalar_to_gcb_t
 
 #define FJALAR_MESSAGE_FIELDLIST(X, a) \
 X(a, STATIC,   SINGULAR, FIXED32,  time,              1) \
@@ -642,11 +697,15 @@ extern const pb_msgdesc_t imu_reading_t_msg;
 extern const pb_msgdesc_t state_estimate_t_msg;
 extern const pb_msgdesc_t can_bus_t_msg;
 extern const pb_msgdesc_t pyro_status_t_msg;
-extern const pb_msgdesc_t loki_to_fjalar_t_msg;
-extern const pb_msgdesc_t fjalar_to_loki_t_msg;
-extern const pb_msgdesc_t sigurd_to_fjalar_t_msg;
-extern const pb_msgdesc_t fjalar_to_sigurd_t_msg;
-extern const pb_msgdesc_t telemetry_packet_t_msg;
+extern const pb_msgdesc_t can_loki_to_fjalar_t_msg;
+extern const pb_msgdesc_t can_fjalar_to_loki_t_msg;
+extern const pb_msgdesc_t can_sigurd_to_fjalar_t_msg;
+extern const pb_msgdesc_t can_fjalar_to_sigurd_t_msg;
+extern const pb_msgdesc_t can_fafnir_to_fjalar_t_msg;
+extern const pb_msgdesc_t can_fjalar_to_fafnir_t_msg;
+extern const pb_msgdesc_t lora_gcb_to_fjalar_t_msg;
+extern const pb_msgdesc_t lora_fjalar_to_gcb_t_msg;
+extern const pb_msgdesc_t fjalar_info_t_msg;
 extern const pb_msgdesc_t gnss_position_t_msg;
 extern const pb_msgdesc_t gnss_status_t_msg;
 extern const pb_msgdesc_t set_sudo_t_msg;
@@ -668,11 +727,15 @@ extern const pb_msgdesc_t fjalar_message_t_msg;
 #define STATE_ESTIMATE_FIELDS &state_estimate_t_msg
 #define CAN_BUS_FIELDS &can_bus_t_msg
 #define PYRO_STATUS_FIELDS &pyro_status_t_msg
-#define LOKI_TO_FJALAR_FIELDS &loki_to_fjalar_t_msg
-#define FJALAR_TO_LOKI_FIELDS &fjalar_to_loki_t_msg
-#define SIGURD_TO_FJALAR_FIELDS &sigurd_to_fjalar_t_msg
-#define FJALAR_TO_SIGURD_FIELDS &fjalar_to_sigurd_t_msg
-#define TELEMETRY_PACKET_FIELDS &telemetry_packet_t_msg
+#define CAN_LOKI_TO_FJALAR_FIELDS &can_loki_to_fjalar_t_msg
+#define CAN_FJALAR_TO_LOKI_FIELDS &can_fjalar_to_loki_t_msg
+#define CAN_SIGURD_TO_FJALAR_FIELDS &can_sigurd_to_fjalar_t_msg
+#define CAN_FJALAR_TO_SIGURD_FIELDS &can_fjalar_to_sigurd_t_msg
+#define CAN_FAFNIR_TO_FJALAR_FIELDS &can_fafnir_to_fjalar_t_msg
+#define CAN_FJALAR_TO_FAFNIR_FIELDS &can_fjalar_to_fafnir_t_msg
+#define LORA_GCB_TO_FJALAR_FIELDS &lora_gcb_to_fjalar_t_msg
+#define LORA_FJALAR_TO_GCB_FIELDS &lora_fjalar_to_gcb_t_msg
+#define FJALAR_INFO_FIELDS &fjalar_info_t_msg
 #define GNSS_POSITION_FIELDS &gnss_position_t_msg
 #define GNSS_STATUS_FIELDS &gnss_status_t_msg
 #define SET_SUDO_FIELDS &set_sudo_t_msg
@@ -690,28 +753,32 @@ extern const pb_msgdesc_t fjalar_message_t_msg;
 /* Maximum encoded size of messages (where known) */
 #define ACKNOWLEDGE_SIZE                         2
 #define CAN_BUS_SIZE                             22
+#define CAN_FAFNIR_TO_FJALAR_SIZE                0
+#define CAN_FJALAR_TO_FAFNIR_SIZE                10
+#define CAN_FJALAR_TO_LOKI_SIZE                  11
+#define CAN_FJALAR_TO_SIGURD_SIZE                0
+#define CAN_LOKI_TO_FJALAR_SIZE                  32
+#define CAN_SIGURD_TO_FJALAR_SIZE                20
 #define CLEAR_FLASH_SIZE                         0
 #define ENTER_IDLE_SIZE                          0
 #define FJALAR_DATA_SIZE                         79
+#define FJALAR_INFO_SIZE                         18
 #define FJALAR_MESSAGE_SIZE                      97
-#define FJALAR_TO_LOKI_SIZE                      11
-#define FJALAR_TO_SIGURD_SIZE                    0
 #define FLASH_DATA_SIZE                          77
 #define GNSS_POSITION_SIZE                       15
 #define GNSS_STATUS_SIZE                         32
 #define HIL_IN_SIZE                              56
 #define HIL_OUT_SIZE                             9
 #define IMU_READING_SIZE                         30
-#define LOKI_TO_FJALAR_SIZE                      32
+#define LORA_FJALAR_TO_GCB_SIZE                  0
+#define LORA_GCB_TO_FJALAR_SIZE                  4
 #define PRESSURE_READING_SIZE                    5
 #define PYRO_STATUS_SIZE                         6
 #define READY_UP_SIZE                            0
 #define READ_FLASH_SIZE                          22
 #define SCHEMA_PB_H_MAX_SIZE                     FJALAR_MESSAGE_SIZE
 #define SET_SUDO_SIZE                            2
-#define SIGURD_TO_FJALAR_SIZE                    0
 #define STATE_ESTIMATE_SIZE                      45
-#define TELEMETRY_PACKET_SIZE                    53
 #define TRIGGER_PYRO_SIZE                        11
 
 #ifdef __cplusplus

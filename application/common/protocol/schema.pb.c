@@ -24,19 +24,31 @@ PB_BIND(CAN_BUS, can_bus_t, AUTO)
 PB_BIND(PYRO_STATUS, pyro_status_t, AUTO)
 
 
-PB_BIND(LOKI_TO_FJALAR, loki_to_fjalar_t, AUTO)
+PB_BIND(CAN_LOKI_TO_FJALAR, can_loki_to_fjalar_t, AUTO)
 
 
-PB_BIND(FJALAR_TO_LOKI, fjalar_to_loki_t, AUTO)
+PB_BIND(CAN_FJALAR_TO_LOKI, can_fjalar_to_loki_t, AUTO)
 
 
-PB_BIND(SIGURD_TO_FJALAR, sigurd_to_fjalar_t, AUTO)
+PB_BIND(CAN_SIGURD_TO_FJALAR, can_sigurd_to_fjalar_t, AUTO)
 
 
-PB_BIND(FJALAR_TO_SIGURD, fjalar_to_sigurd_t, AUTO)
+PB_BIND(CAN_FJALAR_TO_SIGURD, can_fjalar_to_sigurd_t, AUTO)
 
 
-PB_BIND(TELEMETRY_PACKET, telemetry_packet_t, AUTO)
+PB_BIND(CAN_FAFNIR_TO_FJALAR, can_fafnir_to_fjalar_t, AUTO)
+
+
+PB_BIND(CAN_FJALAR_TO_FAFNIR, can_fjalar_to_fafnir_t, AUTO)
+
+
+PB_BIND(LORA_GCB_TO_FJALAR, lora_gcb_to_fjalar_t, AUTO)
+
+
+PB_BIND(LORA_FJALAR_TO_GCB, lora_fjalar_to_gcb_t, AUTO)
+
+
+PB_BIND(FJALAR_INFO, fjalar_info_t, AUTO)
 
 
 PB_BIND(GNSS_POSITION, gnss_position_t, AUTO)
