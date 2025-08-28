@@ -55,14 +55,9 @@ int main(void) {
 	printk("Started\n");
 
 	fjalar_god.sudo = false;
-
-	init_sensors(&fjalar_god);
-	init_init(&fjalar_god); // will init filter when done
 	init_flight_state(&fjalar_god);
-	init_aerodynamics(&fjalar_god);
 	init_communication(&fjalar_god);
 	init_actuation(&fjalar_god);
-	init_control(&fjalar_god);
 	init_can(&fjalar_god);
 	return 0;
 }

@@ -83,16 +83,17 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
 
     switch (state->flight_state) {
     case STATE_IDLE:
-        if (init->init_completed){
+        if (1==1){ // replace with lora command
             state->flight_state = STATE_AWAITING_INIT; // change this state to be called "initiated"
+            init_init(&fjalar_god); // start init thread
         }
         break;
     case STATE_AWAITING_INIT:
-        if (1 == 2){
+        if (1 == 1){ // replace with init done
             state->flight_state = STATE_INITIATED;
         } // change for lora struct
     case STATE_INITIATED:
-        if (1 == 2){ //Change
+        if (1 == 1){ // replace with lora command
             state->flight_state = STATE_AWAITING_LAUNCH;
         }
     case STATE_AWAITING_LAUNCH:
