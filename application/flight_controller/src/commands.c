@@ -51,22 +51,15 @@ void handle_fjalar_message(fjalar_message_t *msg, fjalar_t *fjalar, state_t *sta
         case FJALAR_DATA_SET_SUDO_TAG:
             handle_set_sudo(&msg->data.data.set_sudo, fjalar, channel);
             break;
-
-        case FJALAR_DATA_READY_UP_TAG:
-            handle_ready_up(&msg->data.data.ready_up, fjalar, state, channel);
-            break;
         case FJALAR_DATA_TRIGGER_PYRO_TAG:
             handle_trigger_pyro(&msg->data.data.trigger_pyro, fjalar, channel);
             break;
-
         case FJALAR_DATA_CLEAR_FLASH_TAG:
             handle_clear_flash(&msg->data.data.clear_flash, fjalar, channel);
             break;
-
         case FJALAR_DATA_READ_FLASH_TAG:
             handle_read_flash(&msg->data.data.read_flash, fjalar, channel);
             break;
-            
         case FJALAR_DATA_HIL_IN_TAG:
             handle_hil_in(&msg->data.data.hil_in, fjalar, channel);
             break;
@@ -78,22 +71,6 @@ void handle_fjalar_message(fjalar_message_t *msg, fjalar_t *fjalar, state_t *sta
 void handle_set_sudo(set_sudo_t *msg, fjalar_t *fjalar, enum com_channels channel) {
     fjalar->sudo = msg->enabled;
     LOG_WRN("set sudo %d", msg->enabled);
-}
-
-// this function no longer serves purpose...
-void handle_ready_up(ready_up_t *msg, fjalar_t *fjalar, state_t *state, enum com_channels channel) {
-    bool succesful;
-    LOG_INF("handle_ready_up RUN!, this function does nothing, fix.");
-    /*
-    if (fjalar->sudo == true || state->flight_state == STATE_IDLE) {
-        state->flight_state = STATE_LAUNCHPAD;
-        succesful = true;
-        LOG_INF("changing to ready");
-    } else {
-        succesful = false;
-        LOG_INF("couldn't change to ready");
-    }
-    */
 }
 
 void handle_trigger_pyro(trigger_pyro_t *msg, fjalar_t *fjalar, enum com_channels channel) {
@@ -111,7 +88,7 @@ void handle_clear_flash(clear_flash_t *msg, fjalar_t *fjalar, enum com_channels 
         LOG_WRN("Tried to clear flash when not in sudo mode");
         return;
     }
-    clear_flash(fjalar);
+    clear_flash(fjalar); // link this to com_flash
 }
 
 void handle_read_flash(read_flash_t *msg, fjalar_t *fjalar, enum com_channels channel) {
