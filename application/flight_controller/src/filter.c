@@ -818,7 +818,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             attitude_filter_gyroscope(pos_kf, att_kf, gx, gy, gz, imu.t);
 
             // use state machine TODO: remove state idle since filter.c is not actually being run in that state
-            if (state->flight_state == STATE_IDLE || state->flight_state == STATE_LAUNCHPAD){ //only used pre launch
+            if (state->flight_state == STATE_INITIATED){ //only used pre launch
                 attitude_filter_accelerometer_ground(att_kf, pos_kf, aerodynamics, ax, ay, az, imu.t); 
             }
 

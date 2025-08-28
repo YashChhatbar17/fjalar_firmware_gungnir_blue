@@ -11,7 +11,9 @@ typedef struct aerodynamics aerodynamics_t;
 
 enum fjalar_flight_state { // code these in to state machine
     STATE_IDLE,
-    STATE_LAUNCHPAD,
+    STATE_AWAITING_INIT,
+    STATE_INITIATED,
+    STATE_AWAITING_LAUNCH,
     STATE_BOOST,
     STATE_COAST,
     STATE_DROGUE_DESCENT,

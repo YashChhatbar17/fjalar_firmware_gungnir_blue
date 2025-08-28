@@ -216,7 +216,7 @@ void buzzer_thread(fjalar_t *fjalar, state_t *state, void *p3) {
                 k_msleep(1000);
                 break;
 
-            case STATE_LAUNCHPAD:
+            case STATE_INITIATED:
                 play_song(&buzzer_dt, keyboardcat_melody, sizeof(keyboardcat_melody), keyboardcat_tempo);
                 k_msleep(1000);
                 break;

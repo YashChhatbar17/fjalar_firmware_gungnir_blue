@@ -84,23 +84,30 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
     switch (state->flight_state) {
     case STATE_IDLE:
         if (init->init_completed){
-            state->flight_state = STATE_LAUNCHPAD; // change this state to be called "initiated"
+            state->flight_state = STATE_AWAITING_INIT; // change this state to be called "initiated"
         }
         break;
-    case STATE_LAUNCHPAD:
-        if (a_norm > BOOST_ACCEL_THRESHOLD && z > 10) {
+    case STATE_AWAITING_INIT:
+        if (1 == 2){
+            state->flight_state = STATE_INITIATED;
+        } // change for lora struct
+    case STATE_INITIATED:
+        if (1 == 2){ //Change
+            state->flight_state = STATE_AWAITING_LAUNCH;
+        }
+    case STATE_AWAITING_LAUNCH:
+        if (a_norm > BOOST_ACCEL_THRESHOLD && z > 10){
             state->flight_state = STATE_BOOST;
             state->event_launch = true;
             state->liftoff_time = k_uptime_get_32();
             LOG_WRN("Changing state to BOOST due to acceleration");
         }
-        if (v_norm > BOOST_SPEED_THRESHOLD) {
+        if (v_norm > BOOST_SPEED_THRESHOLD){
             state->flight_state = STATE_BOOST;
             state->event_launch = true;
             state->liftoff_time = k_uptime_get_32();
             LOG_WRN("Changing state to BOOST due to speed");
         }
-        break;
     case STATE_BOOST:
         if (az < COAST_ACCEL_THRESHOLD && !aerodynamics->thrust_bool) {
             state->flight_state = STATE_COAST;

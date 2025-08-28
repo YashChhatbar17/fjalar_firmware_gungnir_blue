@@ -55,11 +55,6 @@ void handle_fjalar_message(fjalar_message_t *msg, fjalar_t *fjalar, state_t *sta
         case FJALAR_DATA_READY_UP_TAG:
             handle_ready_up(&msg->data.data.ready_up, fjalar, state, channel);
             break;
-
-        case FJALAR_DATA_ENTER_IDLE_TAG:
-            handle_enter_idle(&msg->data.data.enter_idle, fjalar, fjalar->ptr_state, channel);
-            break;
-
         case FJALAR_DATA_TRIGGER_PYRO_TAG:
             handle_trigger_pyro(&msg->data.data.trigger_pyro, fjalar, channel);
             break;
@@ -99,18 +94,6 @@ void handle_ready_up(ready_up_t *msg, fjalar_t *fjalar, state_t *state, enum com
         LOG_INF("couldn't change to ready");
     }
     */
-}
-
-void handle_enter_idle(enter_idle_t *msg, fjalar_t *fjalar, state_t *state, enum com_channels channel) {
-    bool succesful;
-    if (fjalar->sudo == true || state->flight_state == STATE_LAUNCHPAD) {
-        state->flight_state = STATE_IDLE;
-        succesful = true;
-        LOG_INF("changing to idle");
-    } else {
-        succesful = false;
-        LOG_INF("couldn't change to idle");
-    }
 }
 
 void handle_trigger_pyro(trigger_pyro_t *msg, fjalar_t *fjalar, enum com_channels channel) {

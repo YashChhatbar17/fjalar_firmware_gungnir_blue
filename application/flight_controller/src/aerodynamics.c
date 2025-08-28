@@ -138,7 +138,7 @@ void update_thrust(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodyn
 
 
     float N; // normal force induced acceleration
-    if (state->flight_state == STATE_IDLE || state->flight_state == STATE_LAUNCHPAD){
+    if (state->flight_state == STATE_INITIATED){
         N = aerodynamics->g_physics;
     } else{N = 0;}
     float g = -(aerodynamics->g_physics); // gravitational acceleration
@@ -146,7 +146,7 @@ void update_thrust(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodyn
     float T; // Thrust
     float total_acceleration = pos_kf->a_norm;
 
-    if (state->flight_state == STATE_IDLE || state->flight_state == STATE_LAUNCHPAD){
+    if (state->flight_state == STATE_INITIATED){
         T = total_acceleration - N;
     }
     if (state->flight_state == STATE_BOOST || state->flight_state == STATE_COAST){
@@ -234,7 +234,7 @@ void aerodynamics_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         drag_update(pos_kf, att_kf, aerodynamics); // needs to be updated at all states due to logic in update_thrust 
 
-        if (state->flight_state != STATE_IDLE){ // doesn't run during init
+        if (state->flight_state != STATE_IDLE || state->flight_state != STATE_AWAITING_INIT){
             update_thrust(pos_kf, att_kf, aerodynamics, state);
         }
         
