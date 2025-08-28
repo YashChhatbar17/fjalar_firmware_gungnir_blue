@@ -106,8 +106,8 @@ message CAN_FjalarToFafnir{
 }
 
 message LORA_GcbToFjalar{
-    bool ready = 1; //?
-    bool launch = 2; //?
+    bool ready_initiate_fjalar = 1; //?
+    bool ready_launch_fjalar = 2; //?
 }
 
 message LORA_FjalarToGcb{

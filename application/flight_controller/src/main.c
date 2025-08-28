@@ -22,6 +22,7 @@ This is the main script, its purpose is to:
 #include "flight_state.h"
 #include "control.h"
 #include "com_can.h"
+#include "com_lora.h"
 
 LOG_MODULE_REGISTER(main, CONFIG_APP_MAIN_LOG_LEVEL);
 
@@ -33,6 +34,7 @@ static state_t           state_obj;
 static control_t		 control_obj; 
 static state_t           state_obj;  
 static can_t			 can_obj;
+static lora_t			 lora_obj;
 
 fjalar_t fjalar_god = {
 	.ptr_init         = &init_obj,
@@ -41,7 +43,8 @@ fjalar_t fjalar_god = {
 	.ptr_aerodynamics = &aerodynamics_obj,
 	.ptr_state        = &state_obj,
 	.ptr_control	  = &control_obj,
-	.ptr_can	      = &can_obj
+	.ptr_can	      = &can_obj,
+	.ptr_lora		  = &lora_obj,
 };
 
 int main(void) {

@@ -116,8 +116,8 @@ typedef struct can_fjalar_to_fafnir {
 } can_fjalar_to_fafnir_t;
 
 typedef struct lora_gcb_to_fjalar {
-    bool ready; /* ? */
-    bool launch; /* ? */
+    bool ready_initiate_fjalar; /* ? */
+    bool ready_launch_fjalar; /* ? */
 } lora_gcb_to_fjalar_t;
 
 typedef struct lora_fjalar_to_gcb { /* ig this is same as FjalarData */
@@ -386,8 +386,8 @@ extern "C" {
 #define CAN_FJALAR_TO_FAFNIR_OPEN_SOLENOID_3_TAG 3
 #define CAN_FJALAR_TO_FAFNIR_OPEN_SOLENOID_4_TAG 4
 #define CAN_FJALAR_TO_FAFNIR_OPEN_MAIN_VALVE_TAG 5
-#define LORA_GCB_TO_FJALAR_READY_TAG             1
-#define LORA_GCB_TO_FJALAR_LAUNCH_TAG            2
+#define LORA_GCB_TO_FJALAR_READY_INITIATE_FJALAR_TAG 1
+#define LORA_GCB_TO_FJALAR_READY_LAUNCH_FJALAR_TAG 2
 #define FJALAR_INFO_FJALAR_BATTERY_VOLTAGE_TAG   1
 #define FJALAR_INFO_FLASH_ADDRESS_TAG            2
 #define FJALAR_INFO_SUDO_TAG                     3
@@ -555,8 +555,8 @@ X(a, STATIC,   SINGULAR, BOOL,     open_main_valve,   5)
 #define CAN_FJALAR_TO_FAFNIR_DEFAULT NULL
 
 #define LORA_GCB_TO_FJALAR_FIELDLIST(X, a) \
-X(a, STATIC,   SINGULAR, BOOL,     ready,             1) \
-X(a, STATIC,   SINGULAR, BOOL,     launch,            2)
+X(a, STATIC,   SINGULAR, BOOL,     ready_initiate_fjalar,   1) \
+X(a, STATIC,   SINGULAR, BOOL,     ready_launch_fjalar,   2)
 #define LORA_GCB_TO_FJALAR_CALLBACK NULL
 #define LORA_GCB_TO_FJALAR_DEFAULT NULL
 

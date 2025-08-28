@@ -16,6 +16,7 @@ The flight state script serves the following purpose:
 #include "aerodynamics.h"
 #include "flight_state.h"
 #include "actuation.h"
+#include "com_lora.h"
 
 LOG_MODULE_REGISTER(flight, CONFIG_APP_FLIGHT_LOG_LEVEL);
 
@@ -72,7 +73,7 @@ static void deploy_main(fjalar_t *fjalar, init_t *init, state_t *state, position
     LOG_WRN("Main deployed at %.2f m", pos_kf->X_data[2]);
 }
 
-static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf, aerodynamics_t *aerodynamics) {
+static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf, aerodynamics_t *aerodynamics, lora_t *lora) {
     float az = pos_kf->X_data[8];
     float vz = pos_kf->X_data[5];
     float z  = pos_kf->X_data[2];
@@ -83,17 +84,17 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
 
     switch (state->flight_state) {
     case STATE_IDLE:
-        if (1==1){ // replace with lora command
+        if (lora->LORA_READY_INITIATE_FJALAR){ // replace with lora command
             state->flight_state = STATE_AWAITING_INIT; // change this state to be called "initiated"
             init_init(&fjalar_god); // start init thread
         }
         break;
     case STATE_AWAITING_INIT:
-        if (1 == 1){ // replace with init done
+        if (init->init_completed){ // replace with init done
             state->flight_state = STATE_INITIATED;
         } // change for lora struct
     case STATE_INITIATED:
-        if (1 == 1){ // replace with lora command
+        if (lora->LORA_READY_LAUNCH_FJALAR){ // replace with lora command
             state->flight_state = STATE_AWAITING_LAUNCH;
         }
     case STATE_AWAITING_LAUNCH:
@@ -193,12 +194,13 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
     attitude_filter_t *att_kf = fjalar->ptr_att_kf;
     aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
     state_t           *state = fjalar->ptr_state;
+    lora_t            *lora = fjalar->ptr_lora;
 
     state->flight_state = STATE_IDLE;
     state->velocity_class = VELOCITY_SUBSONIC;
 
     while (true) {
-        evaluate_state(fjalar, init, state, pos_kf, aerodynamics);
+        evaluate_state(fjalar, init, state, pos_kf, aerodynamics, lora);
         evaluate_event(fjalar, state, pos_kf);
         evaluate_velocity(aerodynamics, state);
         k_msleep(10);
