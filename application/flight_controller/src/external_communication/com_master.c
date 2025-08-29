@@ -11,9 +11,10 @@ sensor information via usb/uart.
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
 #include <protocol.h>
+#include <zephyr/drivers/flash.h>
+
 
 #include "fjalar.h"
-#include "commands.h"
 #include "com_master.h"
 #include "com_flash.h"
 #include "com_lora.h"
@@ -79,6 +80,119 @@ int deinit_communication() {
 
 	e |= k_thread_join(&sampler_thread_data, K_MSEC(1000));
 	return e;
+}
+
+void handle_hil_in(hil_in_t *msg, fjalar_t *fjalar, enum com_channels channel){
+    #if DT_NODE_EXISTS(DT_ALIAS(hilsensor))
+    const struct device *const hilsensor_dev = DEVICE_DT_GET(DT_ALIAS(hilsensor));
+
+    hil_data_t hil_data = {
+        .ax = msg->ax,
+        .ay = msg->ay,
+        .az = msg->az,
+        .gx = msg->gx,
+        .gy = msg->gy,
+        .gz = msg->gz,
+        .p = msg->p,
+        .lon = msg->lon,
+        .lat = msg->lat,
+        .alt = msg->alt,
+        .time = k_uptime_get_32(),
+    };
+
+    hilsensor_feed(hilsensor_dev, &hil_data);
+    #endif
+}
+
+void handle_set_sudo(set_sudo_t *msg, fjalar_t *fjalar, enum com_channels channel) {
+    fjalar->sudo = msg->enabled;
+    LOG_WRN("set sudo %d", msg->enabled);
+}
+
+void handle_trigger_pyro(trigger_pyro_t *msg, fjalar_t *fjalar, enum com_channels channel) {
+    if (fjalar->sudo != true) {
+        LOG_WRN("Tried to enable pyro %d when not in sudo mode", msg->pyro);
+        return;
+    }
+        set_pyro(fjalar, msg->pyro, 1);
+        k_msleep(500);
+        set_pyro(fjalar, msg->pyro, 0);
+}
+
+void read_flash(fjalar_t *fjalar, uint8_t *buf, uint32_t index, uint8_t len) {
+	LOG_DBG("Reading flash");
+	const struct device *flash_dev = DEVICE_DT_GET(DT_ALIAS(data_flash));
+	k_mutex_lock(&flash_mutex, K_FOREVER);
+	flash_read(flash_dev, index, buf, len);
+	k_mutex_unlock(&flash_mutex);
+}
+
+void clear_flash(fjalar_t *fjalar) {
+	LOG_WRN("Clearing flash");
+	const struct device *flash_dev = DEVICE_DT_GET(DT_ALIAS(data_flash));
+	k_mutex_lock(&flash_mutex, K_FOREVER);
+	flash_erase(flash_dev, 0, fjalar->flash_size);
+	fjalar->flash_address = 0;
+	k_mutex_unlock(&flash_mutex);
+}
+
+void handle_clear_flash(clear_flash_t *msg, fjalar_t *fjalar, enum com_channels channel) {
+    if (fjalar->sudo != true) {
+        LOG_WRN("Tried to clear flash when not in sudo mode");
+        return;
+    }
+    clear_flash(fjalar); // link this to com_flash
+}
+
+void handle_read_flash(read_flash_t *msg, fjalar_t *fjalar, enum com_channels channel) {
+    struct fjalar_message resp;
+    if (msg->length > sizeof(resp.data.data.flash_data.data.bytes)) {
+        LOG_ERR("Requested flash read can't fit in buffer");
+        return;
+    }
+    resp.has_data = true;
+    resp.data.which_data = FJALAR_DATA_FLASH_DATA_TAG;
+    resp.data.data.flash_data.data.size = msg->length;
+    resp.data.data.flash_data.start_index = msg->start_index;
+    resp.time = k_uptime_get_32();
+    read_flash(fjalar, resp.data.data.flash_data.data.bytes, msg->start_index, msg->length);
+    send_response(fjalar, &resp, channel);
+}
+
+void handle_fjalar_buf(struct protocol_state *ps, fjalar_t *fjalar, uint8_t *buf, int len, enum com_channels channel) {
+    fjalar_message_t msg;
+    for (int i = 0; i < len; i++) {
+        int ret;
+        ret = parse_fjalar_message(ps, buf[i], &msg);
+        if (ret == 1) {
+            handle_fjalar_message(&msg, fjalar, fjalar->ptr_state, channel);
+        } else if (ret == -1) {
+            reset_protocol_state(ps);
+        }
+    }
+}
+
+void handle_fjalar_message(fjalar_message_t *msg, fjalar_t *fjalar, state_t *state, enum com_channels channel) {
+    //LOG_INF("handling msg with id %d", msg->data.which_data);
+    switch (msg->data.which_data) {
+        case FJALAR_DATA_SET_SUDO_TAG:
+            handle_set_sudo(&msg->data.data.set_sudo, fjalar, channel);
+            break;
+        case FJALAR_DATA_TRIGGER_PYRO_TAG:
+            handle_trigger_pyro(&msg->data.data.trigger_pyro, fjalar, channel);
+            break;
+        case FJALAR_DATA_CLEAR_FLASH_TAG:
+            handle_clear_flash(&msg->data.data.clear_flash, fjalar, channel);
+            break;
+        case FJALAR_DATA_READ_FLASH_TAG:
+            handle_read_flash(&msg->data.data.read_flash, fjalar, channel);
+            break;
+        case FJALAR_DATA_HIL_IN_TAG:
+            handle_hil_in(&msg->data.data.hil_in, fjalar, channel);
+            break;
+        default:
+            LOG_ERR("Unsupported message: %d", msg->data.which_data);
+    }
 }
 
 void send_message(fjalar_t *fjalar, state_t *state, fjalar_message_t *msg, enum message_priority prio) {

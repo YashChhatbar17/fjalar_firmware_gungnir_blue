@@ -32,7 +32,6 @@ zephyr_include_directories(
 target_sources(app PRIVATE
     src/flight_state.c
     src/sensors.c
-    src/commands.c
     src/actuation.c
     src/filter.c
     src/aerodynamics.c

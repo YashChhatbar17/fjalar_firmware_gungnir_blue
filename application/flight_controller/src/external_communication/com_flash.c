@@ -57,24 +57,6 @@ void init_com_flash(fjalar_t *fjalar){
 
 K_MSGQ_DEFINE(flash_msgq, sizeof(struct padded_buf), 32, 4);
 
-void read_flash(fjalar_t *fjalar, uint8_t *buf, uint32_t index, uint8_t len) {
-	LOG_DBG("Reading flash");
-	const struct device *flash_dev = DEVICE_DT_GET(DT_ALIAS(data_flash));
-	k_mutex_lock(&flash_mutex, K_FOREVER);
-	flash_read(flash_dev, index, buf, len);
-	k_mutex_unlock(&flash_mutex);
-}
-
-void clear_flash(fjalar_t *fjalar) {
-	LOG_WRN("Clearing flash");
-	const struct device *flash_dev = DEVICE_DT_GET(DT_ALIAS(data_flash));
-	k_mutex_lock(&flash_mutex, K_FOREVER);
-	flash_erase(flash_dev, 0, fjalar->flash_size);
-	fjalar->flash_address = 0;
-	k_mutex_unlock(&flash_mutex);
-}
-
-
 void flash_thread(fjalar_t *fjalar, void *p2, void *p3) {
 	const struct device *flash_dev = DEVICE_DT_GET(DT_ALIAS(data_flash));
 	if (!device_is_ready(flash_dev)) {
