@@ -97,8 +97,23 @@ void usb_msg_enqueue(fjalar_message_t *msg){
 void usb_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 	while (true){
 		// create msg
-		
-
+		// FjalarInfo
+		/*
+		fjalar_info_t msg_fjalar_info = {
+			.time = k_uptime_get_32(),
+			.has_data = true,
+			.data = {
+				.which_data         = FJALAR_DATA_FJALAR_INFO_TAG,
+				.data.fjalar_info = {
+					fjalar_battery_voltage = fjalar->battery_voltage;
+					flash_address = fjalar->flash_adress;
+					sudo = fjalar->sudo;
+				},
+			},
+		};
+		usb_msg_enqueue(&msg_fjalar_info);
+		*/
+	
 		// encode and put into msgq
 		//usb_msg_enqueue(&msg);
 		k_msleep(100);

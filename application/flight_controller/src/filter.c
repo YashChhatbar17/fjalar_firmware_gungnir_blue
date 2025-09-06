@@ -816,15 +816,16 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             float gz = g_array[init->new_z_index] * init->new_z_sign; 
 
             // call filters
-            position_filter_accelerometer(init, pos_kf, att_kf, ax, ay, az, imu.t); // needs magnetometer
+            if (state->flight_state != STATE_INITIATED){ // to avoid drift before launch
+                position_filter_accelerometer(init, pos_kf, att_kf, ax, ay, az, imu.t); // needs magnetometer to not get usage of ax and ay
+            }
+
             attitude_filter_gyroscope(pos_kf, att_kf, gx, gy, gz, imu.t);
 
             // use state machine TODO: remove state idle since filter.c is not actually being run in that state
             if (state->flight_state == STATE_INITIATED){ //only used pre launch
                 attitude_filter_accelerometer_ground(att_kf, pos_kf, aerodynamics, ax, ay, az, imu.t); 
             }
-
-
         }
 
         if (k_msgq_get(&pressure_msgq, &pressure, K_NO_WAIT) == 0) {
@@ -844,7 +845,9 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
                 pos_kf->raw_gps_lat = gps.lat;
                 pos_kf->raw_gps_lon = gps.lon;
                 pos_kf->raw_gps_alt = gps.alt;
+                #if !DT_ALIAS_EXISTS(hilsensor) // remove when gps has been added to hilsensor
                 position_filter_gps(init, pos_kf, gps.lat, gps.lon, gps.alt, gps.t);
+                #endif
 
 
 
@@ -868,7 +871,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         
         LOG_DBG("x: %f", pos_kf->X_data[0]);
         LOG_DBG("y: %f", pos_kf->X_data[1]);
-        LOG_WRN("z: %f", pos_kf->X_data[2]);
+        LOG_DBG("z: %f", pos_kf->X_data[2]);
 
         LOG_DBG("vx: %f", pos_kf->X_data[3]);
         LOG_DBG("vy: %f", pos_kf->X_data[4]);
@@ -878,8 +881,9 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         LOG_DBG("ay: %f", pos_kf->X_data[7]);
         LOG_DBG("az: %f", pos_kf->X_data[8]);
 
-        LOG_WRN("v_norm: %f", pos_kf->v_norm);
-        LOG_WRN("a_norm: %f", pos_kf->a_norm);
+        LOG_DBG("v_norm: %f", pos_kf->v_norm);
+        LOG_DBG("a_norm: %f", pos_kf->a_norm);
+        
         
         k_msleep(10); // 100 Hz
         }

@@ -178,8 +178,8 @@ void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
     can_t             *can = fjalar->ptr_can;
 	lora_t            *lora = fjalar->ptr_lora;
 
-	lora->LORA_READY_INITIATE_FJALAR = true;
-	lora->LORA_READY_LAUNCH_FJALAR = true;
+	//lora->LORA_READY_INITIATE_FJALAR = true; // for testing without tracker DO NOT FORGET TO REMOVE
+	//lora->LORA_READY_LAUNCH_FJALAR = true;
 
 	while (true){
 		// gps
@@ -206,8 +206,8 @@ void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 				.data.flight_state = state->flight_state
 			},
 		};
-		flash_msg_enqueue(&msg_flight_state);
+		lora_msg_enqueue(&msg_flight_state);
 
-		k_msleep(1000);
+		k_msleep(3000);
 	}
 }
