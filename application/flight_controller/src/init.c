@@ -199,15 +199,17 @@ static void init_finish(init_t *init){
     init->yaw0 = 0.0f;
 
     // add beep when init finish
+    init->init_completed = true;
 }
 
 static inline bool init_ready(const init_t *init)
 {
-    return init->n_imu  >= IMU_INIT_N  &&
-           init->n_baro >= BARO_INIT_N &&
-           init->n_gps  >= GPS_INIT_N;
-}
+    bool imu_ready  = (IMU_INIT_N  == 0) || (init->n_imu  >= IMU_INIT_N);
+    bool baro_ready = (BARO_INIT_N == 0) || (init->n_baro >= BARO_INIT_N);
+    bool gps_ready  = (GPS_INIT_N  == 0) || (init->n_gps  >= GPS_INIT_N);
 
+    return imu_ready && baro_ready && gps_ready;
+}
 
 void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
     init_t            *init  = fjalar->ptr_init;
@@ -235,38 +237,39 @@ void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
     struct pressure_queue_entry pressure;
     struct gps_queue_entry gps;
 
+    init->n_imu = 0;
+    init->n_baro = 0;
+    init->n_gps = 0;
+    
+    while (!init_ready(init)) {
 
-    while (init->n_imu < IMU_INIT_N || init->n_baro < BARO_INIT_N || init->n_gps < GPS_INIT_N) {
-        // things
 		if (k_msgq_get(&imu_msgq, &imu, K_NO_WAIT) == 0) {
             events[1].state = K_POLL_STATE_NOT_READY;
+            LOG_INF("IMU N: %d", init->n_imu);
 
             // init mode
             if (init->n_imu < IMU_INIT_N) {
-                if (init->n_imu == 0 || imu.ax != init->ax[init->n_imu-1]){ // in order to work on native simulation
-                    init->ax[init->n_imu] = imu.ax;
-                    init->ay[init->n_imu] = imu.ay;
-                    init->az[init->n_imu] = imu.az;
-                    init->gx[init->n_imu] = imu.gx;
-                    init->gy[init->n_imu] = imu.gy;
-                    init->gz[init->n_imu] = imu.gz;
-                    init->n_imu++;
-                } 
+                init->ax[init->n_imu] = imu.ax;
+                init->ay[init->n_imu] = imu.ay;
+                init->az[init->n_imu] = imu.az;
+                init->gx[init->n_imu] = imu.gx;
+                init->gy[init->n_imu] = imu.gy;
+                init->gz[init->n_imu] = imu.gz;
+                init->n_imu++;
             }
         }
-
+        
 		if (k_msgq_get(&pressure_msgq, &pressure, K_NO_WAIT) == 0) {
             events[0].state = K_POLL_STATE_NOT_READY;
-            
+            LOG_INF("BARO N: %d", init->n_baro);
 
             // init
-			if (init->n_baro < BARO_INIT_N) {
-				if (init->n_baro == 0 || pressure.pressure*1000 != init->p[init->n_baro-1]){
-				init->p[init->n_baro] = pressure.pressure*1000;
-				init->n_baro++;
-				} 
+            if (init->n_baro < BARO_INIT_N) {
+                init->p[init->n_baro] = pressure.pressure*1000;
+                init->n_baro++;
 			}
         }
+        
 
 		 #if DT_ALIAS_EXISTS(gps_uart)
         {
@@ -293,14 +296,17 @@ void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
         #endif
         k_msleep(10); // 100 Hz
     }
+    //LOG_INF("WHAM 1");
+    //k_msleep(1000);
 
 	init_finish(init);
-    
+    LOG_WRN("Init Finished");
+
+    //LOG_INF("WHAM 2");
+    //k_msleep(1000);
     init_filter(fjalar);
     init_aerodynamics(&fjalar_god);
     init_control(&fjalar_god);
-    init_sensors(&fjalar_god); 
-    init->init_completed = true;
     LOG_INF("Init phase completed, started Kalman Filters.");
     // add BEEP from buzzer
 }

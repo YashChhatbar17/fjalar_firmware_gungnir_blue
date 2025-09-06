@@ -136,7 +136,9 @@ void flash_msg_enqueue(fjalar_message_t *msg){
 		return;
 	}
 	LOG_DBG("sending message w/ size %d", size);
-	if (k_msgq_put(&flash_msgq, &pbuf, K_NO_WAIT)){LOG_ERR("could not insert into flash msgq");}
+	if (k_msgq_put(&flash_msgq, &pbuf, K_NO_WAIT)){
+		//LOG_ERR("could not insert into flash msgq");
+	}
 }
 
 void flash_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){

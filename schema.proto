@@ -179,6 +179,9 @@ message HilIn{
     float alt = 10;
 
     uint32 time = 11;
+
+    bool awaiting_init = 12;
+    bool awaiting_launch = 13;
 }
 
 message HilOut{

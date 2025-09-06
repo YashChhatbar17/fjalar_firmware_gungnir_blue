@@ -847,7 +847,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
 
             } else {
-                LOG_WRN("GPS sample dropped (NaN/Inf)");
+                //LOG_WRN("GPS sample dropped (NaN/Inf)");
             }
         }
         #endif
@@ -857,7 +857,8 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         Pmtx_analysis(pos_kf);
 
-        // for devving [change to LOG_INF]
+        LOG_INF("z: %f", pos_kf->X_data[2]);
+        /*
         LOG_DBG("x: %f", pos_kf->X_data[0]);
         LOG_DBG("y: %f", pos_kf->X_data[1]);
         LOG_DBG("z: %f", pos_kf->X_data[2]);
@@ -872,7 +873,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         LOG_DBG("v_norm: %f", pos_kf->v_norm);
         LOG_DBG("a_norm: %f", pos_kf->a_norm);
-
+        */
         k_msleep(10); // 100 Hz
         }
     }

@@ -81,24 +81,27 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
     float a_norm = pos_kf->a_norm;
     float v_norm = pos_kf->v_norm;
 
-
     switch (state->flight_state) {
     case STATE_IDLE:
         if (lora->LORA_READY_INITIATE_FJALAR){
             state->flight_state = STATE_AWAITING_INIT;
-            init_init(&fjalar_god); // start init thread
+            init_init(&fjalar_god); // see mural documentation
+            init_sensors(&fjalar_god); // see mural documentation
         }
         break;
     case STATE_AWAITING_INIT:
         if (init->init_completed){
             state->flight_state = STATE_INITIATED;
         } // change for lora struct
+        break;
     case STATE_INITIATED:
         if (lora->LORA_READY_LAUNCH_FJALAR){
             state->flight_state = STATE_AWAITING_LAUNCH;
         }
+        //LOG_ERR("flight state: STATE_INITIATED");
+        break;
     case STATE_AWAITING_LAUNCH:
-        if (a_norm > BOOST_ACCEL_THRESHOLD && z > 10){
+        if (a_norm > BOOST_ACCEL_THRESHOLD && z > 3){
             state->flight_state = STATE_BOOST;
             state->event_launch = true;
             state->liftoff_time = k_uptime_get_32();
@@ -110,6 +113,8 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
             state->liftoff_time = k_uptime_get_32();
             LOG_WRN("Changing state to BOOST due to speed");
         }
+        //LOG_INF("flight state: STATE_AWAITING_LAUNCH");
+        break;
     case STATE_BOOST:
         if (az < COAST_ACCEL_THRESHOLD && !aerodynamics->thrust_bool) {
             state->flight_state = STATE_COAST;
@@ -119,6 +124,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
         if (vz < 0) {
             LOG_WRN("Fake pressure increase due to sonic shock wave"); // this is probably useless
             }
+        //LOG_INF("flight state: STATE_BOOST");
         break;
     case STATE_COAST:
         
@@ -130,21 +136,25 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
             state->event_apogee = true;
             LOG_WRN("Changing state to FREE_FALL due to speed");
         }
+        LOG_INF("flight state: STATE_COAST");
         break;
     case STATE_DROGUE_DESCENT:
         if (z < 200) {
             deploy_main(fjalar, init, state, pos_kf);
             state->flight_state = STATE_MAIN_DESCENT;
         }
+        LOG_INF("flight state: STATE_DROGUE_DESCENT");
         break;
     case STATE_MAIN_DESCENT:
         if (a_norm > init->g_accelerometer-2 && a_norm<init->g_accelerometer+2){
             state->flight_state = STATE_LANDED;
             state->event_landed = true;
         }
+        LOG_INF("flight state: STATE_MAIN_DESCENT");
         break;
     case STATE_LANDED:
         // yay we landed (right?)
+        LOG_INF("flight state: STATE_LANDED");
         break;
     }
 }

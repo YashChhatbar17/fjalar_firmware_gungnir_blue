@@ -64,7 +64,7 @@ int lora_configure(const struct device *dev, bool transmit) {
 	}
 	struct lora_modem_config config = PROTOCOL_ZEPHYR_LORA_CONFIG;
 	config.tx = transmit;
-	config.tx_power = 10;
+	config.tx_power = 22;
 	int ret = lora_config(dev, &config);
 	if (ret < 0) {
 		LOG_ERR("Could not configure lora %d", ret);
@@ -178,13 +178,21 @@ void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
     can_t             *can = fjalar->ptr_can;
 
 	while (true){
-		fjalar_message_t msg;
-		msg.time = k_uptime_get_32();
-		msg.has_data = true;
-		msg.data.which_data = FJALAR_DATA_IMU_READING_TAG; // change tag
+		// gps
+		fjalar_message_t msg_gps = {
+			.time = k_uptime_get_32(),
+			.has_data = true,
+			.data = {
+				.which_data = FJALAR_DATA_GNSS_POSITION_TAG,
+				.data.gnss_position = {
+					.latitude = pos_kf->raw_gps_lat,
+					.longitude = pos_kf->raw_gps_lon,
+					.altitude = pos_kf->raw_gps_alt,
+				},
+			},
+		};
+		lora_msg_enqueue(&msg_gps);
 
-		// encode and put into msgq
-		lora_msg_enqueue(&msg);
 		k_msleep(1000);
 	}
 }

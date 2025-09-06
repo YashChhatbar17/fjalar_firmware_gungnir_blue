@@ -46,5 +46,5 @@ int get_encoded_message_length(uint8_t *buf);
     .preamble_len = 8, \
     .public_network = false, \
     .tx = 0, \
-    .tx_power = 10 \
+    .tx_power = 22 \
 };

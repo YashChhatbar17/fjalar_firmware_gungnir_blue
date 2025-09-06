@@ -155,12 +155,16 @@ void imu_thread(fjalar_t *fjalar, void *p2, void *p3) {
 			LOG_ERR("Could get imu values");
 			continue;
 		}
-
-		LOG_DBG("read imu: %f %f %f %f %f %f",
+		/*
+		LOG_INF("read imu: %f %f %f %f %f %f",
 			sensor_value_to_float(&ax), sensor_value_to_float(&ay), sensor_value_to_float(&az),
 			sensor_value_to_float(&gx), sensor_value_to_float(&gy), sensor_value_to_float(&gz)
 		);
+		*/
 
+		//LOG_WRN("az: %f", sensor_value_to_float(&az));
+		
+		
 		struct imu_queue_entry q_entry = {
 			.t = k_uptime_get_32(),
 			.ax = sensor_value_to_float(&ax),
@@ -172,11 +176,12 @@ void imu_thread(fjalar_t *fjalar, void *p2, void *p3) {
 		};
 		ret = k_msgq_put(&imu_msgq, &q_entry, K_NO_WAIT);
 		if (ret != 0) {
-			LOG_ERR("Could not write to imu msgq %d", ret);
+			//LOG_ERR("Could not write to imu msgq %d", ret);
 			continue;
 		} 
 
-		fjalar_message_t msg;
+		
+		fjalar_message_t msg; // move this to com_lora
 		msg.time = k_uptime_get_32();
 		msg.has_data = true;
 		msg.data.which_data = FJALAR_DATA_IMU_READING_TAG;
@@ -218,18 +223,20 @@ void barometer_thread(fjalar_t *fjalar, void *p2, void *p3) {
 			LOG_ERR("Could not get barometer pressure");
 			continue;
 		}
-		LOG_DBG("read pressure: %f", sensor_value_to_float(&pressure));
+		//LOG_WRN("read pressure: %f", sensor_value_to_float(&pressure));
 		struct pressure_queue_entry q_entry;
 		q_entry.t = k_uptime_get_32();
 		q_entry.pressure = sensor_value_to_float(&pressure);
+
 		ret = k_msgq_put(&pressure_msgq, &q_entry, K_NO_WAIT);
 		if (ret != 0) {
-			LOG_ERR("Could not write to pressure msgq");
+			//LOG_ERR("Could not write to pressure msgq");
 		}
 		ret = zbus_chan_pub(&pressure_zchan, &q_entry, K_MSEC(100));
 		if (ret != 0) {
 			LOG_ERR("Could not publish pressure to zbus");
 		}
+
 		fjalar_message_t msg;
 		msg.time = k_uptime_get_32();
 		msg.has_data = true;

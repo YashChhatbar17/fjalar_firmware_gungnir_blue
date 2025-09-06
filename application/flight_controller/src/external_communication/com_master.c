@@ -20,6 +20,7 @@ sensor information via usb/uart.
 #include "com_lora.h"
 #include "com_uart.h"
 #include "com_usb.h"
+#include "hilsensor.h"
 
 LOG_MODULE_REGISTER(com_master, CONFIG_APP_COMMUNICATION_LOG_LEVEL);
 
@@ -99,7 +100,10 @@ void handle_hil_in(hil_in_t *msg, fjalar_t *fjalar, enum com_channels channel){
         .alt = msg->alt,
         .time = k_uptime_get_32(),
     };
-
+	
+	fjalar->ptr_lora->LORA_READY_INITIATE_FJALAR = msg->awaiting_init;
+	fjalar->ptr_lora->LORA_READY_LAUNCH_FJALAR = msg->awaiting_launch;
+	
     hilsensor_feed(hilsensor_dev, &hil_data);
     #endif
 }
@@ -210,7 +214,7 @@ void send_message(fjalar_t *fjalar, state_t *state, fjalar_message_t *msg, enum 
 			}
 			#if DT_ALIAS_EXISTS(data_flash)
 			if (k_msgq_put(&flash_msgq, &pbuf, K_NO_WAIT)) {
-				LOG_INF("could not insert into flash msgq");
+				//LOG_INF("could not insert into flash msgq");
 			}
 			#endif
 			#if DT_ALIAS_EXISTS(external_uart)
@@ -228,7 +232,7 @@ void send_message(fjalar_t *fjalar, state_t *state, fjalar_message_t *msg, enum 
 		case MSG_PRIO_HIGH:
 			#if DT_ALIAS_EXISTS(data_flash)
 			if (k_msgq_put(&flash_msgq, &pbuf, K_NO_WAIT)) {
-				LOG_INF("could not insert into flash msgq");
+				//LOG_INF("could not insert into flash msgq");
 			}
 			#endif
 			#if DT_ALIAS_EXISTS(lora)
@@ -266,7 +270,7 @@ void send_response(fjalar_t *fjalar, fjalar_message_t *msg, enum com_channels ch
 		case COM_CHAN_FLASH:
 			#if DT_ALIAS_EXISTS(data_flash)
 			if (k_msgq_put(&flash_msgq, &pbuf, K_NO_WAIT)) {
-				LOG_INF("could not insert into flash msgq");
+				//LOG_INF("could not insert into flash msgq");
 			}
 			#endif
 			break;

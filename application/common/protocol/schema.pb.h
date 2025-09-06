@@ -186,6 +186,8 @@ typedef struct hil_in {
     float lat;
     float alt;
     uint32_t time;
+    bool awaiting_init;
+    bool awaiting_launch;
 } hil_in_t;
 
 typedef struct hil_out {
@@ -302,7 +304,7 @@ extern "C" {
 #define READY_UP_INIT_DEFAULT                    {0}
 #define ENTER_IDLE_INIT_DEFAULT                  {0}
 #define TRIGGER_PYRO_INIT_DEFAULT                {0}
-#define HIL_IN_INIT_DEFAULT                      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+#define HIL_IN_INIT_DEFAULT                      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define HIL_OUT_INIT_DEFAULT                     {0, 0, 0}
 #define FJALAR_DATA_INIT_DEFAULT                 {0, {ACKNOWLEDGE_INIT_DEFAULT}}
 #define FJALAR_MESSAGE_INIT_DEFAULT              {0, 0, false, FJALAR_DATA_INIT_DEFAULT}
@@ -331,7 +333,7 @@ extern "C" {
 #define READY_UP_INIT_ZERO                       {0}
 #define ENTER_IDLE_INIT_ZERO                     {0}
 #define TRIGGER_PYRO_INIT_ZERO                   {0}
-#define HIL_IN_INIT_ZERO                         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+#define HIL_IN_INIT_ZERO                         {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define HIL_OUT_INIT_ZERO                        {0, 0, 0}
 #define FJALAR_DATA_INIT_ZERO                    {0, {ACKNOWLEDGE_INIT_ZERO}}
 #define FJALAR_MESSAGE_INIT_ZERO                 {0, 0, false, FJALAR_DATA_INIT_ZERO}
@@ -415,6 +417,8 @@ extern "C" {
 #define HIL_IN_LAT_TAG                           9
 #define HIL_IN_ALT_TAG                           10
 #define HIL_IN_TIME_TAG                          11
+#define HIL_IN_AWAITING_INIT_TAG                 12
+#define HIL_IN_AWAITING_LAUNCH_TAG               13
 #define HIL_OUT_AIRBRAKE_PERCENTAGE_TAG          1
 #define HIL_OUT_MAIN_DEPLOYED_TAG                2
 #define HIL_OUT_DROGUE_DEPLOYED_TAG              3
@@ -635,7 +639,9 @@ X(a, STATIC,   SINGULAR, FLOAT,    p,                 7) \
 X(a, STATIC,   SINGULAR, FLOAT,    lon,               8) \
 X(a, STATIC,   SINGULAR, FLOAT,    lat,               9) \
 X(a, STATIC,   SINGULAR, FLOAT,    alt,              10) \
-X(a, STATIC,   SINGULAR, UINT32,   time,             11)
+X(a, STATIC,   SINGULAR, UINT32,   time,             11) \
+X(a, STATIC,   SINGULAR, BOOL,     awaiting_init,    12) \
+X(a, STATIC,   SINGULAR, BOOL,     awaiting_launch,  13)
 #define HIL_IN_CALLBACK NULL
 #define HIL_IN_DEFAULT NULL
 
@@ -790,7 +796,7 @@ extern const pb_msgdesc_t fjalar_message_t_msg;
 #define FLIGHT_EVENT_SIZE                        14
 #define GNSS_POSITION_SIZE                       15
 #define GNSS_STATUS_SIZE                         32
-#define HIL_IN_SIZE                              56
+#define HIL_IN_SIZE                              60
 #define HIL_OUT_SIZE                             9
 #define IMU_READING_SIZE                         30
 #define LORA_FJALAR_TO_GCB_SIZE                  0
