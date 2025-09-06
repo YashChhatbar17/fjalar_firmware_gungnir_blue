@@ -149,7 +149,7 @@ void pyro_thread(fjalar_t *fjalar, void *p2, void *p3) {
         fjalar->pyro1_sense = gpio_pin_get_dt(&pyro1_sense_dt);
         fjalar->pyro2_sense = gpio_pin_get_dt(&pyro2_sense_dt);
         fjalar->pyro3_sense = gpio_pin_get_dt(&pyro3_sense_dt);
-        //LOG_INF("pyros connected p1:%d p2:%d p3:%d", fjalar->pyro1_sense, fjalar->pyro2_sense, fjalar->pyro3_sense);
+        LOG_INF("pyros connected p1:%d p2:%d p3:%d", fjalar->pyro1_sense, fjalar->pyro2_sense, fjalar->pyro3_sense);
         k_msleep(500);
     }
 }

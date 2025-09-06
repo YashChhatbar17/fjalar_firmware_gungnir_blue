@@ -844,7 +844,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
                 pos_kf->raw_gps_lat = gps.lat;
                 pos_kf->raw_gps_lon = gps.lon;
                 pos_kf->raw_gps_alt = gps.alt;
-                //position_filter_gps(init, pos_kf, gps.lat, gps.lon, gps.alt, gps.t);
+                position_filter_gps(init, pos_kf, gps.lat, gps.lon, gps.alt, gps.t);
 
 
 
@@ -858,6 +858,12 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         update_acceleration_norm(pos_kf);
 
         Pmtx_analysis(pos_kf);
+
+        /*
+        static int counter = 0;
+        if (counter%10 == 0){LOG_INF("vz: %f", pos_kf->X_data[5]);}
+        counter++;
+        */
 
         /*
         LOG_DBG("x: %f", pos_kf->X_data[0]);

@@ -73,6 +73,11 @@ static void deploy_main(fjalar_t *fjalar, init_t *init, state_t *state, position
     LOG_WRN("Main deployed at %.2f m", pos_kf->X_data[2]);
 }
 
+static void start_pyro_camera(fjalar_t *fjalar){
+    set_pyro(fjalar, 3, true); // starts camera [3 = Camera]
+    LOG_WRN("Camera Started");
+}
+
 static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf, aerodynamics_t *aerodynamics, lora_t *lora) {
     float az = pos_kf->X_data[8];
     float vz = pos_kf->X_data[5];
@@ -99,6 +104,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
     case STATE_INITIATED:
         if (lora->LORA_READY_LAUNCH_FJALAR){
             state->flight_state = STATE_AWAITING_LAUNCH;
+            start_pyro_camera(fjalar);
         }
         LOG_ERR("flight state: STATE_INITIATED");
         break;
