@@ -1,0 +1,37 @@
+/ {
+	zephyr,user {
+		io-channels = <&adc 0>, <&adc 1>, <&adc 7>;
+	};
+    chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,shell-uart = &cdc_acm_uart0;
+    };
+
+    aliases {
+        commands-usb = &cdc_acm_uart1;
+    };
+};
+
+&zephyr_udc0 {
+    cdc_acm_uart0: cdc_acm_uart0 {
+        compatible = "zephyr,cdc-acm-uart";
+    };
+    cdc_acm_uart1: cdc_acm_uart1 {
+        compatible = "zephyr,cdc-acm-uart";
+    };
+};
+
+
+&adc {
+	#address-cells = <1>;
+	#size-cells = <0>;
+    status="okay";
+	channel@2 {
+		reg = <2>; // p0.04
+		zephyr,gain = "ADC_GAIN_1_6";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_VDD>;
+		zephyr,resolution = <12>;
+	};
+};

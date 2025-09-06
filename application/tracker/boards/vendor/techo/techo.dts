@@ -6,7 +6,7 @@
 
 /dts-v1/;
 #include <nordic/nrf52840_qiaa.dtsi>
-#include "t_echo-pinctrl.dtsi"
+#include "techo-pinctrl.dtsi"
 
 / {
 	model = "T-echo";
@@ -93,6 +93,25 @@
 			busy-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
 		};
 	};
+
+    mipi_dbi {
+        compatible = "zephyr,mipi-dbi-spi";
+        spi-dev = <&spi0>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        reset-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+        dc-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
+
+        ssd1681: ssd1681@0 {
+            reg = <0>;
+            compatible = "solomon,ssd1681";
+            busy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+            mipi-max-frequency = <20000000>;
+            height = <200>;
+            width = <200>;
+            rotation= <180>;
+        };
+    };
 };
 
 &adc {
@@ -134,18 +153,6 @@
 	pinctrl-1 = <&spi0_sleep>;
 	cs-gpios = <&gpio0 30 GPIO_ACTIVE_LOW>;
 	pinctrl-names = "default", "sleep";
-
-	ssd1681: ssd1681@0 {
-		reg = <0>;
-		compatible = "solomon,ssd1681";
-		reset-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
-		dc-gpios = <&gpio0 28 GPIO_ACTIVE_LOW>;
-		busy-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
-		spi-max-frequency = <20000000>;
-		height = <200>;
-		width = <200>;
-		orientation-flipped;
-	};
 };
 
 &ieee802154 {

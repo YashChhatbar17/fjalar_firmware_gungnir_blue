@@ -54,7 +54,7 @@ void init_com_lora(fjalar_t *fjalar){
         LORA_MSG_ENQUEUE_THREAD_PRIORITY, 0, K_NO_WAIT
     );
     k_thread_name_set(lora_msg_enqueue_thread_id, "lora enqueue");
-} 
+}
 
 int lora_configure(const struct device *dev, bool transmit) {
 	static uint8_t current_mode = -1;

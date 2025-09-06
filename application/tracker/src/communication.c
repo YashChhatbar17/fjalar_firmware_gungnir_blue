@@ -94,51 +94,11 @@ void send_screen_command(tracker_t *tracker) {
         case FRAME_TELEMETRY:
             break;
 
-		case FRAME_PYRO1:
-			msg.has_data = true;
-			msg.data.which_data = FJALAR_DATA_TRIGGER_PYRO_TAG;
-			msg.data.data.trigger_pyro.pyro = 1;
-			send_message(tracker, &msg);
-            break;
-
-		case FRAME_PYRO2:
-			msg.has_data = true;
-			msg.data.which_data = FJALAR_DATA_TRIGGER_PYRO_TAG;
-			msg.data.data.trigger_pyro.pyro = 2;
-			send_message(tracker, &msg);
-            break;
-
-        case FRAME_PYRO3:
-			msg.has_data = true;
-			msg.data.which_data = FJALAR_DATA_TRIGGER_PYRO_TAG;
-			msg.data.data.trigger_pyro.pyro = 3;
-			send_message(tracker, &msg);
-			break;
-
         case FRAME_GET_READY:
 			msg.has_data = true;
 			msg.data.which_data = FJALAR_DATA_READY_UP_TAG;
 			send_message(tracker, &msg);
             break;
-
-        case FRAME_ENTER_IDLE:
-			msg.has_data = true;
-			msg.data.which_data = FJALAR_DATA_ENTER_IDLE_TAG;
-			send_message(tracker, &msg);
-            break;
-
-        case FRAME_ENTER_SUDO:
-			msg.has_data = true;
-			msg.data.which_data = FJALAR_DATA_SET_SUDO_TAG;
-			msg.data.data.set_sudo.enabled = !tracker->telemetry.sudo;
-			send_message(tracker, &msg);
-            break;
-
-		case FRAME_CLEAR_FLASH:
-			msg.has_data = true;
-			msg.data.which_data = FJALAR_DATA_CLEAR_FLASH_TAG;
-			send_message(tracker, &msg);
-			break;
 
         case FRAME_MAX:
             break;
@@ -159,9 +119,9 @@ void send_message(tracker_t *tracker, fjalar_message_t *msg) {
 void handle_fjalar_message(tracker_t *tracker, struct fjalar_message *msg) {
 	LOG_DBG("handling message with ID %d", msg->data.which_data);
     switch (msg->data.which_data) {
-        case FJALAR_DATA_TELEMETRY_PACKET_TAG:
-            tracker->telemetry = msg->data.data.telemetry_packet;
-            break;
+        // case FJALAR_DATA_TELEMETRY_PACKET_TAG:
+            // tracker->telemetry = msg->data.data.telemetry_packet;
+            // break;
         default:
 			LOG_DBG("Could not handle message with ID %d", msg->data.which_data);
     }
@@ -233,7 +193,7 @@ struct lora_rx {
 
 K_MSGQ_DEFINE(lora_rx_msgq, sizeof(struct lora_rx), 5, 4);
 
-void lora_cb(const struct device *dev, uint8_t *buf, uint16_t size, int16_t rssi, int8_t snr) {
+void lora_cb(const struct device *dev, uint8_t *buf, uint16_t size, int16_t rssi, int8_t snr, void *user) {
     struct lora_rx rx;
 	rx.size = MIN(size, PROTOCOL_BUFFER_LENGTH);
 	memcpy(rx.buf, buf, rx.size);
@@ -269,7 +229,7 @@ void lora_thread(tracker_t *tracker, void* p2, void* p3) {
 			LOG_DBG("LoRa rxing");
 		}
 
-		lora_recv_async(lora_dev, lora_cb);
+		lora_recv_async(lora_dev, lora_cb, NULL);
 		// k_poll(&events[1], 1, K_MSEC(10000)); //poll only rx first to not interrupt messages
 		k_poll(events, 2, K_FOREVER);
 
@@ -296,7 +256,7 @@ void lora_thread(tracker_t *tracker, void* p2, void* p3) {
         ret = k_msgq_get(&lora_msgq, &pbuf, K_NO_WAIT);
         if (ret == 0) {
 			events[0].state = K_POLL_STATE_NOT_READY;
-			lora_recv_async(lora_dev, NULL); // cancel reception
+			lora_recv_async(lora_dev, NULL, NULL); // cancel reception
             ret = lora_configure(lora_dev, LORA_TRANSMIT);
 			if (ret) {
 				LOG_ERR("LORA tx configure failed");

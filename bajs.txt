@@ -1,0 +1,14 @@
+[0/1] Re-running CMake...
+-- Application: /home/olof/programs/zephyr/fjalar_firmware/application/tracker
+-- CMake version: 3.31.6
+-- Cache files will be written to: /home/olof/.cache/zephyr
+-- Zephyr version: 4.1.0 (/home/olof/programs/zephyr/fjalar_firmware/deps/zephyr)
+-- Found west (found suitable version "1.3.0", minimum required is "0.14.0")
+-- Board: techo, qualifiers: nrf52840
+-- Found host-tools: zephyr 0.17.0 (/home/olof/zephyr-sdk-0.17.0)
+-- Found toolchain: zephyr 0.17.0 (/home/olof/zephyr-sdk-0.17.0)
+-- Found BOARD.dts: /home/olof/programs/zephyr/fjalar_firmware/application/tracker/boards/vendor/techo/techo.dts
+-- Found devicetree overlay: /home/olof/programs/zephyr/fjalar_firmware/application/tracker/boards/techo.overlay
+-- Generated zephyr.dts: /home/olof/programs/zephyr/fjalar_firmware/build/zephyr/zephyr.dts
+-- Generated pickled edt: /home/olof/programs/zephyr/fjalar_firmware/build/zephyr/edt.pickle
+-- Generated devicetree_generated.h: /home/olof/programs/zephyr/fjalar_firmware/build/zephyr/include/generated/zephyr/devicetree_generated.h

@@ -1,4 +1,4 @@
-identifier: t_echo
+identifier: techo
 name: T-echo
 type: mcu
 arch: arm

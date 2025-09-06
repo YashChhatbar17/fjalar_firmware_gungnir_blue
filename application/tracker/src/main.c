@@ -25,7 +25,7 @@ void button_callback(const struct device *dev, struct gpio_callback *cb, uint32_
     static uint32_t pressed_at = 0;
 
     bool state = gpio_pin_get_dt(&button_sw);
-    // LOG_DBG("button pressed at %d %d", k_uptime_get_32(), state);
+    LOG_DBG("button pressed at %d %d", k_uptime_get_32(), state);
 
     // driver doesn't debounce
     if (k_uptime_get_32() - pressed_at < 50) {
@@ -45,6 +45,7 @@ void button_callback(const struct device *dev, struct gpio_callback *cb, uint32_
         }
     }
 }
+void drawing_thread(void*, void*, void*);
 
 int main(void)
 {
@@ -55,6 +56,7 @@ int main(void)
 		k_msleep(1000);
 	}
 	#endif
+
     init_display(&tracker_god);
     init_communication(&tracker_god);
     init_sensors(&tracker_god);
@@ -74,13 +76,19 @@ int main(void)
     gpio_init_callback(&button_callback_data, button_callback, BIT(button_sw.pin));
     ret = gpio_add_callback_dt(&button_sw, &button_callback_data);
 
+    if (ret) {
+        LOG_ERR("configuring GPIO failed %d", ret);
+    }
+
     while (1) {
         ret = gpio_pin_toggle_dt(&gpio_led);
         if (ret < 0) {
             return 0;
         }
 
-        k_msleep(100);
+        LOG_ERR("Goon");
+
+        k_msleep(1000);
     }
     return 0;
 }

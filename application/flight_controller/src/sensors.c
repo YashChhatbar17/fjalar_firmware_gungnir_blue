@@ -174,7 +174,7 @@ void imu_thread(fjalar_t *fjalar, void *p2, void *p3) {
 		if (ret != 0) {
 			LOG_ERR("Could not write to imu msgq %d", ret);
 			continue;
-		} 
+		}
 
 		fjalar_message_t msg;
 		msg.time = k_uptime_get_32();

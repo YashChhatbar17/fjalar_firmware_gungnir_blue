@@ -39,25 +39,60 @@ void next_frame(tracker_t *tracker) {
 }
 
 void drawing_thread(tracker_t *tracker, void *p2, void *p3) {
+	const struct device *dev;
+	uint16_t x_res;
+	uint16_t y_res;
+	uint16_t rows;
+	uint8_t ppt;
 
-    // init screen
-    if (!device_is_ready(display_dev)) {
-        LOG_ERR("Display not ready");
-    }
-    if (display_set_pixel_format(display_dev, PIXEL_FORMAT_MONO10) != 0) {
-        LOG_ERR("Failed to set required pixel format\n");
-    }
-    if (cfb_framebuffer_init(display_dev)) {
-        LOG_ERR("Framebuffer initialization failed!\n");
-    }
-    cfb_framebuffer_clear(display_dev, true);
-    display_blanking_off(display_dev);
-    for (int idx = 0; idx < 42; idx++) {
-        if (cfb_get_font_size(display_dev, idx, &font_width, &font_height)) {
+	dev = DEVICE_DT_GET(DT_CHOSEN(zephyr_display));
+	if (!device_is_ready(dev)) {
+		LOG_ERR("Device %s not ready\n", dev->name);
+		return;
+	}
+
+	if (display_set_pixel_format(dev, PIXEL_FORMAT_MONO10) != 0) {
+		if (display_set_pixel_format(dev, PIXEL_FORMAT_MONO01) != 0) {
+			LOG_ERR("Failed to set required pixel format");
+			return;
+		}
+	}
+
+	LOG_INF("Initialized %s\n", dev->name);
+
+	if (cfb_framebuffer_init(dev)) {
+		LOG_ERR("Framebuffer initialization failed!\n");
+		return;
+	}
+
+	cfb_framebuffer_clear(dev, true);
+
+	display_blanking_off(dev);
+
+	x_res = cfb_get_display_parameter(dev, CFB_DISPLAY_WIDTH);
+	y_res = cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGHT);
+	rows = cfb_get_display_parameter(dev, CFB_DISPLAY_ROWS);
+	ppt = cfb_get_display_parameter(dev, CFB_DISPLAY_PPT);
+
+	for (int idx = 0; idx < 42; idx++) {
+		if (cfb_get_font_size(dev, idx, &font_width, &font_height)) {
 			break;
 		}
-		cfb_framebuffer_set_font(display_dev, idx);
+		cfb_framebuffer_set_font(dev, idx);
+		LOG_INF("font width %d, font height %d\n",
+		       font_width, font_height);
 	}
+
+	LOG_INF("x_res %d, y_res %d, ppt %d, rows %d, cols %d\n",
+	       x_res,
+	       y_res,
+	       ppt,
+	       rows,
+	       cfb_get_display_parameter(dev, CFB_DISPLAY_COLS));
+
+	cfb_framebuffer_invert(dev);
+
+	cfb_set_kerning(dev, 3);
 
     //init gpio
     const struct gpio_dt_spec touch_sw = GPIO_DT_SPEC_GET(DT_ALIAS(sw1), gpios);
@@ -80,50 +115,37 @@ void drawing_thread(tracker_t *tracker, void *p2, void *p3) {
 
 const static char* state_to_string(enum flight_state state) {
     switch(state) {
-        case FLIGHT_STATE_IDLE:
-            return "Idle";
-        case FLIGHT_STATE_LAUNCHPAD:
-            return "Launchpad";
-        case FLIGHT_STATE_BOOST:
-            return "Boost";
-        case FLIGHT_STATE_COAST:
-            return "Coast";
-        case FLIGHT_STATE_FREE_FALL:
-            return "Free Fall";
-        case FLIGHT_STATE_DROGUE_DESCENT:
-            return "Drogue";
-        case FLIGHT_STATE_MAIN_DESCENT:
-            return "Main";
-        case FLIGHT_STATE_LANDED:
-            return "Landed";
         default:
-            return "error";
-            LOG_ERR("Invalid flight state");
+            return "goon";
+            // LOG_ERR("Invalid flight state");
     }
 }
 
 void draw_frame(tracker_t *tracker, enum screen_frames frame) {
     LOG_DBG("Draw frame");
-    cfb_framebuffer_clear(display_dev, false);
+    cfb_framebuffer_clear(display_dev, true);
 
     uint8_t buf[128];
     int len;
     int i = 0;
     int x_offset = 10;
+    LOG_ERR("hej? %d", tracker->current_frame);
     switch (frame) {
         case FRAME_INFO:
+            LOG_ERR("chud");
             i = 3;
             len = snprintk(buf, sizeof(buf), "info");
             cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
             break;
         case FRAME_TRACKING:
+            i = 3;
             len = snprintk(buf, sizeof(buf), "tracking");
             cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
             len = snprintk(buf, sizeof(buf), "rocket");
             cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "lat: %f°", tracker->telemetry.latitude);
+            len = snprintk(buf, sizeof(buf), "lat: %f°", tracker->rocket.lat);
             cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "lon: %f°", tracker->telemetry.longitude);
+            len = snprintk(buf, sizeof(buf), "lon: %f°", tracker->rocket.lon);
             cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
             len = snprintk(buf, sizeof(buf), "tracker");
             cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
@@ -132,79 +154,48 @@ void draw_frame(tracker_t *tracker, enum screen_frames frame) {
             len = snprintk(buf, sizeof(buf), "lon: %f°", tracker->longitude);
             cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
 
-            float distance = haversine_distance(tracker->telemetry.latitude, tracker->telemetry.longitude, tracker->latitude, tracker->longitude);
-            len = snprintk(buf, sizeof(buf), "distance: %fm", distance);
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
+            // float distance = haversine_distance(tracker->telemetry.latitude, tracker->telemetry.longitude, tracker->latitude, tracker->longitude);
+            // len = snprintk(buf, sizeof(buf), "distance: %fm", distance);
+            // cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
             break;
         case FRAME_TELEMETRY:
-            len = snprintk(buf, sizeof(buf), "alt: %fm", tracker->telemetry.altitude);
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "vel: %fm/s", tracker->telemetry.velocity);
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "az: %fm/s2", tracker->telemetry.az);
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "p1:%d p2:%d p3:%d", tracker->telemetry.pyro1_connected, tracker->telemetry.pyro2_connected, tracker->telemetry.pyro3_connected);
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "rssi: %ddBm", tracker->local_rssi);
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "state: %s", state_to_string(tracker->telemetry.flight_state));
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "flash: %f%%", tracker->telemetry.flash_address / (float) 0x8000000 * 100 * 8);
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "volt: %fV", tracker->telemetry.battery);
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            break;
-        case FRAME_PYRO1:
             i = 3;
-            len = snprintk(buf, sizeof(buf), "PYRO 1");
+            len = snprintk(buf, sizeof(buf), "telemetry");
             cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "connected: %d", tracker->telemetry.pyro1_connected);
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            break;
-        case FRAME_PYRO2:
-            i = 3;
-            len = snprintk(buf, sizeof(buf), "PYRO 2");
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "connected: %d", tracker->telemetry.pyro2_connected);
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            break;
-        case FRAME_PYRO3:
-            i = 3;
-            len = snprintk(buf, sizeof(buf), "PYRO 3");
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "connected: %d", tracker->telemetry.pyro3_connected);
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
+            // len = snprintk(buf, sizeof(buf), "vel: %fm/s", tracker->telemetry.velocity);
+            // cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
+            // len = snprintk(buf, sizeof(buf), "az: %fm/s2", tracker->telemetry.az);
+            // cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
+            // len = snprintk(buf, sizeof(buf), "p1:%d p2:%d p3:%d", tracker->telemetry.pyro1_connected, tracker->telemetry.pyro2_connected, tracker->telemetry.pyro3_connected);
+            // cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
+            // len = snprintk(buf, sizeof(buf), "rssi: %ddBm", tracker->local_rssi);
+            // cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
+            // len = snprintk(buf, sizeof(buf), "state: %s", state_to_string(tracker->telemetry.flight_state));
+            // cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
+            // len = snprintk(buf, sizeof(buf), "flash: %f%%", tracker->telemetry.flash_address / (float) 0x8000000 * 100 * 8);
+            // cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
+            // len = snprintk(buf, sizeof(buf), "volt: %fV", tracker->telemetry.battery);
+            // cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
             break;
         case FRAME_GET_READY:
             i = 3;
             len = snprintk(buf, sizeof(buf), "BECOME READY?");
             cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "state: %s", state_to_string(tracker->telemetry.flight_state));
+            len = snprintk(buf, sizeof(buf), "state: %s", state_to_string(tracker->rocket.state));
             cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
             break;
-        case FRAME_ENTER_IDLE:
+        case FRAME_ENTER_INIT:
             i = 3;
-            len = snprintk(buf, sizeof(buf), "BECOME IDLE?");
+            len = snprintk(buf, sizeof(buf), "START INIT?");
             cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "state: %s", state_to_string(tracker->telemetry.flight_state));
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            break;
-        case FRAME_ENTER_SUDO:
-            i = 3;
-            len = snprintk(buf, sizeof(buf), "SUDO MODE?");
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "Sudo: %d", tracker->telemetry.sudo);
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            break;
-        case FRAME_CLEAR_FLASH:
-            i = 3;
-            len = snprintk(buf, sizeof(buf), "CLEAR FLASH?");
-            cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
-            len = snprintk(buf, sizeof(buf), "flash address: %d", tracker->telemetry.flash_address);
+            len = snprintk(buf, sizeof(buf), "state: %s", state_to_string(tracker->rocket.state));
             cfb_draw_text(display_dev, buf, x_offset, i++ * font_height);
             break;
         case FRAME_MAX:
             break;
     }
-    cfb_framebuffer_finalize(display_dev);
+    int e = cfb_framebuffer_finalize(display_dev);
+    if (e) {
+        LOG_ERR("framebuffer could not be finalied: %d", e);
+    }
 }

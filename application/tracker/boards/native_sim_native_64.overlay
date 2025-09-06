@@ -33,14 +33,6 @@
         };
         debounce-interval-ms = < 50 >;
     };
-
-    // uart2: uart2 {
-    //     status = "okay";
-    //     compatible = "zephyr,native-tty-uart";
-    //     serial-port = "/dev/pts/12";
-    //     current-speed = <115200>;
-    // };
-
 };
 
 &zephyr_udc0 {
@@ -62,4 +54,8 @@
       compatible = "zephyr,gpio-emul-sdl";
       scancodes = <54 55>;
     };
+};
+
+&uart1 {
+    status="okay";
 };

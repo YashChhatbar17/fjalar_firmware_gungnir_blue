@@ -1,0 +1,6 @@
+board:
+  name: techo
+  full_name: T-Echo Tracker
+  vendor: vendor
+  socs:
+    - name: nrf52840

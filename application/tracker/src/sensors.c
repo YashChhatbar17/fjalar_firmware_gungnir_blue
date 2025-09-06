@@ -1,17 +1,22 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/adc.h>
 #include <math.h>
+
+
 
 #include <minmea.h>
 
 #include "tracker.h"
 
-LOG_MODULE_REGISTER(gps, CONFIG_APP_SENSORS_LOG_LEVEL);
+LOG_MODULE_REGISTER(sensors, CONFIG_APP_SENSORS_LOG_LEVEL);
 
 #define GPS_THREAD_STACK_SIZE 2048
-
 #define GPS_THREAD_PRIORITY 7
+
+#define VBAT_THREAD_PRIORITY 7
+#define VBAT_THREAD_STACK_SIZE 2048
 
 #if DT_ALIAS_EXISTS(gps_uart)
 K_THREAD_STACK_DEFINE(gps_thread_stack, GPS_THREAD_STACK_SIZE);
@@ -19,7 +24,12 @@ struct k_thread gps_thread_data;
 k_tid_t gps_thread_id;
 #endif
 
+K_THREAD_STACK_DEFINE(vbat_thread_stack, VBAT_THREAD_STACK_SIZE);
+struct k_thread vbat_thread_data;
+k_tid_t vbat_thread_id;
+
 void gps_thread(tracker_t *tracker, void *p2, void *p3);
+void vbat_thread(tracker_t *fjalar, void *p2, void *p3);
 
 void init_sensors(tracker_t *tracker) {
 	#if DT_ALIAS_EXISTS(gps_uart)
@@ -32,6 +42,18 @@ void init_sensors(tracker_t *tracker) {
 		GPS_THREAD_PRIORITY, 0, K_NO_WAIT
 	);
 	k_thread_name_set(gps_thread_id, "gps");
+	#endif
+
+    #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
+	vbat_thread_id = k_thread_create(
+		&vbat_thread_data,
+		vbat_thread_stack,
+		K_THREAD_STACK_SIZEOF(vbat_thread_stack),
+		(k_thread_entry_t) vbat_thread,
+		tracker, NULL, NULL,
+		VBAT_THREAD_PRIORITY, 0, K_NO_WAIT
+	);
+	k_thread_name_set(vbat_thread_id, "bat_adc");
 	#endif
 }
 
@@ -151,3 +173,62 @@ float haversine_distance(float lat1, float lon1, float lat2, float lon2) {
 
     return distance;
 }
+
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
+void vbat_thread(tracker_t *tracker, void *p2, void *p3) {
+	#define DT_SPEC_AND_COMMA(node_id, prop, idx) \
+	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+	static const struct adc_dt_spec adc_channels[] = {
+		DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels,
+					DT_SPEC_AND_COMMA)
+	};
+	int err;
+
+	for (size_t i = 0U; i < ARRAY_SIZE(adc_channels); i++) {
+		if (!device_is_ready(adc_channels[i].dev)) {
+			LOG_ERR("ADC controller device %s not ready\n", adc_channels[i].dev->name);
+			return;
+		}
+		err = adc_channel_setup_dt(&adc_channels[i]);
+		if (err < 0) {
+			LOG_ERR("Could not setup channel #%d (%d)\n", i, err);
+			return;
+		}
+	}
+
+	while (true) {
+		k_msleep(100);
+		uint16_t sample;
+		struct adc_sequence sequence;
+		struct adc_sequence_options options;
+		options.interval_us = 0;
+		options.extra_samplings = 0;
+		options.callback = NULL;
+		sequence.buffer = &sample;
+		sequence.buffer_size = sizeof(sample);
+		sequence.options = &options;
+		err = adc_sequence_init_dt(&adc_channels[0], &sequence);
+		if (err) {
+			LOG_ERR("Could not init adc channel");
+			continue;
+		}
+		err = adc_read(adc_channels[0].dev, &sequence);
+		if (err) {
+			LOG_ERR("Could not read adc channel");
+			continue;
+		}
+		uint32_t mv = sample;
+		float volt;
+		// const float numerator = DT_PROP(DT_PATH(zephyr_user), battery_numerator);
+		// const float denominator = DT_PROP(DT_PATH(zephyr_user), battery_denominator);
+		err = adc_raw_to_millivolts_dt(&adc_channels[0],
+						       &mv);
+		if (err) {
+			LOG_ERR("Could not convert adc raw");
+		}
+		volt = (mv / 1000.0);
+		tracker->battery_voltage = volt;
+		LOG_DBG("battery voltage raw: %f scaled: %f", mv / 1000.0, volt);
+	}
+}
+#endif
