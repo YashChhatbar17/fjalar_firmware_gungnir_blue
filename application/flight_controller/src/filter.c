@@ -56,11 +56,11 @@ TODO:
 */
 
 void position_filter_init(position_filter_t *pos_kf, init_t *init) {
-    float process_variance = 0.01;
+    float position_process_variance = 10;
     float ax_variance = 0.01;
     float ay_variance = 0.01;
     float az_variance = 0.01;
-    float pressure_variance = 92;
+    float pressure_variance = 10000.0;
     float lon_variance = 0.001; // measure these
     float lat_variance = 0.001; // measure these
     float alt_variance = 0.001; // measure these
@@ -77,15 +77,15 @@ void position_filter_init(position_filter_t *pos_kf, init_t *init) {
 
 
     float P_init[81] = {
-        process_variance, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, process_variance, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, process_variance, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, process_variance, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, process_variance, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, process_variance, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, process_variance, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, process_variance, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, process_variance
+        position_process_variance, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, position_process_variance, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, position_process_variance, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, position_process_variance, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, position_process_variance, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, position_process_variance, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, position_process_variance, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, position_process_variance, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, position_process_variance
     };
     pos_kf->P.data = pos_kf->P_data;
     pos_kf->P.sz_rows = 9;
@@ -335,6 +335,8 @@ void position_filter_barometer(init_t *init, position_filter_t *pos_kf, float pr
     // y
     ZSL_MATRIX_DEF(y, 1, 1);
     zsl_mtx_sub(&z, &hx, &y);
+    //LOG_INF("P altitude variance: %f", pos_kf->P_data[20]);
+
 
     // S
     ZSL_MATRIX_DEF(HP, 1, 9);
@@ -489,7 +491,7 @@ void Pmtx_analysis(position_filter_t *pos_kf){
 
 // Attitude Filter
 void attitude_filter_init(attitude_filter_t *att_kf, init_t *init) {
-    float process_variance = 0.01;
+    float attitude_process_variance = 0.01;
     float ax_variance = 0.03;
     float ay_variance = 0.03;
     float az_variance = 0.03;
@@ -506,9 +508,9 @@ void attitude_filter_init(attitude_filter_t *att_kf, init_t *init) {
     */
 
     float P_init[9] = {
-        process_variance, 0, 0,
-        0, process_variance, 0,
-        0, 0, process_variance
+        attitude_process_variance, 0, 0,
+        0, attitude_process_variance, 0,
+        0, 0, attitude_process_variance
 
     };
     att_kf->P.data = att_kf->P_data;
@@ -842,7 +844,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
                 pos_kf->raw_gps_lat = gps.lat;
                 pos_kf->raw_gps_lon = gps.lon;
                 pos_kf->raw_gps_alt = gps.alt;
-                position_filter_gps(init, pos_kf, gps.lat, gps.lon, gps.alt, gps.t);
+                //position_filter_gps(init, pos_kf, gps.lat, gps.lon, gps.alt, gps.t);
 
 
 
@@ -857,7 +859,6 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         Pmtx_analysis(pos_kf);
 
-        LOG_INF("z: %f", pos_kf->X_data[2]);
         /*
         LOG_DBG("x: %f", pos_kf->X_data[0]);
         LOG_DBG("y: %f", pos_kf->X_data[1]);

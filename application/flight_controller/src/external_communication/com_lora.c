@@ -193,6 +193,17 @@ void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 		};
 		lora_msg_enqueue(&msg_gps);
 
+		// FlightState
+		fjalar_message_t msg_flight_state = {
+			.time = k_uptime_get_32(),
+			.has_data = true,
+			.data = {
+				.which_data = FJALAR_DATA_FLIGHT_STATE_TAG,
+				.data.flight_state = state->flight_state
+			},
+		};
+		flash_msg_enqueue(&msg_flight_state);
+
 		k_msleep(1000);
 	}
 }

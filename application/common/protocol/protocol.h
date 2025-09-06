@@ -39,8 +39,8 @@ int get_encoded_message_length(uint8_t *buf);
 
 #define PROTOCOL_ZEPHYR_LORA_CONFIG { \
     .bandwidth = BW_500_KHZ, \
-    .coding_rate = CR_4_6, \
-    .datarate = 	SF_8, \
+    .coding_rate = CR_4_8, \
+    .datarate = 	SF_12, \
     .frequency = 437000000, \
     .iq_inverted = false, \
     .preamble_len = 8, \

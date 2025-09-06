@@ -108,6 +108,11 @@ void handle_hil_in(hil_in_t *msg, fjalar_t *fjalar, enum com_channels channel){
     #endif
 }
 
+void handle_gcb_in(lora_gcb_to_fjalar_t *msg, fjalar_t *fjalar, enum com_channels channel){
+	fjalar->ptr_lora->LORA_READY_INITIATE_FJALAR = msg->ready_initiate_fjalar;
+	fjalar->ptr_lora->LORA_READY_LAUNCH_FJALAR = msg->ready_launch_fjalar;
+}
+
 void handle_set_sudo(set_sudo_t *msg, fjalar_t *fjalar, enum com_channels channel) {
     fjalar->sudo = msg->enabled;
     LOG_WRN("set sudo %d", msg->enabled);
@@ -194,6 +199,8 @@ void handle_fjalar_message(fjalar_message_t *msg, fjalar_t *fjalar, state_t *sta
         case FJALAR_DATA_HIL_IN_TAG:
             handle_hil_in(&msg->data.data.hil_in, fjalar, channel);
             break;
+		case FJALAR_DATA_LORA_GCB_TO_FJALAR_TAG:
+			handle_gcb_in(&msg->data.data.lora_gcb_to_fjalar, fjalar, channel);
         default:
             LOG_ERR("Unsupported message: %d", msg->data.which_data);
     }

@@ -88,17 +88,19 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
             init_init(&fjalar_god); // see mural documentation
             init_sensors(&fjalar_god); // see mural documentation
         }
+        LOG_INF("flight state: STATE_IDLE");
         break;
     case STATE_AWAITING_INIT:
         if (init->init_completed){
             state->flight_state = STATE_INITIATED;
         } // change for lora struct
+        LOG_INF("flight state: STATE_AWAITING_INIT");
         break;
     case STATE_INITIATED:
         if (lora->LORA_READY_LAUNCH_FJALAR){
             state->flight_state = STATE_AWAITING_LAUNCH;
         }
-        //LOG_ERR("flight state: STATE_INITIATED");
+        LOG_ERR("flight state: STATE_INITIATED");
         break;
     case STATE_AWAITING_LAUNCH:
         if (a_norm > BOOST_ACCEL_THRESHOLD && z > 3){
@@ -113,7 +115,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
             state->liftoff_time = k_uptime_get_32();
             LOG_WRN("Changing state to BOOST due to speed");
         }
-        //LOG_INF("flight state: STATE_AWAITING_LAUNCH");
+        LOG_INF("flight state: STATE_AWAITING_LAUNCH");
         break;
     case STATE_BOOST:
         if (az < COAST_ACCEL_THRESHOLD && !aerodynamics->thrust_bool) {
@@ -124,7 +126,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
         if (vz < 0) {
             LOG_WRN("Fake pressure increase due to sonic shock wave"); // this is probably useless
             }
-        //LOG_INF("flight state: STATE_BOOST");
+        LOG_INF("flight state: STATE_BOOST");
         break;
     case STATE_COAST:
         
