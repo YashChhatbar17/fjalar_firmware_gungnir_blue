@@ -60,7 +60,7 @@ void position_filter_init(position_filter_t *pos_kf, init_t *init) {
     float ax_variance = 0.01;
     float ay_variance = 0.01;
     float az_variance = 0.01;
-    float pressure_variance = 10000.0;
+    float pressure_variance = 1000.0;
     float lon_variance = 0.001; // measure these
     float lat_variance = 0.001; // measure these
     float alt_variance = 0.001; // measure these
@@ -865,10 +865,10 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         counter++;
         */
 
-        /*
+        
         LOG_DBG("x: %f", pos_kf->X_data[0]);
         LOG_DBG("y: %f", pos_kf->X_data[1]);
-        LOG_DBG("z: %f", pos_kf->X_data[2]);
+        LOG_WRN("z: %f", pos_kf->X_data[2]);
 
         LOG_DBG("vx: %f", pos_kf->X_data[3]);
         LOG_DBG("vy: %f", pos_kf->X_data[4]);
@@ -878,9 +878,9 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         LOG_DBG("ay: %f", pos_kf->X_data[7]);
         LOG_DBG("az: %f", pos_kf->X_data[8]);
 
-        LOG_DBG("v_norm: %f", pos_kf->v_norm);
-        LOG_DBG("a_norm: %f", pos_kf->a_norm);
-        */
+        LOG_WRN("v_norm: %f", pos_kf->v_norm);
+        LOG_WRN("a_norm: %f", pos_kf->a_norm);
+        
         k_msleep(10); // 100 Hz
         }
     }

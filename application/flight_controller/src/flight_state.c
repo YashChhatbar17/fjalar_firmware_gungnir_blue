@@ -86,6 +86,8 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
     float a_norm = pos_kf->a_norm;
     float v_norm = pos_kf->v_norm;
 
+    static int counter = 0;
+
     switch (state->flight_state) {
     case STATE_IDLE:
         if (lora->LORA_READY_INITIATE_FJALAR){
@@ -93,20 +95,26 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
             init_init(&fjalar_god); // see mural documentation
             init_sensors(&fjalar_god); // see mural documentation
         }
-        LOG_INF("flight state: STATE_IDLE");
+
+        if (counter%100 == 0){LOG_INF("flight state: STATE_IDLE");}
+        counter++;
+
         break;
     case STATE_AWAITING_INIT:
         if (init->init_completed){
             state->flight_state = STATE_INITIATED;
         } // change for lora struct
-        LOG_INF("flight state: STATE_AWAITING_INIT");
+        if (counter%100 == 0){LOG_INF("flight state: STATE_AWAITING_INIT");}
+        counter++;
+        
         break;
     case STATE_INITIATED:
         if (lora->LORA_READY_LAUNCH_FJALAR){
             state->flight_state = STATE_AWAITING_LAUNCH;
             start_pyro_camera(fjalar);
         }
-        LOG_ERR("flight state: STATE_INITIATED");
+        if (counter%100 == 0){LOG_ERR("flight state: STATE_INITIATED");}
+        counter++;
         break;
     case STATE_AWAITING_LAUNCH:
         if (a_norm > BOOST_ACCEL_THRESHOLD && z > 3){
@@ -121,7 +129,8 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
             state->liftoff_time = k_uptime_get_32();
             LOG_WRN("Changing state to BOOST due to speed");
         }
-        LOG_INF("flight state: STATE_AWAITING_LAUNCH");
+        if (counter%100 == 0){LOG_INF("flight state: STATE_AWAITING_LAUNCH");}
+        counter++;
         break;
     case STATE_BOOST:
         if (az < COAST_ACCEL_THRESHOLD && !aerodynamics->thrust_bool) {

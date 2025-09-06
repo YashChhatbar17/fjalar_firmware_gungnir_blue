@@ -176,6 +176,10 @@ void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
     state_t           *state = fjalar->ptr_state;
     control_t         *control = fjalar->ptr_control;
     can_t             *can = fjalar->ptr_can;
+	lora_t            *lora = fjalar->ptr_lora;
+
+	lora->LORA_READY_INITIATE_FJALAR = true;
+	lora->LORA_READY_LAUNCH_FJALAR = true;
 
 	while (true){
 		// gps
