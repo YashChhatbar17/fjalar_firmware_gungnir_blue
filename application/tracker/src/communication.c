@@ -119,9 +119,11 @@ void send_message(tracker_t *tracker, fjalar_message_t *msg) {
 void handle_fjalar_message(tracker_t *tracker, struct fjalar_message *msg) {
 	LOG_DBG("handling message with ID %d", msg->data.which_data);
     switch (msg->data.which_data) {
-        // case FJALAR_DATA_TELEMETRY_PACKET_TAG:
-            // tracker->telemetry = msg->data.data.telemetry_packet;
-            // break;
+        case FJALAR_DATA_GNSS_POSITION_TAG:
+            LOG_INF("Got GPS");
+            tracker->rocket.lat = msg->data.data.gnss_position.latitude;
+            tracker->rocket.lon = msg->data.data.gnss_position.longitude;
+            break;
         default:
 			LOG_DBG("Could not handle message with ID %d", msg->data.which_data);
     }
@@ -169,7 +171,7 @@ int lora_configure(const struct device *dev, uint8_t transmit) {
 	}
     struct lora_modem_config config = PROTOCOL_ZEPHYR_LORA_CONFIG;
     config.tx = transmit;
-	config.tx_power = 10;
+	config.tx_power = 22;
     int ret = lora_config(dev, &config);
 	if (ret < 0) {
 		LOG_ERR("Could not configure lora %d", ret);

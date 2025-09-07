@@ -6,9 +6,10 @@ from collections import defaultdict, deque
 from google.protobuf import json_format
 import sys
 import time
-
-# import hvplot.streamz
-# from streamz.dataframe import DataFrame
+from queue import Queue
+import os
+from datetime import datetime
+import base64
 
 ALIGNMENT_BYTE = 0x33
 CRC_POLY= 0x1011
@@ -16,26 +17,36 @@ CRC_SEED = 0x35
 BAUDRATE=1000000
 
 class FjalarParser:
-    def __init__(self, path):
-        try:
-            self.stream = serial.Serial(port=path, baudrate=BAUDRATE)
-            self.stream_is_file = False
-            print("opened serial")
-        except:
-            # self.stream_is_file = True
-            # try:
-            #     self.stream = open(path, "rb")
-            #     print("opened file")
-            # except:
-            sys.exit()
-
+    def __init__(self):
         self.data = defaultdict(lambda: ([], []))
-        self.message_que = deque(maxlen=100)
+        self.message_queue = deque(maxlen=100)
+        self.backup_stream = None
+
+    def open_serial(self, path):
+        self.stream = serial.Serial(port=path, baudrate=BAUDRATE)
+
+        os.makedirs("data", exist_ok=True)
+        now = datetime.now()
+        filename = now.strftime("data_%Y_%m_%d_%H_%M_%S.bin")
+        self.backup_stream = open("data/" + filename, "wb")
+
         self._reader_t = Thread(target=self._reader_thread)
         self._reader_t.start()
+        print("opened serial")
+
+    def open_file(self, path):
+        self.stream = open(path, "rb")
+
+        self._reader_t = Thread(target=self._reader_thread)
+        self._reader_t.start()
+        print("opened file")
 
     def _read(self, len):
-        return self.stream.read(len)
+        buf = self.stream.read(len)
+        if self.backup_stream is not None:
+            self.backup_stream.write(buf)
+
+        return buf
 
     def _write(self, buf):
         self.stream.write(buf)
@@ -65,15 +76,23 @@ class FjalarParser:
                 continue
             msg = schema.FjalarMessage()
             msg.ParseFromString(data)
-            self.message_que.append(msg)
             time = msg.time / 1000
-            data = json_format.MessageToDict(msg.data, including_default_value_fields=True)
+            data = json_format.MessageToDict(msg.data, always_print_fields_with_no_presence=True)
             print(data)
             try:
-                data = data[next(iter(data.keys()))] # ignore the message name
-                for field in data.keys():
-                    self.data[field][0].append(time)
-                    self.data[field][1].append(data[field])
+                self.message_queue.append(data)
+            except:
+                pass
+
+            try:
+                name = next(iter(data.keys()))
+                if data is dict:
+                    for field in data.keys():
+                        self.data[field][0].append(time)
+                        self.data[field][1].append(data[name][field])
+                else: # there is only one message that uses this path but I'm too tired to tell fabian to fix it
+                    self.data[name][0].append(time)
+                    self.data[name][1].append(data[name])
             except:
                 print("invalid data", data)
 
@@ -104,11 +123,23 @@ class FjalarParser:
         msg.data.CopyFrom(data_msg)
         self._write_message(msg)
 
-    def ready_up(self):
+    def enter_initiate(self):
         msg = schema.FjalarMessage()
         data_msg = schema.FjalarData()
-        ready_up_msg = schema.ReadyUp()
-        data_msg.ready_up.CopyFrom(ready_up_msg)
+        lora_msg = schema.LORA_GcbToFjalar()
+        lora_msg.ready_initiate_fjalar = True
+        lora_msg.ready_launch_fjalar = False
+        data_msg.lora_gcb_to_fjalar.CopyFrom(lora_msg)
+        msg.data.CopyFrom(data_msg)
+        self._write_message(msg)
+
+    def enter_launch(self):
+        msg = schema.FjalarMessage()
+        data_msg = schema.FjalarData()
+        lora_msg = schema.LORA_GcbToFjalar()
+        lora_msg.ready_initiate_fjalar = False
+        lora_msg.ready_launch_fjalar = True
+        data_msg.lora_gcb_to_fjalar.CopyFrom(lora_msg)
         msg.data.CopyFrom(data_msg)
         self._write_message(msg)
 
@@ -121,6 +152,7 @@ class FjalarParser:
         msg.data.CopyFrom(data_msg)
         self._write_message(msg)
 
+
     def read_flash(self, index, length):
         msg = schema.FjalarMessage()
         data_msg = schema.FjalarData()
@@ -132,16 +164,19 @@ class FjalarParser:
         self._write_message(msg)
 
         start = time.time()
-        index_to_read = 0
 
         while True:
             if time.time() - start > 1:
-                return []
-            if len(self.message_que) > 0:
-                msg = self.message_que.pop()
-                if msg.data.HasField("flash_data"):
-                    if msg.data.flash_data.start_index == index and len(msg.data.flash_data.data) == length:
-                        return msg.data.flash_data.data
+                return None
+            if len(self.message_queue) > 0:
+                msg = self.message_queue.pop()
+                if "flashData" in msg:
+                    print(msg)
+                    buf = base64.b64decode(msg["flashData"]["data"])
+                    print(len(buf))
+                    if msg["flashData"]["startIndex"] == index and len(buf) == length:
+                        return buf  # was mixing dict/attr
                     else:
-                        print(msg.data.flash_data.start_index, index, len(msg.data.flash_data.data), length)
-                        print("got a different flash message somewhow")
+                        print(msg["flashData"]["startIndex"], index, len(buf), length)
+                        print("got a different flash message somehow")
+            time.sleep(0.0001)
