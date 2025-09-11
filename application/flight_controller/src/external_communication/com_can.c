@@ -147,11 +147,11 @@ void can_rx_sigurd(const struct device *const can_dev, struct can_frame *frame, 
 // Give privilage to RX callbacks
 static int can_cb_priv_init(can_t *can){
     int err;
-    err = can_add_rx_filter(can_dev, can_rx_loki, &can, &filter_rx_loki);
-    if (err < 0) {LOG_ERR("adding loki filter failed: %d", err);}
+    err = can_add_rx_filter(can_dev, can_rx_loki, can, &filter_rx_loki);
+    if (err) {LOG_ERR("adding loki filter failed: %d", err);}else{LOG_WRN("adding loki filter success");}
 
-    //err = can_add_rx_filter(can_dev, can_rx_sigurd, &can, &filter_rx_sigurd);
-    //if (err < 0) {LOG_ERR("adding sigurd filter failed: %d", err);}
+    //err = can_add_rx_filter(can_dev, can_rx_sigurd, can, &filter_rx_sigurd);
+    //if (err) {LOG_ERR("adding sigurd filter failed: %d", err);}
     return 0;
 }
 
@@ -202,9 +202,9 @@ void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
         #endif
 
         /*
-        LOG_INF("loki_state     : %d", can->loki_state);
-        LOG_INF("loki_sub_state : %d", can->loki_sub_state);
-        LOG_INF("loki_angle     : %f", can->loki_angle);
+        LOG_INF("loki_state          : %d", can->loki_state);
+        LOG_INF("loki_sub_state      : %d", can->loki_sub_state);
+        LOG_INF("loki_angle          : %f", can->loki_angle);
         LOG_INF("loki_battery_voltage: %f", can->loki_battery_voltage);
         */
 

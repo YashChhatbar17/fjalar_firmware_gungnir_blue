@@ -208,6 +208,6 @@ void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 		};
 		lora_msg_enqueue(&msg_flight_state);
 
-		k_msleep(3000);
+		k_msleep(5000);
 	}
 }

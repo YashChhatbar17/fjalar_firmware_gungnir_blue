@@ -201,6 +201,7 @@ void handle_fjalar_message(fjalar_message_t *msg, fjalar_t *fjalar, state_t *sta
             break;
 		case FJALAR_DATA_LORA_GCB_TO_FJALAR_TAG:
 			handle_gcb_in(&msg->data.data.lora_gcb_to_fjalar, fjalar, channel);
+			break;
         default:
             LOG_ERR("Unsupported message: %d", msg->data.which_data);
     }

@@ -114,7 +114,7 @@ void flash_thread(fjalar_t *fjalar, void *p2, void *p3) {
 				k_mutex_unlock(&flash_mutex);
 				continue;
 			}
-			LOG_INF("wrote to flash address %d", fjalar->flash_address);
+			//LOG_INF("wrote to flash address %d", fjalar->flash_address);
 			int ret = flash_write(flash_dev, fjalar->flash_address, pbuf.buf, size);
 			if (ret) {
 				LOG_ERR("Could not write to flash");
@@ -210,6 +210,10 @@ void flash_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 					.vx    = pos_kf->X_data[3],
 					.vy    = pos_kf->X_data[4],
 					.vz    = pos_kf->X_data[5],
+					.ax    = pos_kf->X_data[6],
+					.ay    = pos_kf->X_data[7],
+					.az    = pos_kf->X_data[8],
+					
 					.roll  = att_kf->X_data[0],
 					.pitch = att_kf->X_data[1],
 					.yaw   = att_kf->X_data[2],

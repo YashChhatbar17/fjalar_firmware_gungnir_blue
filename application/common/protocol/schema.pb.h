@@ -58,6 +58,9 @@ typedef struct state_estimate {
     float vx;
     float vy;
     float vz;
+    float ax;
+    float ay;
+    float az;
     float roll;
     float pitch;
     float yaw;
@@ -283,7 +286,7 @@ extern "C" {
 #define ACKNOWLEDGE_INIT_DEFAULT                 {0}
 #define PRESSURE_READING_INIT_DEFAULT            {0}
 #define IMU_READING_INIT_DEFAULT                 {0, 0, 0, 0, 0, 0}
-#define STATE_ESTIMATE_INIT_DEFAULT              {0, 0, 0, 0, 0, 0, 0, 0, 0}
+#define STATE_ESTIMATE_INIT_DEFAULT              {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define CAN_BUS_INIT_DEFAULT                     {0, 0, 0, 0, 0}
 #define PYRO_STATUS_INIT_DEFAULT                 {0, 0, 0}
 #define CAN_LOKI_TO_FJALAR_INIT_DEFAULT          {0, 0, 0, 0}
@@ -312,7 +315,7 @@ extern "C" {
 #define ACKNOWLEDGE_INIT_ZERO                    {0}
 #define PRESSURE_READING_INIT_ZERO               {0}
 #define IMU_READING_INIT_ZERO                    {0, 0, 0, 0, 0, 0}
-#define STATE_ESTIMATE_INIT_ZERO                 {0, 0, 0, 0, 0, 0, 0, 0, 0}
+#define STATE_ESTIMATE_INIT_ZERO                 {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 #define CAN_BUS_INIT_ZERO                        {0, 0, 0, 0, 0}
 #define PYRO_STATUS_INIT_ZERO                    {0, 0, 0}
 #define CAN_LOKI_TO_FJALAR_INIT_ZERO             {0, 0, 0, 0}
@@ -360,9 +363,12 @@ extern "C" {
 #define STATE_ESTIMATE_VX_TAG                    4
 #define STATE_ESTIMATE_VY_TAG                    5
 #define STATE_ESTIMATE_VZ_TAG                    6
-#define STATE_ESTIMATE_ROLL_TAG                  7
-#define STATE_ESTIMATE_PITCH_TAG                 8
-#define STATE_ESTIMATE_YAW_TAG                   9
+#define STATE_ESTIMATE_AX_TAG                    7
+#define STATE_ESTIMATE_AY_TAG                    8
+#define STATE_ESTIMATE_AZ_TAG                    9
+#define STATE_ESTIMATE_ROLL_TAG                  10
+#define STATE_ESTIMATE_PITCH_TAG                 11
+#define STATE_ESTIMATE_YAW_TAG                   12
 #define CAN_BUS_CAN_STARTED_TAG                  1
 #define CAN_BUS_LOKI_LATEST_RX_TIME_TAG          2
 #define CAN_BUS_LOKI_LATEST_TX_TIME_TAG          3
@@ -492,9 +498,12 @@ X(a, STATIC,   SINGULAR, FLOAT,    z,                 3) \
 X(a, STATIC,   SINGULAR, FLOAT,    vx,                4) \
 X(a, STATIC,   SINGULAR, FLOAT,    vy,                5) \
 X(a, STATIC,   SINGULAR, FLOAT,    vz,                6) \
-X(a, STATIC,   SINGULAR, FLOAT,    roll,              7) \
-X(a, STATIC,   SINGULAR, FLOAT,    pitch,             8) \
-X(a, STATIC,   SINGULAR, FLOAT,    yaw,               9)
+X(a, STATIC,   SINGULAR, FLOAT,    ax,                7) \
+X(a, STATIC,   SINGULAR, FLOAT,    ay,                8) \
+X(a, STATIC,   SINGULAR, FLOAT,    az,                9) \
+X(a, STATIC,   SINGULAR, FLOAT,    roll,             10) \
+X(a, STATIC,   SINGULAR, FLOAT,    pitch,            11) \
+X(a, STATIC,   SINGULAR, FLOAT,    yaw,              12)
 #define STATE_ESTIMATE_CALLBACK NULL
 #define STATE_ESTIMATE_DEFAULT NULL
 
@@ -807,7 +816,7 @@ extern const pb_msgdesc_t fjalar_message_t_msg;
 #define READ_FLASH_SIZE                          22
 #define SCHEMA_PB_H_MAX_SIZE                     FJALAR_MESSAGE_SIZE
 #define SET_SUDO_SIZE                            2
-#define STATE_ESTIMATE_SIZE                      45
+#define STATE_ESTIMATE_SIZE                      60
 #define TRIGGER_PYRO_SIZE                        11
 
 #ifdef __cplusplus

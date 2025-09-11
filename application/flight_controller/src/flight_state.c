@@ -73,10 +73,12 @@ static void deploy_main(fjalar_t *fjalar, init_t *init, state_t *state, position
     LOG_WRN("Main deployed at %.2f m", pos_kf->X_data[2]);
 }
 
+/*
 static void start_pyro_camera(fjalar_t *fjalar){
     set_pyro(fjalar, 3, true); // starts camera [3 = Camera]
     LOG_WRN("Camera Started");
 }
+*/
 
 static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf, aerodynamics_t *aerodynamics, lora_t *lora) {
     float az = pos_kf->X_data[8];
@@ -86,88 +88,71 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
     float a_norm = pos_kf->a_norm;
     float v_norm = pos_kf->v_norm;
 
-    static int counter = 0;
-
     switch (state->flight_state) {
     case STATE_IDLE:
         if (lora->LORA_READY_INITIATE_FJALAR){
             state->flight_state = STATE_AWAITING_INIT;
             init_init(&fjalar_god); // see mural documentation
             init_sensors(&fjalar_god); // see mural documentation
+            LOG_WRN("State transitioned from STATE_IDLE to STATE_AWAITING_INIT due to LoRa command");
         }
-
-        if (counter%100 == 0){LOG_INF("flight state: STATE_IDLE");}
-        counter++;
-
         break;
     case STATE_AWAITING_INIT:
         if (init->init_completed){
             state->flight_state = STATE_INITIATED;
+            LOG_WRN("State transitioned from STATE_AWAITING_INIT to STATE_INITIATED due to completed initialization");
         } // change for lora struct
-        if (counter%100 == 0){LOG_INF("flight state: STATE_AWAITING_INIT");}
-        counter++;
-        
         break;
     case STATE_INITIATED:
         if (lora->LORA_READY_LAUNCH_FJALAR){
             state->flight_state = STATE_AWAITING_LAUNCH;
-            start_pyro_camera(fjalar);
+            LOG_WRN("State transitioned from STATE_INITIATED to STATE_AWAITING_LAUNCH due to LoRa command");
         }
-        if (counter%100 == 0){LOG_ERR("flight state: STATE_INITIATED");}
-        counter++;
         break;
     case STATE_AWAITING_LAUNCH:
         if (a_norm > BOOST_ACCEL_THRESHOLD && z > 3){
             state->flight_state = STATE_BOOST;
             state->event_launch = true;
             state->liftoff_time = k_uptime_get_32();
-            LOG_WRN("Changing state to BOOST due to acceleration");
+            LOG_WRN("State transitioned from STATE_AWAITING_LAUNCH to STATE_BOOST due to acceleration");
         }
         if (v_norm > BOOST_SPEED_THRESHOLD){
             state->flight_state = STATE_BOOST;
             state->event_launch = true;
             state->liftoff_time = k_uptime_get_32();
-            LOG_WRN("Changing state to BOOST due to speed");
+            LOG_WRN("State transitioned from STATE_AWAITING_LAUNCH to STATE_BOOST due to speed");
         }
-        if (counter%100 == 0){LOG_INF("flight state: STATE_AWAITING_LAUNCH");}
-        counter++;
         break;
     case STATE_BOOST:
         if (az < COAST_ACCEL_THRESHOLD && !aerodynamics->thrust_bool) {
             state->flight_state = STATE_COAST;
             state->event_burnout = true;
-            LOG_WRN("Changing state to COAST due to acceleration");
+            LOG_WRN("State transitioned from STATE_BOOST to STATE_COAST due to acceleration");
         }
-        if (vz < 0) {
-            LOG_WRN("Fake pressure increase due to sonic shock wave"); // this is probably useless
-            }
-        LOG_INF("flight state: STATE_BOOST");
         break;
     case STATE_COAST:
         
         if (vz < 0) {
             state->apogee_time = k_uptime_get_32();
-
             deploy_drogue(fjalar, init, state, pos_kf);
             state->flight_state = STATE_DROGUE_DESCENT;
             state->event_apogee = true;
-            LOG_WRN("Changing state to FREE_FALL due to speed");
+            LOG_WRN("State transitioned from STATE_BOOST to STATE_DROGUE_DESCENT due to velocity");
         }
-        LOG_INF("flight state: STATE_COAST");
         break;
     case STATE_DROGUE_DESCENT:
         if (z < 200) {
             deploy_main(fjalar, init, state, pos_kf);
             state->flight_state = STATE_MAIN_DESCENT;
+            LOG_WRN("State transitioned from STATE_DROGUE_DESCENT to STATE_MAIN_DESCENT due to altitude");
         }
-        LOG_INF("flight state: STATE_DROGUE_DESCENT");
         break;
     case STATE_MAIN_DESCENT:
         if (a_norm > init->g_accelerometer-2 && a_norm<init->g_accelerometer+2){
             state->flight_state = STATE_LANDED;
             state->event_landed = true;
+            LOG_WRN("State transitioned from STATE_MAIN_DESCENT to STATE_LANDED due to acceleration");
         }
-        LOG_INF("flight state: STATE_MAIN_DESCENT");
         break;
     case STATE_LANDED:
         // yay we landed (right?)

@@ -53,7 +53,7 @@ void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         float altitude_AGL = pos_kf->X_data[2];
 
-        if (state->flight_state == STATE_COAST && altitude_AGL > 1500.0f) {
+        if (state->flight_state == STATE_COAST && altitude_AGL > 1500.0f || true) {
             float predicted_apogee = aerodynamics->expected_apogee;
             float error = predicted_apogee - TARGET_APOGEE_AGL;
 

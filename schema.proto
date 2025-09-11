@@ -48,10 +48,13 @@ message StateEstimate {
     float vx = 4;
     float vy = 5;
     float vz = 6;
+    float ax = 7;
+    float ay = 8;
+    float az = 9;
 
-    float roll = 7;
-    float pitch = 8;
-    float yaw = 9;
+    float roll = 10;
+    float pitch = 11;
+    float yaw = 12;
 }
 
 message CANBus {

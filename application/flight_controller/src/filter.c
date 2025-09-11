@@ -56,10 +56,10 @@ TODO:
 */
 
 void position_filter_init(position_filter_t *pos_kf, init_t *init) {
-    float position_process_variance = 10;
-    float ax_variance = 0.01;
-    float ay_variance = 0.01;
-    float az_variance = 0.01;
+    float position_process_variance = 0.01;
+    float ax_variance = 1.0; //0.01;
+    float ay_variance = 1.0; //0.01;
+    float az_variance = 1.0; //0.01;
     float pressure_variance = 1000.0;
     float lon_variance = 0.001; // measure these
     float lat_variance = 0.001; // measure these
@@ -254,6 +254,7 @@ void position_filter_accelerometer(init_t *init, position_filter_t *pos_kf, atti
     zsl_mtx_mult(&rotation, &u, &u_rot);
     u_rot.data[2] = u_rot.data[2] - init->g_accelerometer; // correct for gravity (accelerometers gravity)
 
+    //LOG_WRN("az rotated into global frame: %f", u_rot.data[2]);
     // X
     ZSL_MATRIX_DEF(AX, 9, 1);
     ZSL_MATRIX_DEF(BU, 9, 1);
@@ -815,6 +816,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             float gy = g_array[init->new_y_index] * init->new_y_sign; 
             float gz = g_array[init->new_z_index] * init->new_z_sign; 
 
+            //LOG_WRN("az ROTATED: %f", az);
             // call filters
             if (state->flight_state != STATE_INITIATED){ // to avoid drift before launch
                 position_filter_accelerometer(init, pos_kf, att_kf, ax, ay, az, imu.t); // needs magnetometer to not get usage of ax and ay
@@ -871,7 +873,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         
         LOG_DBG("x: %f", pos_kf->X_data[0]);
         LOG_DBG("y: %f", pos_kf->X_data[1]);
-        LOG_DBG("z: %f", pos_kf->X_data[2]);
+        //LOG_WRN("z: %f", pos_kf->X_data[2]);
 
         LOG_DBG("vx: %f", pos_kf->X_data[3]);
         LOG_DBG("vy: %f", pos_kf->X_data[4]);
@@ -881,8 +883,12 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         LOG_DBG("ay: %f", pos_kf->X_data[7]);
         LOG_DBG("az: %f", pos_kf->X_data[8]);
 
-        LOG_DBG("v_norm: %f", pos_kf->v_norm);
-        LOG_DBG("a_norm: %f", pos_kf->a_norm);
+        //LOG_WRN("v_norm: %f", pos_kf->v_norm);
+        //LOG_WRN("a_norm: %f", pos_kf->a_norm);
+
+        //LOG_WRN("roll: %f", att_kf->X_data[0]);
+        //LOG_WRN("pitch: %f", att_kf->X_data[1]);
+        //LOG_WRN("yaw: %f", att_kf->X_data[2]);
         
         
         k_msleep(10); // 100 Hz
