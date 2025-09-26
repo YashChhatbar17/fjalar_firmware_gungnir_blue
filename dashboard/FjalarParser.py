@@ -24,10 +24,11 @@ class FjalarParser:
     def open_serial(self, path):
         self.stream = serial.Serial(port=path, baudrate=BAUDRATE)
 
-        os.makedirs("data", exist_ok=True)
+        outdir = os.path.join("dashboard", "data")
+        os.makedirs(outdir, exist_ok=True)
         now = datetime.now()
         filename = now.strftime("data_%Y_%m_%d_%H_%M_%S.bin")
-        self.backup_stream = open("data/" + filename, "wb")
+        self.backup_stream = open(os.path.join(outdir, filename), "wb")
 
         self._reader_t = Thread(target=self._reader_thread)
         self._reader_t.start()

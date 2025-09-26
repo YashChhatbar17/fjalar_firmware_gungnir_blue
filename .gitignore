@@ -8,3 +8,5 @@ __pycache__
 flash.bin
 sca
 schemamatrocket.proto
+/dashboard/data
+/data
