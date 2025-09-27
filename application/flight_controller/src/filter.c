@@ -492,13 +492,13 @@ void Pmtx_analysis(position_filter_t *pos_kf){
 
 // Attitude Filter
 void attitude_filter_init(attitude_filter_t *att_kf, init_t *init) {
-    float attitude_process_variance = 0.01;
+    float attitude_process_variance = 100;
     float ax_variance = 0.03;
     float ay_variance = 0.03;
     float az_variance = 0.03;
-    float gx_variance = 0.03;
-    float gy_variance = 0.03;
-    float gz_variance = 0.03;
+    float gx_variance = 1.03;
+    float gy_variance = 1.03;
+    float gz_variance = 1.03;
     /*
     float ax_variance = init->var_ax;
     float ay_variance = init->var_ay;
@@ -565,10 +565,6 @@ void attitude_filter_gyroscope(position_filter_t *pos_kf, attitude_filter_t *att
 
     float dt = (time - att_kf->previous_update_gyroscope) / 1000.0;
     att_kf->previous_update_gyroscope = time;
-
-    gx *= (M_PI/180);
-    gy *= (M_PI/180);
-    gz *= (M_PI/180);
 
     // Identity matrix 3x3
     zsl_real_t I3_data[9] = {
@@ -639,8 +635,8 @@ void attitude_filter_gyroscope(position_filter_t *pos_kf, attitude_filter_t *att
 };
 
 
-void attitude_filter_accelerometer_ground(attitude_filter_t *att_kf, position_filter_t *pos_kf, aerodynamics_t *aerodynamics, float ax, float ay, float az, uint32_t time){
-    if (az > 10){return;} // Guards against start of boost phase, before state update (!)
+void attitude_filter_accelerometer_ground(init_t *init, attitude_filter_t *att_kf, position_filter_t *pos_kf, aerodynamics_t *aerodynamics, float ax, float ay, float az, uint32_t time){
+    if (az > 12){return;} // Guards against start of boost phase, before state update (!)
 
     // z matrix
     zsl_real_t z_data[3] = {
@@ -668,7 +664,7 @@ void attitude_filter_accelerometer_ground(attitude_filter_t *att_kf, position_fi
 
     // EKF STEPS
     // create h(x)
-    float g = aerodynamics->g_physics;
+    float g = init->g_accelerometer;
 
     float phi = att_kf->X_data[0];
     float theta = att_kf->X_data[1];
@@ -732,6 +728,15 @@ void attitude_filter_accelerometer_ground(attitude_filter_t *att_kf, position_fi
     zsl_mtx_mult(&K, &H, &KH);
     zsl_mtx_sub(&I3, &KH, &I3KH);
     zsl_mtx_mult(&I3KH, &att_kf->P, &att_kf->P);
+
+    //LOG_INF("y 0: %f, y 1: %f, y 2: %f", y.data[0], y.data[1], y.data[2]);
+    //LOG_INF("z 0 : %f", z_data[0]);
+    //LOG_INF("z 1 : %f", z_data[1]);
+    //LOG_INF("z 2 : %f", z_data[2]);
+
+    //LOG_INF("Hx 0: %f", hx.data[0]);
+    //LOG_INF("Hx 1: %f", hx.data[1]);
+    //LOG_INF("Hx 2: %f", hx.data[2]);
 };
 
 
@@ -816,17 +821,18 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             float gy = g_array[init->new_y_index] * init->new_y_sign; 
             float gz = g_array[init->new_z_index] * init->new_z_sign; 
 
-            //LOG_WRN("az ROTATED: %f", az);
-            // call filters
-            if (state->flight_state != STATE_INITIATED){ // to avoid drift before launch
-                position_filter_accelerometer(init, pos_kf, att_kf, ax, ay, az, imu.t); // needs magnetometer to not get usage of ax and ay
-            }
+            //LOG_INF("ax: %f, ay: %f, az: %f", ax, ay, az);
 
+            // call filters
+            //if (state->flight_state != STATE_INITIATED){ // to avoid drift before launch
+                position_filter_accelerometer(init, pos_kf, att_kf, ax, ay, az, imu.t); // needs magnetometer to not get usage of ax and ay
+            //}
+            
             attitude_filter_gyroscope(pos_kf, att_kf, gx, gy, gz, imu.t);
 
             // use state machine TODO: remove state idle since filter.c is not actually being run in that state
             if (state->flight_state == STATE_INITIATED){ //only used pre launch
-                attitude_filter_accelerometer_ground(att_kf, pos_kf, aerodynamics, ax, ay, az, imu.t); 
+                attitude_filter_accelerometer_ground(init, att_kf, pos_kf, aerodynamics, ax, ay, az, imu.t); 
             }
         }
 
@@ -835,7 +841,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             pos_kf->raw_baro_p = pressure.pressure*1000;
             // use state machine
             if (state->velocity_class == VELOCITY_SUBSONIC){ // baro bad in native
-                position_filter_barometer(init, pos_kf, pressure.pressure, pressure.t); // Ask other team about barometer solution on bad data
+                //position_filter_barometer(init, pos_kf, pressure.pressure, pressure.t); // Ask other team about barometer solution on bad data
             }          
         }
 
@@ -848,7 +854,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
                 pos_kf->raw_gps_lon = gps.lon;
                 pos_kf->raw_gps_alt = gps.alt;
                 #if !DT_ALIAS_EXISTS(hilsensor) // remove when gps has been added to hilsensor
-                position_filter_gps(init, pos_kf, gps.lat, gps.lon, gps.alt, gps.t);
+                //position_filter_gps(init, pos_kf, gps.lat, gps.lon, gps.alt, gps.t);
                 #endif
 
 
@@ -870,26 +876,15 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         counter++;
         */
 
-        
-        LOG_DBG("x: %f", pos_kf->X_data[0]);
-        LOG_DBG("y: %f", pos_kf->X_data[1]);
-        //LOG_WRN("z: %f", pos_kf->X_data[2]);
-
-        LOG_DBG("vx: %f", pos_kf->X_data[3]);
-        LOG_DBG("vy: %f", pos_kf->X_data[4]);
-        LOG_DBG("vz: %f", pos_kf->X_data[5]);
-
-        LOG_DBG("ax: %f", pos_kf->X_data[6]);
-        LOG_DBG("ay: %f", pos_kf->X_data[7]);
-        LOG_DBG("az: %f", pos_kf->X_data[8]);
 
         //LOG_WRN("v_norm: %f", pos_kf->v_norm);
         //LOG_WRN("a_norm: %f", pos_kf->a_norm);
-
-        //LOG_WRN("roll: %f", att_kf->X_data[0]);
-        //LOG_WRN("pitch: %f", att_kf->X_data[1]);
-        //LOG_WRN("yaw: %f", att_kf->X_data[2]);
+        //LOG_WRN("x : %f, y : %f, z : %f", pos_kf->X_data[0], pos_kf->X_data[1], pos_kf->X_data[2]);
+        //LOG_WRN("vx: %f, vy: %f, vz: %f", pos_kf->X_data[3], pos_kf->X_data[4], pos_kf->X_data[5]);
+        //LOG_WRN("ax: %f, ay: %f, az: %f", pos_kf->X_data[6], pos_kf->X_data[7], pos_kf->X_data[8]);
         
+        //LOG_WRN("roll: %fπ, pitch: %fπ, yaw: %fπ", att_kf->X_data[0]/3.14, att_kf->X_data[1]/3.14, att_kf->X_data[2]/3.14);
+
         
         k_msleep(10); // 100 Hz
         }

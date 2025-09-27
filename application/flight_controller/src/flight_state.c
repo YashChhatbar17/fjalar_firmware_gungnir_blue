@@ -215,6 +215,6 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
         evaluate_state(fjalar, init, state, pos_kf, aerodynamics, lora);
         evaluate_event(fjalar, state, pos_kf);
         evaluate_velocity(aerodynamics, state);
-        k_msleep(10);
+        k_msleep(10); 
     }
 }
