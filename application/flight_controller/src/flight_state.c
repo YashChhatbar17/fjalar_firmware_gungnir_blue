@@ -116,7 +116,9 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
             state->liftoff_time = k_uptime_get_32();
             LOG_WRN("State transitioned from STATE_AWAITING_LAUNCH to STATE_BOOST due to acceleration");
         }
-        if (v_norm > BOOST_SPEED_THRESHOLD){
+
+        // adding velocity as a requirement here will not work due to the velocity zeroing logic i filter.c
+        if (v_norm > BOOST_SPEED_THRESHOLD){ 
             state->flight_state = STATE_BOOST;
             state->event_launch = true;
             state->liftoff_time = k_uptime_get_32();

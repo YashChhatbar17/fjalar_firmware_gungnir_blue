@@ -53,10 +53,15 @@ void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
         float altitude_AGL = pos_kf->X_data[2];
 
-        if (state->flight_state == STATE_COAST && altitude_AGL > 1500.0f || true) {
+        if (state->flight_state == STATE_COAST && altitude_AGL > 1500.0f) {
             float predicted_apogee = aerodynamics->expected_apogee;
+            if (isnan(predicted_apogee)){
+                LOG_WRN("control run with Nan apogee value, loop blocked");
+                k_msleep(10);
+                continue;
+            }
             float error = predicted_apogee - TARGET_APOGEE_AGL;
-
+            
             integral += error * SAMPLING_TIME_S;
 
             if (integral > PID_INTEGRAL_MAX) {
@@ -88,16 +93,13 @@ void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
             float theta = asinf(arg) * (180.0f / 3.14159f);
             control->airbrakes_angle = theta;
 
-            //LOG_INF("output: %f", control->airbrakes_angle);
-            //LOG_INF("CONTROL ACTIVE: Alt=%.1f, Pred_Ap=%.1f, Err=%.1f, PID_Out=%.2f, Angle=%.2f", altitude_AGL, predicted_apogee, error, output, control->airbrakes_angle);
-
         } else {
             //to prevent integral windup
             integral = 0.0f;
             last_error = 0.0f;
             control->airbrakes_angle = 0.0f;
             }
-
+        
         k_msleep(10); // 100 Hz
     }
 }

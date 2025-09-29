@@ -20,7 +20,7 @@ For this we use the linear Kalman filter (KF) and the nonlinear extended Kalman 
 #include "filter.h"
 #include "aerodynamics.h"
 #include "flight_state.h"
-
+#include "control.h"
 
 LOG_MODULE_REGISTER(filter, CONFIG_APP_FILTER_LOG_LEVEL);
 
@@ -638,6 +638,12 @@ void attitude_filter_gyroscope(position_filter_t *pos_kf, attitude_filter_t *att
 void attitude_filter_accelerometer_ground(init_t *init, attitude_filter_t *att_kf, position_filter_t *pos_kf, aerodynamics_t *aerodynamics, float ax, float ay, float az, uint32_t time){
     if (az > 12){return;} // Guards against start of boost phase, before state update (!)
 
+    /* 
+    There is a risk of this correction step being run while rocket is acceleration but before 
+    the state is updated to STATE_BOOST, thus ruining attitude state. Although the guard at the very start of this function 
+    should fix that.
+    */
+
     // z matrix
     zsl_real_t z_data[3] = {
         ax,
@@ -764,13 +770,21 @@ void update_acceleration_norm(position_filter_t *pos_kf) {
     }
 }
 
+void zero_velocity(position_filter_t *pos_kf){ 
+    /* since Fjalar do not have a correcting step for the velocity part of the state vector, 
+    this is needed to avoid drift on launchpad. Only run up intil boost*/
+    pos_kf->X_data[3] = 0.0f;
+    pos_kf->X_data[4] = 0.0f;
+    pos_kf->X_data[5] = 0.0f;
+}
 void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
     init_t            *init  = fjalar->ptr_init;
     position_filter_t *pos_kf = fjalar->ptr_pos_kf;
     attitude_filter_t *att_kf = fjalar->ptr_att_kf;
     aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
     state_t           *state = fjalar->ptr_state;
-
+    control_t         *control = fjalar->ptr_control;
+    
     // call things before loop
     struct k_poll_event events[2] = {
     K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
@@ -824,14 +838,12 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             //LOG_INF("ax: %f, ay: %f, az: %f", ax, ay, az);
 
             // call filters
-            //if (state->flight_state != STATE_INITIATED){ // to avoid drift before launch
-                position_filter_accelerometer(init, pos_kf, att_kf, ax, ay, az, imu.t); // needs magnetometer to not get usage of ax and ay
-            //}
             
+            position_filter_accelerometer(init, pos_kf, att_kf, ax, ay, az, imu.t); // needs magnetometer to not get usage of ax and ay
             attitude_filter_gyroscope(pos_kf, att_kf, gx, gy, gz, imu.t);
 
             // use state machine TODO: remove state idle since filter.c is not actually being run in that state
-            if (state->flight_state == STATE_INITIATED){ //only used pre launch
+            if (state->flight_state == STATE_INITIATED || state->flight_state == STATE_AWAITING_LAUNCH){
                 attitude_filter_accelerometer_ground(init, att_kf, pos_kf, aerodynamics, ax, ay, az, imu.t); 
             }
         }
@@ -841,7 +853,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             pos_kf->raw_baro_p = pressure.pressure*1000;
             // use state machine
             if (state->velocity_class == VELOCITY_SUBSONIC){ // baro bad in native
-                //position_filter_barometer(init, pos_kf, pressure.pressure, pressure.t); // Ask other team about barometer solution on bad data
+                position_filter_barometer(init, pos_kf, pressure.pressure, pressure.t); // Ask other team about barometer solution on bad data
             }          
         }
 
@@ -865,10 +877,16 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         }
         #endif
 
+        if (state->flight_state == STATE_INITIATED || state->flight_state == STATE_AWAITING_LAUNCH){
+            // filter.c is only run after initialization, which is why these two states above are sufficient
+            zero_velocity(pos_kf);
+        }
+
         update_velocity_norm(pos_kf);
         update_acceleration_norm(pos_kf);
 
         Pmtx_analysis(pos_kf);
+
 
         /*
         static int counter = 0;
@@ -882,9 +900,12 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         //LOG_WRN("x : %f, y : %f, z : %f", pos_kf->X_data[0], pos_kf->X_data[1], pos_kf->X_data[2]);
         //LOG_WRN("vx: %f, vy: %f, vz: %f", pos_kf->X_data[3], pos_kf->X_data[4], pos_kf->X_data[5]);
         //LOG_WRN("ax: %f, ay: %f, az: %f", pos_kf->X_data[6], pos_kf->X_data[7], pos_kf->X_data[8]);
-        
         //LOG_WRN("roll: %fπ, pitch: %fπ, yaw: %fπ", att_kf->X_data[0]/3.14, att_kf->X_data[1]/3.14, att_kf->X_data[2]/3.14);
-
+        static int counter = 0;
+        if (counter % 100 == 0){
+            //LOG_WRN("airbrake angle: %f", control->airbrakes_angle);
+        }
+        counter++;
         
         k_msleep(10); // 100 Hz
         }

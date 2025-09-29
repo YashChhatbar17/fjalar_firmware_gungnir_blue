@@ -155,16 +155,7 @@ void imu_thread(fjalar_t *fjalar, void *p2, void *p3) {
 			LOG_ERR("Could get imu values");
 			continue;
 		}
-		/*
-		LOG_INF("read imu: %f %f %f %f %f %f",
-			sensor_value_to_float(&ax), sensor_value_to_float(&ay), sensor_value_to_float(&az),
-			sensor_value_to_float(&gx), sensor_value_to_float(&gy), sensor_value_to_float(&gz)
-		);
-		*/
-
-		//LOG_WRN("az: %f", sensor_value_to_float(&az));
-		
-		
+			
 		struct imu_queue_entry q_entry = {
 			.t = k_uptime_get_32(),
 			.ax = sensor_value_to_float(&ax),

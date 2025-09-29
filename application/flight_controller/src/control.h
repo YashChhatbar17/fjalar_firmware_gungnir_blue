@@ -1,7 +1,7 @@
 #pragma once
 
 #include "fjalar.h"
-#define TARGET_APOGEE_AGL         3000.0f
+#define TARGET_APOGEE_AGL       3000.0f
 
 #define SAMPLING_RATE_HZ        100.0f
 #define SAMPLING_TIME_S         (1.0f / SAMPLING_RATE_HZ)

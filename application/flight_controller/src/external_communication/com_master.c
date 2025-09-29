@@ -182,7 +182,7 @@ void handle_fjalar_buf(struct protocol_state *ps, fjalar_t *fjalar, uint8_t *buf
 }
 
 void handle_fjalar_message(fjalar_message_t *msg, fjalar_t *fjalar, state_t *state, enum com_channels channel) {
-    LOG_INF("handling msg with id %d", msg->data.which_data);
+    //LOG_INF("handling msg with id %d", msg->data.which_data);
     switch (msg->data.which_data) {
         case FJALAR_DATA_SET_SUDO_TAG:
             handle_set_sudo(&msg->data.data.set_sudo, fjalar, channel);
