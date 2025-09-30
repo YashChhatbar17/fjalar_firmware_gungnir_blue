@@ -83,7 +83,7 @@ void position_filter_init(position_filter_t *pos_kf, init_t *init) {
         0, 0, 0, position_process_variance, 0, 0, 0, 0, 0,
         0, 0, 0, 0, position_process_variance, 0, 0, 0, 0,
         0, 0, 0, 0, 0, position_process_variance, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, position_process_variance, 0, 0,
+        0, 0, 0, 0, 0, 0, position_process_variance, 0, 0, 
         0, 0, 0, 0, 0, 0, 0, position_process_variance, 0,
         0, 0, 0, 0, 0, 0, 0, 0, position_process_variance
     };
@@ -169,12 +169,12 @@ void position_filter_accelerometer(init_t *init, position_filter_t *pos_kf, atti
     
     // A matrix
     zsl_real_t A_data[81] = {
-        1, 0, 0, dt, 0, 0, 0.5*dt*dt, 0, 0,
-        0, 1, 0, 0, dt, 0, 0, 0.5*dt*dt, 0,
-        0, 0, 1, 0, 0, dt, 0, 0, 0.5*dt*dt,
-        0, 0, 0, 1, 0, 0, dt, 0, 0,
-        0, 0, 0, 0, 1, 0, 0, dt, 0,
-        0, 0, 0, 0, 0, 1, 0, 0, dt,
+        1, 0, 0, dt, 0, 0, 0, 0, 0,
+        0, 1, 0, 0, dt, 0, 0, 0, 0,
+        0, 0, 1, 0, 0, dt, 0, 0, 0,
+        0, 0, 0, 1, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 1, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 1, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -198,12 +198,12 @@ void position_filter_accelerometer(init_t *init, position_filter_t *pos_kf, atti
 
     // B matrix
     zsl_real_t B_data[27] = {
-        0, 0, 0,
-        0, 0, 0,
-        0, 0, 0,
-        0, 0, 0,
-        0, 0, 0,
-        0, 0, 0,
+        0.5*dt*dt, 0, 0,
+        0, 0.5*dt*dt, 0,
+        0, 0, 0.5*dt*dt,
+        dt, 0, 0,
+        0, dt, 0,
+        0, 0, dt,
         1, 0, 0,
         0, 1, 0,
         0, 0, 1
@@ -262,7 +262,7 @@ void position_filter_accelerometer(init_t *init, position_filter_t *pos_kf, atti
     zsl_mtx_mult(&A, &pos_kf->X, &AX);
     zsl_mtx_mult(&B, &u_rot, &BU);
     zsl_mtx_add(&AX, &BU, &pos_kf->X);
-    
+
     // P
     ZSL_MATRIX_DEF(AP, 9, 9);
     ZSL_MATRIX_DEF(APAT, 9, 9);
@@ -902,8 +902,9 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         //LOG_WRN("ax: %f, ay: %f, az: %f", pos_kf->X_data[6], pos_kf->X_data[7], pos_kf->X_data[8]);
         //LOG_WRN("roll: %fπ, pitch: %fπ, yaw: %fπ", att_kf->X_data[0]/3.14, att_kf->X_data[1]/3.14, att_kf->X_data[2]/3.14);
         static int counter = 0;
-        if (counter % 100 == 0){
-            //LOG_WRN("airbrake angle: %f", control->airbrakes_angle);
+        if (counter % 1 == 0){
+            //LOG_WRN("Pvx: %2.f, Pvy: %2.f, Pvz: %2.f", pos_kf->P_data[30], pos_kf->P_data[40], pos_kf->P_data[50]);
+            //LOG_WRN("axy: %.2f, vxy: %.2f, xy: %.2f", sqrtf(pos_kf->X_data[6]*pos_kf->X_data[6]+pos_kf->X_data[7]*pos_kf->X_data[7]), sqrtf(pos_kf->X_data[3]*pos_kf->X_data[3]+pos_kf->X_data[4]*pos_kf->X_data[4]), sqrtf(pos_kf->X_data[0]*pos_kf->X_data[0]+pos_kf->X_data[1]*pos_kf->X_data[1]));
         }
         counter++;
         
