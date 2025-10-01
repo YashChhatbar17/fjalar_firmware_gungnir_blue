@@ -74,3 +74,6 @@ Currently, the velocity class is only used to decide whether the barometer filte
 
 The velocity class machine differs slightly from the other two in that it can move both upward and downward between classes.  
 Here, *M* refers to the Mach number.
+
+### State Estimation
+The flight computer makes use of linear and nonlinear kalman filters that are detailed in aesir's slab posts.
