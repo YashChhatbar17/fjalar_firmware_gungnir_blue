@@ -41,3 +41,36 @@ Both the tracker and flight firmware supports compiling for `native_sim` allowin
 To run natively change the board to `-b native_sim` and use `-t run` instead of `-t flash`
 
 `west build application/flight_controller/ -p auto -b native_sim -t run`
+
+
+### State Machine
+The state machine is constrained so that each state can only progress to the next; there is no other way for the FC to be in a state without first having been in the one prior. Every state has an exit requirement that, when fulfilled, changes the state variable to the next state.  
+
+At this stage, the state is mainly used in `if`-statements related to the **State Estimation** script, since some functions are only valid in specific states. With the addition of air brakes, the state and event are also sent via CAN to **Loki** to determine whether the air brakes should be deployed.  
+
+#### State Machine Table
+
+| Int | State                  | Cause                                                                                   | Consequence                                                                 |
+|-----|-------------------------|-----------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| 0   | `STATE_IDLE`            | Set as initial state                                                                    | Nothing                                                                     |
+| 1   | `STATE_AWAITING_INIT`   | LoRa command received                                                                    | Initialization script is allowed to run                                     |
+| 2   | `STATE_INITIATED`       | Init sequence completed                                                                 | `Filter.c` runs `attitude_filter_accelerometer_ground` function (otherwise not) |
+| 3   | `STATE_AWAITING_LAUNCH` | LoRa command received                                                                    | Operation of motor systems is allowed (not enforced yet)                    |
+| 4   | `STATE_BOOST`           | Acceleration > boost threshold **and** altitude > 10 m<br>**OR** velocity > boost threshold | Nothing                                                                     |
+| 5   | `STATE_COAST`           | `thrust_bool` is negative → force analysis shows no thrust in system                     | Air brakes can be used (1 of 2 conditions)                                  |
+| 6   | `STATE_DROGUE_DESCENT`  | Apogee reached                                                                          | Drogue pyro charge activated                                                |
+| 7   | `STATE_MAIN_DESCENT`    | Altitude AGL < 200 m                                                                    | Main pyro charge activated                                                  |
+| 8   | `STATE_LANDED`          | Accelerometer senses only normal force (~+9.81 m/s²)                                    | Nothing                                                                     |
+
+---
+
+### Event Machine
+The event machine is a collection of boolean flags that simplify the logging of important events.
+
+---
+
+### Velocity Class
+Currently, the velocity class is only used to decide whether the barometer filter function should be executed. It is only run in the **subsonic** state, since in the **transonic** state shockwaves would interfere with readings.  
+
+The velocity class machine differs slightly from the other two in that it can move both upward and downward between classes.  
+Here, *M* refers to the Mach number.
