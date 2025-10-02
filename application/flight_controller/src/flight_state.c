@@ -139,7 +139,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
             deploy_drogue(fjalar, init, state, pos_kf);
             state->flight_state = STATE_DROGUE_DESCENT;
             state->event_apogee = true;
-            LOG_WRN("State transitioned from STATE_BOOST to STATE_DROGUE_DESCENT due to velocity");
+            LOG_WRN("State transitioned from STATE_COAST to STATE_DROGUE_DESCENT due to velocity");
         }
         break;
     case STATE_DROGUE_DESCENT:

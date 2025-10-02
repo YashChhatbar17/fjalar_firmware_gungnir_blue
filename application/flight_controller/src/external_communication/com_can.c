@@ -76,10 +76,10 @@ void can_tx_loki(const struct device *can_dev, state_t *state, control_t *contro
 
     uint8_t ev = (state->event_above_acs_threshold) ? 0xA : 0x5; // choose 0xA (1010) or 0x5 (0101)
     
-    data[0] = (st << 4) | (ev & 0x0F);
+    data[0] = (ev << 4) | (st & 0x0F);
 
     // byte 1: event marker 
-    data[1] = (state->event_above_acs_threshold && state->flight_state == STATE_COAST) ? 0xAA : 0x55;
+    data[1] = (state->event_above_acs_threshold && state->flight_state == STATE_COAST || ) ? 0xAA : 0x55;
 
     // bytes 2–3: angle ×100 
     float  airbrake_angle = control->airbrakes_angle; // from control script (PID algo)
