@@ -136,6 +136,7 @@ void read_flash(fjalar_t *fjalar, uint8_t *buf, uint32_t index, uint8_t len) {
 	k_mutex_unlock(&flash_mutex);
 }
 
+/*
 void clear_flash(fjalar_t *fjalar) {
 	LOG_WRN("Clearing flash");
 	const struct device *flash_dev = DEVICE_DT_GET(DT_ALIAS(data_flash));
@@ -144,6 +145,7 @@ void clear_flash(fjalar_t *fjalar) {
 	fjalar->flash_address = 0;
 	k_mutex_unlock(&flash_mutex);
 }
+*/
 
 void handle_clear_flash(clear_flash_t *msg, fjalar_t *fjalar, enum com_channels channel) {
     //if (fjalar->sudo != true) {
