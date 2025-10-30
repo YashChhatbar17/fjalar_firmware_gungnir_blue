@@ -22,7 +22,7 @@ K_MSGQ_DEFINE(lora_msgq, sizeof(struct padded_buf), 5, 4);
 #define LORA_TRANSMIT true
 #define LORA_RECEIVE false
 
-LOG_MODULE_REGISTER(com_lora, CONFIG_APP_COMMUNICATION_LOG_LEVEL);
+LOG_MODULE_REGISTER(com_lora, LOG_LEVEL_INF);
 
 K_THREAD_STACK_DEFINE(lora_thread_stack, LORA_THREAD_STACK_SIZE);
 struct k_thread lora_thread_data;

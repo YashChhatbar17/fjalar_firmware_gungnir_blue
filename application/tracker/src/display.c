@@ -8,7 +8,7 @@
 #include "display.h"
 #include "sensors.h"
 
-LOG_MODULE_REGISTER(app_display, CONFIG_APP_DISPLAY_LOG_LEVEL);
+LOG_MODULE_REGISTER(app_display, LOG_LEVEL_INF);
 
 #define DRAWING_THREAD_PRIORITY 6
 #define DRAWING_THREAD_STACK_SIZE 1024

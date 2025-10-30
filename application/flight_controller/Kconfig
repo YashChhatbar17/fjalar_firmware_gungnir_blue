@@ -2,56 +2,8 @@ menu "Zephyr"
 source "Kconfig.zephyr"
 endmenu
 
-rsource "../common/Kconfig"
 
 
-config BUZZER_ENABLED
-    bool "Enable buzzer"
-    default y
-config DELAYED_START
-    bool "delay start"
-    default n
-
-choice
-	prompt "Boot state"
-	config BOOT_STATE_IDLE
-		bool "boot to idle"
-	config BOOT_STATE_LAUNCHPAD
-		bool "boot to launchpad"
-endchoice
-
-module = APP_SENSORS
-module-str = app_sensors
-source "subsys/logging/Kconfig.template.log_config"
-
-module = APP_ACTUATION
-module-str = app_actuation
-source "subsys/logging/Kconfig.template.log_config"
-
-module = APP_FILTER
-module-str = app_filter
-source "subsys/logging/Kconfig.template.log_config"
-
-module = APP_STATE
-module-str = app_state
-source "subsys/logging/Kconfig.template.log_config"
-
-module = APP_FLIGHT
-module-str = app_flight
-source "subsys/logging/Kconfig.template.log_config"
-
-module = APP_MAIN
-module-str = app_main
-source "subsys/logging/Kconfig.template.log_config"
-
-module = APP_COMMANDS
-module-str = app_commands
-source "subsys/logging/Kconfig.template.log_config"
-
-module = APP_COMMUNICATION
-module-str = app_communication
-source "subsys/logging/Kconfig.template.log_config"
-
-module = APP_AERODYNAMICS
-module-str = app_aerodynamics
-source "subsys/logging/Kconfig.template.log_config"
+# module = APP_SENSORS
+# module-str = app_sensors
+# source "subsys/logging/Kconfig.template.log_config"

@@ -7,7 +7,7 @@
 #include "communication.h"
 #include "tracker.h"
 
-LOG_MODULE_REGISTER(com, CONFIG_APP_COM_LOG_LEVEL);
+LOG_MODULE_REGISTER(com, LOG_LEVEL_INF);
 
 #define LORA_TRANSMIT 1
 #define LORA_RECEIVE 0

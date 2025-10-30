@@ -17,7 +17,7 @@ to a message queue which will be intercepted by the kalman filters.
 #include "sensors.h"
 #include "com_master.h"
 
-LOG_MODULE_REGISTER(sensors, CONFIG_APP_SENSORS_LOG_LEVEL);
+LOG_MODULE_REGISTER(sensors, LOG_LEVEL_INF);
 
 #define IMU_THREAD_PRIORITY 7
 #define IMU_THREAD_STACK_SIZE 2048

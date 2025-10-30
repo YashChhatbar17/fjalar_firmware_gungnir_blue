@@ -22,7 +22,7 @@ sensor information via usb/uart.
 #include "com_usb.h"
 #include "hilsensor.h"
 
-LOG_MODULE_REGISTER(com_master, CONFIG_APP_COMMUNICATION_LOG_LEVEL);
+LOG_MODULE_REGISTER(com_master, LOG_LEVEL_INF);
 
 
 #define SAMPLER_THREAD_PRIORITY 7

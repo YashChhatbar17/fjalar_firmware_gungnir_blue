@@ -22,7 +22,7 @@ For this we use the linear Kalman filter (KF) and the nonlinear extended Kalman 
 #include "flight_state.h"
 #include "control.h"
 
-LOG_MODULE_REGISTER(filter, CONFIG_APP_FILTER_LOG_LEVEL);
+LOG_MODULE_REGISTER(filter, LOG_LEVEL_INF);
 
 #define FILTER_THREAD_PRIORITY 7
 #define FILTER_THREAD_STACK_SIZE 4096

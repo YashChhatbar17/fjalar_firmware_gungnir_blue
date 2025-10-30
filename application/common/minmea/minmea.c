@@ -16,7 +16,7 @@
 
 #define boolstr(s) ((s) ? "true" : "false")
 
-LOG_MODULE_REGISTER(minmea, CONFIG_MINMEA_LOG_LEVEL);
+LOG_MODULE_REGISTER(minmea, LOG_LEVEL_INF);
 
 static int hex2int(char c)
 {

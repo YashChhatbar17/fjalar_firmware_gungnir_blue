@@ -13,7 +13,7 @@ This is the actuation script, its purpose is to:
 #include "melodies.h"
 #include "flight_state.h"
 
-LOG_MODULE_REGISTER(actuation, CONFIG_APP_ACTUATION_LOG_LEVEL);
+LOG_MODULE_REGISTER(actuation, LOG_LEVEL_INF);
 
 #define LED_THREAD_PRIORITY 7
 #define LED_THREAD_STACK_SIZE 2048

@@ -18,7 +18,7 @@ The aerodynamic constants are rocket specific, it is critical that these are loo
 #include "aerodynamics.h"
 #include "flight_state.h"
 
-LOG_MODULE_REGISTER(aerodynamics, CONFIG_APP_AERODYNAMICS_LOG_LEVEL);
+LOG_MODULE_REGISTER(aerodynamics, LOG_LEVEL_INF);
 
 #define AERODYNAMICS_THREAD_PRIORITY 7
 #define AERODYNAMICS_THREAD_STACK_SIZE 4096

@@ -14,7 +14,7 @@
 #include "sensors.h"
 #include "communication.h"
 
-LOG_MODULE_REGISTER(main, CONFIG_APP_MAIN_LOG_LEVEL);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 tracker_t tracker_god = {0};
 

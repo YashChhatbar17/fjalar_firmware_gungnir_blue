@@ -20,7 +20,7 @@ It is important that the rocket remains stationary while the initialization thre
 #include "com_master.h"
 #include "control.h"
 
-LOG_MODULE_REGISTER(init, CONFIG_APP_FLIGHT_LOG_LEVEL);
+LOG_MODULE_REGISTER(init, LOG_LEVEL_INF);
 
 #define INIT_THREAD_PRIORITY 7
 #define INIT_THREAD_STACK_SIZE 4096

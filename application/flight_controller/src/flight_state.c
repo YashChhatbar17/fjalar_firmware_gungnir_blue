@@ -18,7 +18,7 @@ The flight state script serves the following purpose:
 #include "actuation.h"
 #include "com_lora.h"
 
-LOG_MODULE_REGISTER(flight, CONFIG_APP_FLIGHT_LOG_LEVEL);
+LOG_MODULE_REGISTER(flight, LOG_LEVEL_INF);
 
 #define FLIGHT_THREAD_PRIORITY 7
 #define FLIGHT_THREAD_STACK_SIZE 4096

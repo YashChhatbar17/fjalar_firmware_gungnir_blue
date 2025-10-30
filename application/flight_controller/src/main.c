@@ -24,7 +24,7 @@ This is the main script, its purpose is to:
 #include "com_can.h"
 #include "com_lora.h"
 
-LOG_MODULE_REGISTER(main, CONFIG_APP_MAIN_LOG_LEVEL);
+LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
 static init_t            init_obj;
 static position_filter_t position_filter_obj;

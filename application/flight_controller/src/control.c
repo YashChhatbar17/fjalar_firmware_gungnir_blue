@@ -17,7 +17,7 @@
 #define CONTROL_THREAD_STACK_SIZE 4096
 
 
-LOG_MODULE_REGISTER(control, CONFIG_APP_FLIGHT_LOG_LEVEL);
+LOG_MODULE_REGISTER(control, LOG_LEVEL_INF);
 
 void control_thread(fjalar_t *fjalar, void *p2, void *p1);
 

@@ -17,7 +17,7 @@
 #include "com_can.h"
 #include "control.h"
 
-LOG_MODULE_REGISTER(can_com, CONFIG_APP_FLIGHT_LOG_LEVEL);
+LOG_MODULE_REGISTER(can_com, LOG_LEVEL_INF);
 
 #define CAN_THREAD_PRIORITY 7
 #define CAN_THREAD_STACK_SIZE 4096
@@ -79,7 +79,7 @@ void can_tx_loki(const struct device *can_dev, state_t *state, control_t *contro
     data[0] = (ev << 4) | (st & 0x0F);
 
     // byte 1: event marker 
-    data[1] = (state->event_above_acs_threshold && state->flight_state == STATE_COAST || ) ? 0xAA : 0x55;
+    data[1] = (state->event_above_acs_threshold && state->flight_state == STATE_COAST) ? 0xAA : 0x55;
 
     // bytes 2–3: angle ×100 
     float  airbrake_angle = control->airbrakes_angle; // from control script (PID algo)
