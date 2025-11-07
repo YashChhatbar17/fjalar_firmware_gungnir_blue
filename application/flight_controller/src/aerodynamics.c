@@ -36,7 +36,7 @@ void init_aerodynamics(fjalar_t *fjalar) {
 		aerodynamics_thread_stack,
 		K_THREAD_STACK_SIZEOF(aerodynamics_thread_stack),
 		(k_thread_entry_t) aerodynamics_thread,
-		fjalar, NULL, NULL,
+		fjalar,  &filter_output_msgq, NULL, // works from filter.h declaration
 		AERODYNAMICS_THREAD_PRIORITY, 0, K_NO_WAIT
 	);
 	k_thread_name_set(aerodynamics_thread_id, "aerodynamics");
@@ -69,14 +69,13 @@ void drag_init(aerodynamics_t *aerodynamics){
     memcpy(aerodynamics->drag_data, drag_init, sizeof(drag_init));
 }
 
-void drag_update(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodynamics_t *aerodynamics){
+void drag_update(struct filter_output_msg *filter_data, aerodynamics_t *aerodynamics){
     // velocity norm
     ZSL_MATRIX_DEF(v, 3, 1);
-    v.data[0] = pos_kf->X_data[3];
-    v.data[1] = pos_kf->X_data[4];
-    v.data[2] = pos_kf->X_data[5];
-
-    float v_norm = pos_kf->v_norm;
+    v.data[0] = filter_data->velocity[0];
+	v.data[1] = filter_data->velocity[1];
+	v.data[2] = filter_data->velocity[2];
+    float v_norm = filter_data->v_norm;
 
     if (v_norm > 1e-6f){
 
@@ -86,7 +85,7 @@ void drag_update(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodynam
         zsl_mtx_scalar_mult_d(&v_unit, 1.0f/v_norm);
 
         // air density
-        float z = pos_kf->X_data[2];
+        float z = filter_data->position[2];
         float rho = air_density_at(z);
 
         // drag coefficient
@@ -95,9 +94,10 @@ void drag_update(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodynam
         else{c_d = 0.44;}
 
         // rotational matrix
-        float phi = att_kf->X_data[0];
-        float theta = att_kf->X_data[1];
-        float psi = att_kf->X_data[2];
+        float phi   = filter_data->attitude[0];  // roll
+		float theta = filter_data->attitude[1];  // pitch
+		float psi   = filter_data->attitude[2];  // yaw
+
 
         float sp = sinf(phi), cp = cosf(phi);
         float st = sinf(theta), ct = cosf(theta);
@@ -134,7 +134,7 @@ void drag_update(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodynam
     }
 }
 
-void update_thrust(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodynamics_t *aerodynamics, state_t *state){ // will only be correct if run during flight, not before launch
+void update_thrust(struct filter_output_msg *filter_data, aerodynamics_t *aerodynamics, state_t *state){ // will only be correct if run during flight, not before launch
 
 
     float N; // normal force induced acceleration
@@ -144,7 +144,7 @@ void update_thrust(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodyn
     float g = -(aerodynamics->g_physics); // gravitational acceleration
     float D = aerodynamics->drag_norm; // drag acceleration
     float T; // Thrust
-    float total_acceleration = pos_kf->a_norm;
+    float total_acceleration = filter_data->a_norm;
 
     if (state->flight_state == STATE_INITIATED){
         T = total_acceleration - N;
@@ -160,19 +160,19 @@ void update_thrust(position_filter_t *pos_kf, attitude_filter_t *att_kf, aerodyn
     }
 }
 
-void update_apogee_estimate(position_filter_t *pos_kf, aerodynamics_t *aerodynamics){
+void update_apogee_estimate(struct filter_output_msg *filter_data, aerodynamics_t *aerodynamics){
     // get data 
     float dt   = 0.01;
-    float a_z0  = pos_kf->X_data[8];
+    float a_z0  = filter_data->acceleration[2];
 
-    float x    = pos_kf->X_data[0];
-    float y    = pos_kf->X_data[1];
-    float z    = pos_kf->X_data[2];
+    float x    = filter_data->position[0];
+    float y    = filter_data->position[1];
+    float z    = filter_data->position[2];
     float xy   = sqrtf(x*x + y*y);
 
-    float v_x  = pos_kf->X_data[3];
-    float v_y  = pos_kf->X_data[4];
-    float v_z  = pos_kf->X_data[5];
+    float v_x  = filter_data->velocity[0];
+    float v_y  = filter_data->velocity[1];
+    float v_z  = filter_data->velocity[2];
     float v_xy = sqrtf(v_x*v_x + v_y*v_y);
 
     float a_xy;
@@ -205,23 +205,23 @@ void update_apogee_estimate(position_filter_t *pos_kf, aerodynamics_t *aerodynam
 
 }
 
-void update_mach_number(position_filter_t *pos_kf, aerodynamics_t *aerodynamics){
+void update_mach_number(struct filter_output_msg *filter_data, aerodynamics_t *aerodynamics){
     float v_sound = sqrtf(aerodynamics->specific_gas_constant_air*aerodynamics->heat_capacity_ratio_air*aerodynamics->temperature_kelvin);
     aerodynamics->v_sound = v_sound;
 
-    float mach_number = (pos_kf->v_norm)/v_sound;
+    float mach_number = (filter_data->v_norm)/v_sound;
     aerodynamics->mach_number = mach_number;
 }
 
 
-void aerodynamics_thread(fjalar_t *fjalar, void *p2, void *p1) {
+void aerodynamics_thread(fjalar_t *fjalar, struct k_msgq *filter_out_q, void *p1) {
 
     init_t            *init  = fjalar->ptr_init;
-    position_filter_t *pos_kf = fjalar->ptr_pos_kf;
-    attitude_filter_t *att_kf = fjalar->ptr_att_kf;
+	// position_filter_t *pos_kf = fjalar->ptr_pos_kf;
+	// attitude_filter_t *att_kf = fjalar->ptr_att_kf;
+	struct filter_output_msg filter_data;
     aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
     state_t           *state = fjalar->ptr_state;
-
     aerodynamics->g_physics = 9.81;
     aerodynamics->specific_gas_constant_air = 287; // J/(kg*K)
     aerodynamics->heat_capacity_ratio_air = 1.4;
@@ -230,20 +230,22 @@ void aerodynamics_thread(fjalar_t *fjalar, void *p2, void *p1) {
   
     drag_init(aerodynamics);
 
-    while (true){ 
+    while (true){
 
-        drag_update(pos_kf, att_kf, aerodynamics); // needs to be updated at all states due to logic in update_thrust 
-
-        if (state->flight_state != STATE_IDLE || state->flight_state != STATE_AWAITING_INIT){
-            update_thrust(pos_kf, att_kf, aerodynamics, state);
-        }
-        
-
-        if (state->flight_state == STATE_COAST){ // only run when thrust is not active
-            update_apogee_estimate(pos_kf, aerodynamics);
-        } else{aerodynamics->expected_apogee = 0;}
-
-        update_mach_number(pos_kf, aerodynamics);
+		if (k_msgq_get(filter_out_q, &filter_data, K_NO_WAIT) == 0) {
+    		// got new data
+        	drag_update(&filter_data, aerodynamics); // needs to be updated at all states due to logic in update_thrust
+			if (state->flight_state != STATE_IDLE && state->flight_state != STATE_AWAITING_INIT){
+            	update_thrust(&filter_data, aerodynamics, state);
+        	}
+        	if (state->flight_state == STATE_COAST){ // only run when thrust is not active
+            	update_apogee_estimate(&filter_data, aerodynamics);
+        	} else{aerodynamics->expected_apogee = 0;}
+        	update_mach_number(&filter_data, aerodynamics);
+		} else {
+    		// no new data — maybe reuse last filter_data or skip updates
+			LOG_INF("No new data coming from the filter");
+		}
 
         k_msleep(10); // 100 Hz
     }

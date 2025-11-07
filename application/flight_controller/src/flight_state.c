@@ -22,18 +22,10 @@ LOG_MODULE_REGISTER(flight, LOG_LEVEL_INF);
 
 #define FLIGHT_THREAD_PRIORITY 7
 #define FLIGHT_THREAD_STACK_SIZE 4096
-
 #define ALTITUDE_PRIMARY_WINDOW_SIZE 5
 #define ALTITUDE_SECONDARY_WINDOW_SIZE 40
-
 #define IMU_WINDOW_SIZE 11
-
-
 #define DROGUE_DEPLOYMENT_FAILURE_DELAY 8000
-
-
-
-
 
 
 void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1);
@@ -55,22 +47,22 @@ void init_flight_state(fjalar_t *fjalar) {
 		flight_thread_stack,
 		K_THREAD_STACK_SIZEOF(flight_thread_stack),
 		(k_thread_entry_t) flight_state_thread,
-		fjalar, NULL, NULL,
+		fjalar, &filter_output_msgq, NULL,
 		FLIGHT_THREAD_PRIORITY, 0, K_NO_WAIT
 	);
 	k_thread_name_set(flight_thread_id, "flight state");
 }
 
 // fix the information logic
-static void deploy_drogue(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf) { 
+static void deploy_drogue(fjalar_t *fjalar, init_t *init, state_t *state, struct filter_output_msg *filter_data) {
     set_pyro(fjalar, 1, true); // Blowing pyro charge, [1 = Drouge]
-    LOG_WRN("drogue deployed at %.2f m %.2f s", pos_kf->X_data[2], (state->apogee_time - state->liftoff_time) / 1000.0f);
+    LOG_WRN("drogue deployed at %.2f m %.2f s", filter_data->position[2], (state->apogee_time - state->liftoff_time) / 1000.0f);
 }
 
 // fix the information logic
-static void deploy_main(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf) {
+static void deploy_main(fjalar_t *fjalar, init_t *init, state_t *state, struct filter_output_msg *filter_data) {
     set_pyro(fjalar, 2, true); // Blowing pyro charge, [2 = Main]
-    LOG_WRN("Main deployed at %.2f m", pos_kf->X_data[2]);
+    LOG_WRN("Main deployed at %.2f m", filter_data->position[2]);
 }
 
 /*
@@ -80,13 +72,13 @@ static void start_pyro_camera(fjalar_t *fjalar){
 }
 */
 
-static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf, aerodynamics_t *aerodynamics, lora_t *lora) {
-    float az = pos_kf->X_data[8];
-    float vz = pos_kf->X_data[5];
-    float z  = pos_kf->X_data[2];
+static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, struct filter_output_msg *filter_data, aerodynamics_t *aerodynamics, lora_t *lora) {
+    float az = filter_data->acceleration[2];
+    float vz = filter_data->velocity[2];
+    float z  = filter_data->position[2];
 
-    float a_norm = pos_kf->a_norm;
-    float v_norm = pos_kf->v_norm;
+    float a_norm = filter_data->a_norm;
+    float v_norm = filter_data->v_norm;
 
     switch (state->flight_state) {
     case STATE_IDLE:
@@ -136,7 +128,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
         
         if (vz < 0) {
             state->apogee_time = k_uptime_get_32();
-            deploy_drogue(fjalar, init, state, pos_kf);
+            deploy_drogue(fjalar, init, state, &filter_data);
             state->flight_state = STATE_DROGUE_DESCENT;
             state->event_apogee = true;
             LOG_WRN("State transitioned from STATE_COAST to STATE_DROGUE_DESCENT due to velocity");
@@ -144,7 +136,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
         break;
     case STATE_DROGUE_DESCENT:
         if (z < 200) {
-            deploy_main(fjalar, init, state, pos_kf);
+            deploy_main(fjalar, init, state, &filter_data);
             state->flight_state = STATE_MAIN_DESCENT;
             LOG_WRN("State transitioned from STATE_DROGUE_DESCENT to STATE_MAIN_DESCENT due to altitude");
         }
@@ -163,8 +155,8 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
     }
 }
 
-static void evaluate_event(fjalar_t *fjalar, state_t *state, position_filter_t *pos_kf) {
-    float z  = pos_kf->X_data[2];
+static void evaluate_event(fjalar_t *fjalar, state_t *state, struct filter_output_msg *filter_data) {
+    float z  = filter_data->position[2];
 
     state->event_above_acs_threshold = (z > 1500);
     state->event_drogue_deployed = (fjalar->pyro1_sense);
@@ -177,7 +169,7 @@ static void evaluate_velocity(aerodynamics_t *aerodynamics, state_t *state) {
     case VELOCITY_SUBSONIC:
         if (M > 0.8){
             state->velocity_class = VELOCITY_TRANSONIC;
-            LOG_WRN("velocity class changed to transsonic");
+            LOG_WRN("velocity class changed to transonic");
         }
         break;
 
@@ -195,17 +187,18 @@ static void evaluate_velocity(aerodynamics_t *aerodynamics, state_t *state) {
     case VELOCITY_SUPERSONIC:
         if (M < 1.2){
             state->velocity_class = VELOCITY_TRANSONIC;
-            LOG_WRN("velocity class changed to transsonic");
+            LOG_WRN("velocity class changed to transonic");
         }
         break;
 
     }
 }
 
-void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
+void flight_state_thread(fjalar_t *fjalar, struct k_msgq *filter_out_q, void *p1) {
     init_t            *init  = fjalar->ptr_init;
-    position_filter_t *pos_kf = fjalar->ptr_pos_kf;
-    attitude_filter_t *att_kf = fjalar->ptr_att_kf;
+    //position_filter_t *pos_kf = fjalar->ptr_pos_kf;
+    //attitude_filter_t *att_kf = fjalar->ptr_att_kf;
+	struct filter_output_msg filter_data;
     aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
     state_t           *state = fjalar->ptr_state;
     lora_t            *lora = fjalar->ptr_lora;
@@ -214,9 +207,15 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
     state->velocity_class = VELOCITY_SUBSONIC;
 
     while (true) {
-        evaluate_state(fjalar, init, state, pos_kf, aerodynamics, lora);
-        evaluate_event(fjalar, state, pos_kf);
-        evaluate_velocity(aerodynamics, state);
+
+		if (k_msgq_get(filter_out_q, &filter_data, K_NO_WAIT) == 0) {
+        	evaluate_state(fjalar, init, state, &filter_data, aerodynamics, lora);
+        	evaluate_event(fjalar, state, &filter_data);
+       		evaluate_velocity(aerodynamics, state);
+		} else {
+    		// no new data — maybe reuse last filter_data or skip updates
+			LOG_INF("No new data coming from the filter");
+		}
         k_msleep(10); 
     }
 }

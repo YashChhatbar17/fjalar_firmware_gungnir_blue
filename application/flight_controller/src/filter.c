@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(filter, LOG_LEVEL_INF);
 #define FILTER_THREAD_STACK_SIZE 4096
 
 void filter_thread(fjalar_t *fjalar, void *p2, void *p1);
-
+K_MSGQ_DEFINE(filter_output_msgq, sizeof(struct filter_output_msg), 10, 4);
 K_THREAD_STACK_DEFINE(filter_thread_stack, FILTER_THREAD_STACK_SIZE);
 struct k_thread filter_thread_data;
 k_tid_t filter_thread_id;
@@ -907,6 +907,32 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             //LOG_WRN("axy: %.2f, vxy: %.2f, xy: %.2f", sqrtf(pos_kf->X_data[6]*pos_kf->X_data[6]+pos_kf->X_data[7]*pos_kf->X_data[7]), sqrtf(pos_kf->X_data[3]*pos_kf->X_data[3]+pos_kf->X_data[4]*pos_kf->X_data[4]), sqrtf(pos_kf->X_data[0]*pos_kf->X_data[0]+pos_kf->X_data[1]*pos_kf->X_data[1]));
         }
         counter++;
+        struct filter_output_msg msg = {
+            .timestamp = k_uptime_get_32(),
+            .position = {pos_kf->X_data[0], pos_kf->X_data[1], pos_kf->X_data[2]},
+            .velocity = {pos_kf->X_data[3], pos_kf->X_data[4], pos_kf->X_data[5]},
+            .acceleration = {pos_kf->X_data[6], pos_kf->X_data[7], pos_kf->X_data[8]}
+            .attitude = {att_kf->X_data[0], att_kf->X_data[1], att_kf->X_data[2]},
+            .v_norm = pos_kf->v_norm,
+            .a_norm = pos_kf->a_norm
+            //.raw_imu = {pos_kf->raw_imu_ax, pos_kf->raw_imu_ay, pos_kf->raw_imu_az, att_kf->raw_imu_gx, att_kf->raw_imu_gy, att_kf->raw_imu_gz},
+            //.raw_baro_p = pos_kf->raw_baro_p,
+            //.raw_gps = {pos_kf->raw_gps_lat, pos_kf->raw_gps_lon, pos_kf->raw_gps_alt}
+        };
+
+        // Non-blocking send - don't want to stall filter if queue is full
+        if (k_msgq_put(&filter_output_msgq, &msg, K_NO_WAIT) != 0) {
+            // Queue full - this means consumers are too slow
+            LOG_WRN("Filter output queue full, dropping message");
+            // Could also purge oldest message: k_msgq_purge(&filter_output_msgq);
+        } else {
+            static int pub_counter = 0;
+            if (pub_counter % 100 == 0) {  // Log every 1 second (100Hz loop)
+                LOG_INF("Published: alt=%.2f, v_norm=%.2f, queue_used=%d",
+                        msg.position[2], msg.v_norm, k_msgq_num_used_get(&filter_output_msgq));
+            }
+            pub_counter++;
+        }
         
         k_msleep(10); // 100 Hz
         }

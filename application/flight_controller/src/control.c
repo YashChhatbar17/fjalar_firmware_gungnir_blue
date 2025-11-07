@@ -37,12 +37,25 @@ void init_control(fjalar_t *fjalar) {
 	k_thread_name_set(control_thread_id, "flight state");
 }
 
-
-
 void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
     init_t            *init  = fjalar->ptr_init;
-    position_filter_t *pos_kf = fjalar->ptr_pos_kf;
-    attitude_filter_t *att_kf = fjalar->ptr_att_kf;
+    // At the top of control_thread(), remove these lines:
+	// position_filter_t *pos_kf = fjalar->ptr_pos_kf;  // DELETE
+	// attitude_filter_t *att_kf = fjalar->ptr_att_kf;  // DELETE (already unused)
+	struct filter_output_msg filter_data;
+	static float last_altitude_AGL = 0.0f; // Remember last valid altitude
+
+	// Try to get latest filter data (non-blocking)
+	if (k_msgq_get(&filter_output_msgq, &filter_data, K_NO_WAIT) == 0) {
+    	last_altitude_AGL = filter_data.position[2];
+	} else {
+    	// No new data this cycle, use cached value
+    	// This is fine since both threads run at 100 Hz
+	}
+
+	float altitude_AGL = last_altitude_AGL;
+
+
     aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
     state_t           *state = fjalar->ptr_state;
     control_t         *control = fjalar->ptr_control;
@@ -50,8 +63,10 @@ void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
     static float integral = 0.0f;
     static float last_error = 0.0f;
     while (true){
-
-        float altitude_AGL = pos_kf->X_data[2];
+        // Try to get latest filter data (non-blocking)
+		if (k_msgq_get(&filter_output_msgq, &filter_data, K_NO_WAIT) == 0) {
+    		altitude_AGL = filter_data.position[2];
+		}
 
         if (state->flight_state == STATE_COAST && altitude_AGL > 1500.0f) {
             float predicted_apogee = aerodynamics->expected_apogee;
