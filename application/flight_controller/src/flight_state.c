@@ -32,6 +32,7 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1);
 
 K_THREAD_STACK_DEFINE(flight_thread_stack, FLIGHT_THREAD_STACK_SIZE);
 struct k_thread flight_thread_data;
+extern struct k_msgq aerodynamics_output_msgq;  // add this line
 k_tid_t flight_thread_id;
 
 ZBUS_LISTENER_DEFINE(pressure_zlis, NULL);
@@ -72,7 +73,7 @@ static void start_pyro_camera(fjalar_t *fjalar){
 }
 */
 
-static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, struct filter_output_msg *filter_data, aerodynamics_t *aerodynamics, lora_t *lora) {
+static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, struct filter_output_msg *filter_data, struct aerodynamics_output_msg *aerodynamics, lora_t *lora) {
     float az = filter_data->acceleration[2];
     float vz = filter_data->velocity[2];
     float z  = filter_data->position[2];
@@ -163,7 +164,7 @@ static void evaluate_event(fjalar_t *fjalar, state_t *state, struct filter_outpu
     state->event_main_deployed = (fjalar->pyro2_sense);
 }
 
-static void evaluate_velocity(aerodynamics_t *aerodynamics, state_t *state) {
+static void evaluate_velocity(struct aerodynamics_output_msg *aerodynamics, state_t *state) {
     float M = aerodynamics->mach_number;
     switch(state->velocity_class){
     case VELOCITY_SUBSONIC:
@@ -199,7 +200,8 @@ void flight_state_thread(fjalar_t *fjalar, struct k_msgq *filter_out_q, void *p1
     //position_filter_t *pos_kf = fjalar->ptr_pos_kf;
     //attitude_filter_t *att_kf = fjalar->ptr_att_kf;
 	struct filter_output_msg filter_data;
-    aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
+    struct aerodynamics_output_msg aero_data = {0};
+
     state_t           *state = fjalar->ptr_state;
     lora_t            *lora = fjalar->ptr_lora;
 
@@ -207,15 +209,23 @@ void flight_state_thread(fjalar_t *fjalar, struct k_msgq *filter_out_q, void *p1
     state->velocity_class = VELOCITY_SUBSONIC;
 
     while (true) {
-
-		if (k_msgq_get(filter_out_q, &filter_data, K_NO_WAIT) == 0) {
-        	evaluate_state(fjalar, init, state, &filter_data, aerodynamics, lora);
-        	evaluate_event(fjalar, state, &filter_data);
-       		evaluate_velocity(aerodynamics, state);
-		} else {
-    		// no new data — maybe reuse last filter_data or skip updates
+		// get latest filter data
+		if (k_msgq_get(filter_out_q, &filter_data, K_NO_WAIT) != 0) {
 			LOG_INF("No new data coming from the filter");
+            k_msleep(10);
+            continue;
 		}
+
+        // get latest aerodynamics data
+        if (k_msgq_get(&aerodynamics_output_msgq, &aero_data, K_NO_WAIT) != 0) {
+            // no new aero data, could reuse last aero_data
+        }
+
+        // update flight state
+        evaluate_state(fjalar, init, state, &filter_data, &aero_data, lora);
+        evaluate_event(fjalar, state, &filter_data);
+        evaluate_velocity(&aero_data, state);
+
         k_msleep(10); 
     }
 }

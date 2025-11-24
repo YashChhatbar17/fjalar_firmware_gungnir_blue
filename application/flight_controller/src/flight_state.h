@@ -2,12 +2,12 @@
 
 #include "fjalar.h"
 #include "filter.h"
+#include "aerodynamics.h"
 
 typedef struct fjalar fjalar_t;
 typedef struct init init_t;
 typedef struct position_filter position_filter_t;
 typedef struct attitude_filter attitude_filter_t;
-typedef struct aerodynamics aerodynamics_t;
 
 enum fjalar_flight_state { // code these in to state machine
     STATE_IDLE,

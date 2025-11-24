@@ -18,7 +18,6 @@ For this we use the linear Kalman filter (KF) and the nonlinear extended Kalman 
 #include "sensors.h"
 #include "init.h"
 #include "filter.h"
-#include "aerodynamics.h"
 #include "flight_state.h"
 #include "control.h"
 
@@ -635,7 +634,7 @@ void attitude_filter_gyroscope(position_filter_t *pos_kf, attitude_filter_t *att
 };
 
 
-void attitude_filter_accelerometer_ground(init_t *init, attitude_filter_t *att_kf, position_filter_t *pos_kf, aerodynamics_t *aerodynamics, float ax, float ay, float az, uint32_t time){
+void attitude_filter_accelerometer_ground(init_t *init, attitude_filter_t *att_kf, position_filter_t *pos_kf, float ax, float ay, float az, uint32_t time){
     if (az > 12){return;} // Guards against start of boost phase, before state update (!)
 
     /* 
@@ -781,7 +780,6 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
     init_t            *init  = fjalar->ptr_init;
     position_filter_t *pos_kf = fjalar->ptr_pos_kf;
     attitude_filter_t *att_kf = fjalar->ptr_att_kf;
-    aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
     state_t           *state = fjalar->ptr_state;
     control_t         *control = fjalar->ptr_control;
     
@@ -809,11 +807,13 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
     while (true) {
         if (k_poll(events, 2, K_MSEC(1000))) {
+			// this blocks the filter thread until new data arrives in IMU or Pressure message queue (DATA_AVAILABLE)
+			// or a 1 second timeout occurs
             LOG_ERR("Stopped receiving measurements");
             continue;
         }
 
-        if (k_msgq_get(&imu_msgq, &imu, K_NO_WAIT) == 0) {
+        if (k_msgq_get(&imu_msgq, &imu, K_NO_WAIT) == 0) { // gets IMU data if available
             events[1].state = K_POLL_STATE_NOT_READY;
             // for external communication
             pos_kf->raw_imu_ax = imu.ax;
@@ -844,7 +844,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
             // use state machine TODO: remove state idle since filter.c is not actually being run in that state
             if (state->flight_state == STATE_INITIATED || state->flight_state == STATE_AWAITING_LAUNCH){
-                attitude_filter_accelerometer_ground(init, att_kf, pos_kf, aerodynamics, ax, ay, az, imu.t); 
+                attitude_filter_accelerometer_ground(init, att_kf, pos_kf, ax, ay, az, imu.t);
             }
         }
 
@@ -937,6 +937,3 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         k_msleep(10); // 100 Hz
         }
     }
-
-
-

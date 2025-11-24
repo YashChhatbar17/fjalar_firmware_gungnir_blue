@@ -5,7 +5,6 @@
 
 typedef struct fjalar fjalar_t;
 typedef struct init init_t;
-typedef struct aerodynamics aerodynamics_t;
 typedef struct state state_t;
 
 typedef struct filter_output_msg {

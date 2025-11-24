@@ -1,14 +1,39 @@
 #pragma once
 
 #include <zsl/interp.h>   /* zsl_interp_lin_y_arr() */
+#include <zephyr/kernel.h>
 #include "filter.h"
 
 typedef struct fjalar fjalar_t;
-typedef struct init t;
+typedef struct init_t;
 typedef struct position_filter position_filter_t;
 typedef struct attitude_filter attitude_filter_t;
 typedef struct state state_t;
 
+struct aerodynamics_msg_matrix {
+    float data[3];  // 3x1 vector
+    size_t sz_rows;
+    size_t sz_cols;
+};
+
+struct aerodynamics_output_msg {
+    uint32_t timestamp;
+    float drag_data[3]; // acceleration, not force
+    struct aerodynamics_msg_matrix drag; // drag induced acceleration in local frame
+    float drag_norm;
+    float expected_apogee;
+    uint8_t thrust_bool;
+    float g_physics;
+    float temperature_kelvin;
+    float specific_gas_constant_air;
+    float heat_capacity_ratio_air;
+    float v_sound;
+    float mach_number;
+};
+
+extern struct k_msgq aerodynamics_output_msgq;
+
+/*
 typedef struct aerodynamics {
     zsl_real_t drag_data[3]; // acceleration, not force!
     struct zsl_mtx drag; // drag induced acceleration in local frame
@@ -22,7 +47,7 @@ typedef struct aerodynamics {
     float heat_capacity_ratio_air;
     float v_sound;
     float mach_number;
-} aerodynamics_t;
+} aerodynamics_t; */
 
 void init_aerodynamics(fjalar_t *fjalar);
 
