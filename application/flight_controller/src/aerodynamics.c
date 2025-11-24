@@ -59,8 +59,7 @@ float pressure_to_AGL(position_filter_t *pos_kf, aerodynamics_t *aerodynamics, f
 
 void drag_init(struct aerodynamics_output_msg *aerodynamics){
     float drag_init[3] = {0,0,0};
-    memcpy(aerodynamics->drag_data, drag_init, sizeof(drag_init));
-    memcpy(aerodynamics->drag.data, drag_init, sizeof(aerodynamics->drag.data)); // TODO: double check
+    aerodynamics->drag.data = aerodynamics->drag_data;
     aerodynamics->drag.sz_rows = 3;
     aerodynamics->drag.sz_cols = 1;
     memcpy(aerodynamics->drag_data, drag_init, sizeof(drag_init));
@@ -122,20 +121,13 @@ void drag_update(struct filter_output_msg *filter_data, struct aerodynamics_outp
         // drag vector
         zsl_mtx_scalar_mult_d(&drag_vec, drag_norm);
 
-        memcpy(aerodynamics->drag.data, drag_vec.data, sizeof(aerodynamics->drag.data));
 		memcpy(aerodynamics->drag_data, drag_vec.data, sizeof(aerodynamics->drag_data));
-		// TODO: figure out which one it is
         aerodynamics->drag.sz_rows = 3;
         aerodynamics->drag.sz_cols = 1;
     } else{
-        aerodynamics->drag_norm       = 0.0f;
-        aerodynamics->drag_data[0]    = 0.0f;
-        aerodynamics->drag_data[1]    = 0.0f;
-        aerodynamics->drag_data[2]    = 0.0f;
-		// aerodynamics->drag_data[0] = aerodynamics->drag_data[1] = aerodynamics->drag_data[2] = 0.0f;
-    	// aerodynamics->drag.data[0] = aerodynamics->drag.data[1] = aerodynamics->drag.data[2] = 0.0f;
-
-    }
+    	aerodynamics->drag_norm = 0.0f;
+    	aerodynamics->drag_data[0] = aerodynamics->drag_data[1] = aerodynamics->drag_data[2] = 0.0f;
+	}
 }
 
 void update_thrust(struct filter_output_msg *filter_data, struct aerodynamics_output_msg *aerodynamics, state_t *state){ // will only be correct if run during flight, not before launch

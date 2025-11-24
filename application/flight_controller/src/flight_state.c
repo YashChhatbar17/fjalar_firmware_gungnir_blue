@@ -32,7 +32,6 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1);
 
 K_THREAD_STACK_DEFINE(flight_thread_stack, FLIGHT_THREAD_STACK_SIZE);
 struct k_thread flight_thread_data;
-extern struct k_msgq aerodynamics_output_msgq;  // add this line
 k_tid_t flight_thread_id;
 
 ZBUS_LISTENER_DEFINE(pressure_zlis, NULL);
