@@ -59,7 +59,7 @@ float pressure_to_AGL(position_filter_t *pos_kf, aerodynamics_t *aerodynamics, f
 
 void drag_init(struct aerodynamics_output_msg *aerodynamics){
     float drag_init[3] = {0,0,0};
-    aerodynamics->drag.data = aerodynamics->drag_data;
+    memcpy(aerodynamics->drag.data, aerodynamics->drag_data, sizeof(aerodynamics->drag_data));
     aerodynamics->drag.sz_rows = 3;
     aerodynamics->drag.sz_cols = 1;
     memcpy(aerodynamics->drag_data, drag_init, sizeof(drag_init));
@@ -130,21 +130,21 @@ void drag_update(struct filter_output_msg *filter_data, struct aerodynamics_outp
 	}
 }
 
-void update_thrust(struct filter_output_msg *filter_data, struct aerodynamics_output_msg *aerodynamics, state_t *state){ // will only be correct if run during flight, not before launch
+void update_thrust(struct filter_output_msg *filter_data, struct aerodynamics_output_msg *aerodynamics, struct flight_state_output_msg state_data){ // will only be correct if run during flight, not before launch
 
     float N; // normal force induced acceleration
-    if (state->flight_state == STATE_INITIATED){
+    if (state_data.flight_state == STATE_INITIATED){
         N = aerodynamics->g_physics;
     } else{N = 0;}
     float g = -(aerodynamics->g_physics); // gravitational acceleration
     float D = aerodynamics->drag_norm; // drag acceleration
-    float T; // Thrust
+    float T = 0.0f; // Thrust
     float total_acceleration = filter_data->a_norm;
 
-    if (state->flight_state == STATE_INITIATED){
+    if (state_data.flight_state == STATE_INITIATED){
         T = total_acceleration - N;
     }
-    if (state->flight_state == STATE_BOOST || state->flight_state == STATE_COAST){
+    if (state_data.flight_state == STATE_BOOST || state_data.flight_state == STATE_COAST){
         T = total_acceleration - g - D;
     }
 
@@ -158,7 +158,7 @@ void update_thrust(struct filter_output_msg *filter_data, struct aerodynamics_ou
 void update_apogee_estimate(struct filter_output_msg *filter_data, struct aerodynamics_output_msg *aerodynamics){
     // get data 
     float dt   = 0.01;
-    float a_z0  = filter_data->acceleration[2];
+    // float a_z0  = filter_data->acceleration[2]; unused
 
     float x    = filter_data->position[0];
     float y    = filter_data->position[1];
@@ -209,13 +209,11 @@ void update_mach_number(struct filter_output_msg *filter_data, struct aerodynami
 }
 
 
-void aerodynamics_thread(fjalar_t *fjalar, struct k_msgq *filter_out_q, void *p1) {
-
-    //init_t            *init  = fjalar->ptr_init;
-	// position_filter_t *pos_kf = fjalar->ptr_pos_kf;
-	// attitude_filter_t *att_kf = fjalar->ptr_att_kf;
+void aerodynamics_thread(fjalar_t *fjalar, void *p2, void *p1) {
+    struct k_msgq *filter_out_q = (struct k_msgq *)p2;
+    // init_t            *init  = fjalar->ptr_init; unused
 	struct filter_output_msg filter_data;
-    state_t           *state = fjalar->ptr_state;
+    struct flight_state_output_msg state_data = {0};
 
     // Initialize aerodynamics message with constants
     struct aerodynamics_output_msg aero_msg = {
@@ -234,15 +232,18 @@ void aerodynamics_thread(fjalar_t *fjalar, struct k_msgq *filter_out_q, void *p1
     drag_init(&aero_msg);
 
     while (true){
+        if (k_msgq_get(&flight_state_output_msgq, &state_data, K_NO_WAIT) != 0) {
+            // No new state data, reuse last state_data
+        }
 
 		if (k_msgq_get(filter_out_q, &filter_data, K_NO_WAIT) == 0) {
     		// got new data
 			aero_msg.timestamp = k_uptime_get_32();
         	drag_update(&filter_data, &aero_msg); // needs to be updated at all states due to logic in update_thrust
-			if (state->flight_state != STATE_IDLE && state->flight_state != STATE_AWAITING_INIT){
-            	update_thrust(&filter_data, &aero_msg, state);
+			if (state_data.flight_state != STATE_IDLE && state_data.flight_state != STATE_AWAITING_INIT){
+            	update_thrust(&filter_data, &aero_msg, state_data);
         	}
-        	if (state->flight_state == STATE_COAST){ // only run when thrust is not active
+        	if (state_data.flight_state == STATE_COAST){ // only run when thrust is not active
             	update_apogee_estimate(&filter_data, &aero_msg);
         	} else{aero_msg.expected_apogee = 0.0f;}
         	update_mach_number(&filter_data, &aero_msg);

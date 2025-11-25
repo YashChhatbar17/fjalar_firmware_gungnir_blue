@@ -194,7 +194,8 @@ static void evaluate_velocity(struct aerodynamics_output_msg *aerodynamics, stru
     }
 }
 
-void flight_state_thread(fjalar_t *fjalar, struct k_msgq *filter_out_q, void *p1) {
+void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
+    struct k_msgq *filter_out_q = (struct k_msgq *)p2;
     init_t            *init  = fjalar->ptr_init;
     lora_t            *lora = fjalar->ptr_lora;
     //position_filter_t *pos_kf = fjalar->ptr_pos_kf;

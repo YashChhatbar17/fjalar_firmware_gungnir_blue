@@ -39,29 +39,31 @@ void init_control(fjalar_t *fjalar) {
 
 void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
-    init_t            *init  = fjalar->ptr_init;
-	// position_filter_t *pos_kf = fjalar->ptr_pos_kf;  // DELETE
-	// attitude_filter_t *att_kf = fjalar->ptr_att_kf;  // DELETE (already unused)
+    //init_t            *init  = fjalar->ptr_init; unused
 	struct filter_output_msg filter_data;
 	struct aerodynamics_output_msg aero_data;
-	static struct aerodynamics_output_msg last_aero_data = {0};
-	static float last_altitude_AGL = 0.0f; // Remember last valid altitude
+	struct flight_state_output_msg fs_data;
+	enum fjalar_flight_state flight_state = STATE_INITIATED;
+	enum fjalar_velocity_class velocity_class = VELOCITY_SUBSONIC;
+	static float last_predicted_apogee = 0.0f;
+	static float altitude_AGL = 0.0f; // Remember last valid altitude
 
 	// Try to get latest filter data (non-blocking)
 	if (k_msgq_get(&filter_output_msgq, &filter_data, K_NO_WAIT) == 0) {
-    	last_altitude_AGL = filter_data.position[2];
+    	altitude_AGL = filter_data.position[2];
 	} else {
     	// No new data this cycle, use cached value
     	// This is fine since both threads run at 100 Hz
 	}
 	if (k_msgq_get(&aerodynamics_output_msgq, &aero_data, K_NO_WAIT) == 0) {
-		last_aero_data = aero_data.expected_apogee;
+		last_predicted_apogee = aero_data.expected_apogee;
+	}
+	// Update flight state if new messages exist
+	while (k_msgq_get(&flight_state_output_msgq, &fs_data, K_NO_WAIT) == 0) {
+		flight_state = fs_data.flight_state;
+		velocity_class = fs_data.velocity_class;
 	}
 
-	float altitude_AGL = last_altitude_AGL;
-	float predicted_apogee = last_aero_data.expected_apogee;
-
-    state_t           *state = fjalar->ptr_state;
     control_t         *control = fjalar->ptr_control;
 
     static float integral = 0.0f;
@@ -71,13 +73,18 @@ void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
 		if (k_msgq_get(&filter_output_msgq, &filter_data, K_NO_WAIT) == 0) {
     		altitude_AGL = filter_data.position[2];
 		}
+    	// Update flight state if new messages exist
+    	while (k_msgq_get(&flight_state_output_msgq, &fs_data, K_NO_WAIT) == 0) {
+    		flight_state = fs_data.flight_state;
+    		velocity_class = fs_data.velocity_class;
+    	}
     	// Try to get latest aerodynamics data (non-blocking)
     	if (k_msgq_get(&aerodynamics_output_msgq, &aero_data, K_NO_WAIT) == 0) {
-    		last_aero_data = aero_data;  // store a copy in case queue is temporarily empty
+    		last_predicted_apogee = aero_data.expected_apogee;  // store a copy in case queue is temporarily empty
     	}
 
-        if (state->flight_state == STATE_COAST && altitude_AGL > 1500.0f) {
-            float predicted_apogee = last_aero_data.expected_apogee;
+        if (flight_state == STATE_COAST && altitude_AGL > 1500.0f) {
+            float predicted_apogee = last_predicted_apogee;
             if (isnan(predicted_apogee)){
                 LOG_WRN("control run with Nan apogee value, loop blocked");
                 k_msleep(10);

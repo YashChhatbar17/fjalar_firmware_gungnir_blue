@@ -19,7 +19,7 @@ For this we use the linear Kalman filter (KF) and the nonlinear extended Kalman 
 #include "init.h"
 #include "filter.h"
 #include "flight_state.h"
-#include "control.h"
+// #include "control.h"
 
 LOG_MODULE_REGISTER(filter, LOG_LEVEL_INF);
 
@@ -778,7 +778,7 @@ void zero_velocity(position_filter_t *pos_kf){
 }
 void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
     init_t            *init  = fjalar->ptr_init;
-    control_t         *control = fjalar->ptr_control;
+    // control_t         *control = fjalar->ptr_control; unused
     position_filter_t pos_kf_l;
     attitude_filter_t att_kf_l;
     position_filter_t *pos_kf = &pos_kf_l;
@@ -801,7 +801,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
     struct imu_queue_entry imu;
     struct pressure_queue_entry pressure;
-    struct gps_queue_entry gps;
+    // struct gps_queue_entry gps; unused
 
     position_filter_init(pos_kf, init);
     attitude_filter_init(att_kf, init);

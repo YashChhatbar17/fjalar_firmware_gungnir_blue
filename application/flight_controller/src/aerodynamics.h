@@ -3,11 +3,10 @@
 #include <zsl/interp.h>   /* zsl_interp_lin_y_arr() */
 #include <zephyr/kernel.h>
 #include "filter.h"
+#include "flight_state.h"
 
 typedef struct fjalar fjalar_t;
-typedef struct init_t;
-typedef struct position_filter position_filter_t;
-typedef struct attitude_filter attitude_filter_t;
+//typedef struct init init_t;
 typedef struct state state_t;
 
 struct aerodynamics_msg_matrix {
@@ -196,7 +195,7 @@ static const struct zsl_interp_xy cd_tbl[] = {
 static inline zsl_real_t cd_at(zsl_real_t v)
 {
     zsl_real_t cd;
-    zsl_interp_lin_y_arr(cd_tbl, CD_N, v, &cd);
+    zsl_interp_lin_y_arr((struct zsl_interp_xy *)cd_tbl, CD_N, v, &cd);
     return cd;
 }
 
@@ -218,7 +217,7 @@ static inline zsl_real_t air_density_at(zsl_real_t z)
     if (z < 0.0f) z = 0.0f;
 
     zsl_real_t rho;
-    zsl_interp_lin_y_arr(rho_tbl, RHO_N, z, &rho);
+    zsl_interp_lin_y_arr((struct zsl_interp_xy *)rho_tbl, RHO_N, z, &rho);
     return rho;
 }
 

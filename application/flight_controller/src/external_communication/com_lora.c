@@ -169,14 +169,10 @@ void lora_msg_enqueue(fjalar_message_t *msg){
 }
 
 void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
-	init_t            *init  = fjalar->ptr_init;
-    position_filter_t *pos_kf = fjalar->ptr_pos_kf;
-    attitude_filter_t *att_kf = fjalar->ptr_att_kf;
-    aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
-    state_t           *state = fjalar->ptr_state;
-    control_t         *control = fjalar->ptr_control;
-    can_t             *can = fjalar->ptr_can;
-	lora_t            *lora = fjalar->ptr_lora;
+    typedef struct filter_output_msg filter_data;
+	typedef struct flight_state_output_msg fs_data;
+	fs_data *state = fjalar->ptr_state;
+	filter_data *pos_kf = fjalar->ptr_pos_kf;
 
 	//lora->LORA_READY_INITIATE_FJALAR = true; // for testing without tracker DO NOT FORGET TO REMOVE
 	//lora->LORA_READY_LAUNCH_FJALAR = true;
@@ -189,9 +185,9 @@ void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 			.data = {
 				.which_data = FJALAR_DATA_GNSS_POSITION_TAG,
 				.data.gnss_position = {
-					.latitude = pos_kf->raw_gps_lat,
-					.longitude = pos_kf->raw_gps_lon,
-					.altitude = pos_kf->raw_gps_alt,
+					.latitude = pos_kf->raw_gps[0],
+					.longitude = pos_kf->raw_gps[1],
+					.altitude = pos_kf->raw_gps[2],
 				},
 			},
 		};

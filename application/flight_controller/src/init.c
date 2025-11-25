@@ -213,10 +213,6 @@ static inline bool init_ready(const init_t *init)
 
 void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
     init_t            *init  = fjalar->ptr_init;
-    position_filter_t *pos_kf = fjalar->ptr_pos_kf;
-    attitude_filter_t *att_kf = fjalar->ptr_att_kf;
-    aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
-    state_t           *state = fjalar->ptr_state;
 
     // call things before loop
 	struct k_poll_event events[2] = {
@@ -235,7 +231,7 @@ void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
     struct imu_queue_entry imu;
     struct pressure_queue_entry pressure;
-    struct gps_queue_entry gps;
+    // struct gps_queue_entry gps; unused
 
     init->n_imu = 0;
     init->n_baro = 0;
