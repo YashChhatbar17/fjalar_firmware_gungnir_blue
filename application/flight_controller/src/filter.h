@@ -2,6 +2,7 @@
 
 #include <zsl/matrices.h>
 #include "fjalar.h"
+#include "flight_state.h"
 
 typedef struct fjalar fjalar_t;
 typedef struct init init_t;
@@ -18,7 +19,7 @@ typedef struct filter_output_msg {
     //float raw_imu[6];     // ax, ay, az, gx, gy, gz
     //float raw_baro_p;
     //float raw_gps[3];     // lat, lon, alt
-};
+}filter_output_msg;
 
 extern struct k_msgq filter_output_msgq;
 

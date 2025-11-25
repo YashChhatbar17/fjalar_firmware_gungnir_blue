@@ -29,7 +29,7 @@ struct aerodynamics_output_msg {
     float heat_capacity_ratio_air;
     float v_sound;
     float mach_number;
-};
+} aerodynamics_output_msg;
 
 extern struct k_msgq aerodynamics_output_msgq;
 

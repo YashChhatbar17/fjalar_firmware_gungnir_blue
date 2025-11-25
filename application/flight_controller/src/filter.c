@@ -778,10 +778,11 @@ void zero_velocity(position_filter_t *pos_kf){
 }
 void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
     init_t            *init  = fjalar->ptr_init;
-    position_filter_t *pos_kf = fjalar->ptr_pos_kf;
-    attitude_filter_t *att_kf = fjalar->ptr_att_kf;
-    state_t           *state = fjalar->ptr_state;
     control_t         *control = fjalar->ptr_control;
+    position_filter_t pos_kf_l;
+    attitude_filter_t att_kf_l;
+    position_filter_t *pos_kf = &pos_kf_l;
+    attitude_filter_t *att_kf = &att_kf_l;
     
     // call things before loop
     struct k_poll_event events[2] = {
@@ -805,12 +806,22 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
     position_filter_init(pos_kf, init);
     attitude_filter_init(att_kf, init);
 
+    struct flight_state_output_msg fs_msg;
+    enum fjalar_flight_state flight_state = STATE_INITIATED;
+    enum fjalar_velocity_class velocity_class = VELOCITY_SUBSONIC;
+
     while (true) {
         if (k_poll(events, 2, K_MSEC(1000))) {
 			// this blocks the filter thread until new data arrives in IMU or Pressure message queue (DATA_AVAILABLE)
 			// or a 1 second timeout occurs
             LOG_ERR("Stopped receiving measurements");
             continue;
+        }
+
+        // Update flight state if new messages exist
+        while (k_msgq_get(&flight_state_output_msgq, &fs_msg, K_NO_WAIT) == 0) {
+            flight_state = fs_msg.flight_state;
+            velocity_class = fs_msg.velocity_class;
         }
 
         if (k_msgq_get(&imu_msgq, &imu, K_NO_WAIT) == 0) { // gets IMU data if available
@@ -843,7 +854,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             attitude_filter_gyroscope(pos_kf, att_kf, gx, gy, gz, imu.t);
 
             // use state machine TODO: remove state idle since filter.c is not actually being run in that state
-            if (state->flight_state == STATE_INITIATED || state->flight_state == STATE_AWAITING_LAUNCH){
+            if (flight_state == STATE_INITIATED || flight_state == STATE_AWAITING_LAUNCH){
                 attitude_filter_accelerometer_ground(init, att_kf, pos_kf, ax, ay, az, imu.t);
             }
         }
@@ -852,7 +863,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             events[0].state = K_POLL_STATE_NOT_READY;            
             pos_kf->raw_baro_p = pressure.pressure*1000;
             // use state machine
-            if (state->velocity_class == VELOCITY_SUBSONIC){ // baro bad in native
+            if (velocity_class == VELOCITY_SUBSONIC){ // baro bad in native
                 position_filter_barometer(init, pos_kf, pressure.pressure, pressure.t); // Ask other team about barometer solution on bad data
             }          
         }
@@ -877,7 +888,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         }
         #endif
 
-        if (state->flight_state == STATE_INITIATED || state->flight_state == STATE_AWAITING_LAUNCH){
+        if (flight_state == STATE_INITIATED || flight_state == STATE_AWAITING_LAUNCH){
             // filter.c is only run after initialization, which is why these two states above are sufficient
             zero_velocity(pos_kf);
         }
@@ -911,7 +922,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             .timestamp = k_uptime_get_32(),
             .position = {pos_kf->X_data[0], pos_kf->X_data[1], pos_kf->X_data[2]},
             .velocity = {pos_kf->X_data[3], pos_kf->X_data[4], pos_kf->X_data[5]},
-            .acceleration = {pos_kf->X_data[6], pos_kf->X_data[7], pos_kf->X_data[8]}
+            .acceleration = {pos_kf->X_data[6], pos_kf->X_data[7], pos_kf->X_data[8]},
             .attitude = {att_kf->X_data[0], att_kf->X_data[1], att_kf->X_data[2]},
             .v_norm = pos_kf->v_norm,
             .a_norm = pos_kf->a_norm

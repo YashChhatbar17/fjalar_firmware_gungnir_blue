@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(flight, LOG_LEVEL_INF);
 
 
 void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1);
-
+K_MSGQ_DEFINE(flight_state_output_msgq, sizeof(struct flight_state_output_msg), 10, 4);
 K_THREAD_STACK_DEFINE(flight_thread_stack, FLIGHT_THREAD_STACK_SIZE);
 struct k_thread flight_thread_data;
 k_tid_t flight_thread_id;
@@ -54,13 +54,13 @@ void init_flight_state(fjalar_t *fjalar) {
 }
 
 // fix the information logic
-static void deploy_drogue(fjalar_t *fjalar, init_t *init, state_t *state, struct filter_output_msg *filter_data) {
+static void deploy_drogue(fjalar_t *fjalar, init_t *init, struct flight_state_output_msg *state_data, struct filter_output_msg *filter_data) {
     set_pyro(fjalar, 1, true); // Blowing pyro charge, [1 = Drouge]
-    LOG_WRN("drogue deployed at %.2f m %.2f s", filter_data->position[2], (state->apogee_time - state->liftoff_time) / 1000.0f);
+    LOG_WRN("drogue deployed at %.2f m %.2f s", filter_data->position[2], (state_data->apogee_time - state_data->liftoff_time) / 1000.0f);
 }
 
 // fix the information logic
-static void deploy_main(fjalar_t *fjalar, init_t *init, state_t *state, struct filter_output_msg *filter_data) {
+static void deploy_main(fjalar_t *fjalar, init_t *init, struct filter_output_msg *filter_data) {
     set_pyro(fjalar, 2, true); // Blowing pyro charge, [2 = Main]
     LOG_WRN("Main deployed at %.2f m", filter_data->position[2]);
 }
@@ -72,7 +72,7 @@ static void start_pyro_camera(fjalar_t *fjalar){
 }
 */
 
-static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, struct filter_output_msg *filter_data, struct aerodynamics_output_msg *aerodynamics, lora_t *lora) {
+static void evaluate_state(fjalar_t *fjalar, init_t *init,  struct flight_state_output_msg *state_data, struct filter_output_msg *filter_data, struct aerodynamics_output_msg *aerodynamics, lora_t *lora) {
     float az = filter_data->acceleration[2];
     float vz = filter_data->velocity[2];
     float z  = filter_data->position[2];
@@ -80,10 +80,10 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, struc
     float a_norm = filter_data->a_norm;
     float v_norm = filter_data->v_norm;
 
-    switch (state->flight_state) {
+    switch (state_data->flight_state) {
     case STATE_IDLE:
         if (lora->LORA_READY_INITIATE_FJALAR){
-            state->flight_state = STATE_AWAITING_INIT;
+            state_data->flight_state = STATE_AWAITING_INIT;
             init_init(&fjalar_god); // see mural documentation
             init_sensors(&fjalar_god); // see mural documentation
             LOG_WRN("State transitioned from STATE_IDLE to STATE_AWAITING_INIT due to LoRa command");
@@ -91,60 +91,60 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, struc
         break;
     case STATE_AWAITING_INIT:
         if (init->init_completed){
-            state->flight_state = STATE_INITIATED;
+            state_data->flight_state = STATE_INITIATED;
             LOG_WRN("State transitioned from STATE_AWAITING_INIT to STATE_INITIATED due to completed initialization");
         } // change for lora struct
         break;
     case STATE_INITIATED:
         if (lora->LORA_READY_LAUNCH_FJALAR){
-            state->flight_state = STATE_AWAITING_LAUNCH;
+            state_data->flight_state = STATE_AWAITING_LAUNCH;
             LOG_WRN("State transitioned from STATE_INITIATED to STATE_AWAITING_LAUNCH due to LoRa command");
         }
         break;
     case STATE_AWAITING_LAUNCH:
         if (a_norm > BOOST_ACCEL_THRESHOLD && z > 3){
-            state->flight_state = STATE_BOOST;
-            state->event_launch = true;
-            state->liftoff_time = k_uptime_get_32();
+            state_data->flight_state = STATE_BOOST;
+            state_data->event_launch = true;
+            state_data->liftoff_time = k_uptime_get_32();
             LOG_WRN("State transitioned from STATE_AWAITING_LAUNCH to STATE_BOOST due to acceleration");
         }
 
         // adding velocity as a requirement here will not work due to the velocity zeroing logic i filter.c
         if (v_norm > BOOST_SPEED_THRESHOLD){ 
-            state->flight_state = STATE_BOOST;
-            state->event_launch = true;
-            state->liftoff_time = k_uptime_get_32();
+            state_data->flight_state = STATE_BOOST;
+            state_data->event_launch = true;
+            state_data->liftoff_time = k_uptime_get_32();
             LOG_WRN("State transitioned from STATE_AWAITING_LAUNCH to STATE_BOOST due to speed");
         }
         break;
     case STATE_BOOST:
         if (az < COAST_ACCEL_THRESHOLD && !aerodynamics->thrust_bool) {
-            state->flight_state = STATE_COAST;
-            state->event_burnout = true;
+            state_data->flight_state = STATE_COAST;
+            state_data->event_burnout = true;
             LOG_WRN("State transitioned from STATE_BOOST to STATE_COAST due to acceleration");
         }
         break;
     case STATE_COAST:
         
         if (vz < 0) {
-            state->apogee_time = k_uptime_get_32();
-            deploy_drogue(fjalar, init, state, &filter_data);
-            state->flight_state = STATE_DROGUE_DESCENT;
-            state->event_apogee = true;
+            state_data->apogee_time = k_uptime_get_32();
+            deploy_drogue(fjalar, init, state_data, filter_data);
+            state_data->flight_state = STATE_DROGUE_DESCENT;
+            state_data->event_apogee = true;
             LOG_WRN("State transitioned from STATE_COAST to STATE_DROGUE_DESCENT due to velocity");
         }
         break;
     case STATE_DROGUE_DESCENT:
         if (z < 200) {
-            deploy_main(fjalar, init, state, &filter_data);
-            state->flight_state = STATE_MAIN_DESCENT;
+            deploy_main(fjalar, init, filter_data);
+            state_data->flight_state = STATE_MAIN_DESCENT;
             LOG_WRN("State transitioned from STATE_DROGUE_DESCENT to STATE_MAIN_DESCENT due to altitude");
         }
         break;
     case STATE_MAIN_DESCENT:
         if (a_norm > init->g_accelerometer-2 && a_norm<init->g_accelerometer+2){
-            state->flight_state = STATE_LANDED;
-            state->event_landed = true;
+            state_data->flight_state = STATE_LANDED;
+            state_data->event_landed = true;
             LOG_WRN("State transitioned from STATE_MAIN_DESCENT to STATE_LANDED due to acceleration");
         }
         break;
@@ -155,38 +155,38 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, struc
     }
 }
 
-static void evaluate_event(fjalar_t *fjalar, state_t *state, struct filter_output_msg *filter_data) {
+static void evaluate_event(fjalar_t *fjalar,  struct flight_state_output_msg *state_data, struct filter_output_msg *filter_data) {
     float z  = filter_data->position[2];
 
-    state->event_above_acs_threshold = (z > 1500);
-    state->event_drogue_deployed = (fjalar->pyro1_sense);
-    state->event_main_deployed = (fjalar->pyro2_sense);
+    state_data->event_above_acs_threshold = (z > 1500);
+    state_data->event_drogue_deployed = (fjalar->pyro1_sense);
+    state_data->event_main_deployed = (fjalar->pyro2_sense);
 }
 
-static void evaluate_velocity(struct aerodynamics_output_msg *aerodynamics, state_t *state) {
+static void evaluate_velocity(struct aerodynamics_output_msg *aerodynamics, struct flight_state_output_msg *state_data) {
     float M = aerodynamics->mach_number;
-    switch(state->velocity_class){
+    switch(state_data->velocity_class){
     case VELOCITY_SUBSONIC:
         if (M > 0.8){
-            state->velocity_class = VELOCITY_TRANSONIC;
+            state_data->velocity_class = VELOCITY_TRANSONIC;
             LOG_WRN("velocity class changed to transonic");
         }
         break;
 
     case VELOCITY_TRANSONIC:
         if (M > 1.2){
-            state->velocity_class = VELOCITY_SUPERSONIC;
+            state_data->velocity_class = VELOCITY_SUPERSONIC;
             LOG_WRN("velocity class changed to supersonic");
         }
         if (M < 0.8){
-            state->velocity_class = VELOCITY_SUBSONIC;
+            state_data->velocity_class = VELOCITY_SUBSONIC;
             LOG_WRN("velocity class changed to subsonic");
         }
         break;
 
     case VELOCITY_SUPERSONIC:
         if (M < 1.2){
-            state->velocity_class = VELOCITY_TRANSONIC;
+            state_data->velocity_class = VELOCITY_TRANSONIC;
             LOG_WRN("velocity class changed to transonic");
         }
         break;
@@ -196,16 +196,28 @@ static void evaluate_velocity(struct aerodynamics_output_msg *aerodynamics, stat
 
 void flight_state_thread(fjalar_t *fjalar, struct k_msgq *filter_out_q, void *p1) {
     init_t            *init  = fjalar->ptr_init;
+    lora_t            *lora = fjalar->ptr_lora;
     //position_filter_t *pos_kf = fjalar->ptr_pos_kf;
     //attitude_filter_t *att_kf = fjalar->ptr_att_kf;
 	struct filter_output_msg filter_data;
     struct aerodynamics_output_msg aero_data = {0};
 
-    state_t           *state = fjalar->ptr_state;
-    lora_t            *lora = fjalar->ptr_lora;
+    // Initialize state message
+    struct flight_state_output_msg state_msg = {
+        .timestamp = 0,
+        .flight_state = STATE_IDLE,
+        .velocity_class = VELOCITY_SUBSONIC,
+        .liftoff_time = 0,
+        .apogee_time = 0,
+        .event_launch = false,
+        .event_burnout = false,
+        .event_above_acs_threshold = false,
+        .event_apogee = false,
+        .event_drogue_deployed = false,
+        .event_main_deployed = false,
+        .event_landed = false
+    };
 
-    state->flight_state = STATE_IDLE;
-    state->velocity_class = VELOCITY_SUBSONIC;
 
     while (true) {
 		// get latest filter data
@@ -219,11 +231,17 @@ void flight_state_thread(fjalar_t *fjalar, struct k_msgq *filter_out_q, void *p1
         if (k_msgq_get(&aerodynamics_output_msgq, &aero_data, K_NO_WAIT) != 0) {
             // no new aero data, could reuse last aero_data
         }
-
+        // Update timestamp
+        state_msg.timestamp = k_uptime_get_32();
         // update flight state
-        evaluate_state(fjalar, init, state, &filter_data, &aero_data, lora);
-        evaluate_event(fjalar, state, &filter_data);
-        evaluate_velocity(&aero_data, state);
+        evaluate_state(fjalar, init, &state_msg, &filter_data, &aero_data, lora);
+        evaluate_event(fjalar, &state_msg, &filter_data);
+        evaluate_velocity(&aero_data, &state_msg);
+
+        // Publish state to message queue
+        if (k_msgq_put(&flight_state_output_msgq, &state_msg, K_NO_WAIT) != 0) {
+            LOG_WRN("Flight state output queue full, dropping message");
+        }
 
         k_msleep(10); 
     }
