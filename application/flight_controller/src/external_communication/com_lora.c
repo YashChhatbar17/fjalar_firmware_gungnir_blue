@@ -169,41 +169,42 @@ void lora_msg_enqueue(fjalar_message_t *msg){
 }
 
 void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
-    typedef struct filter_output_msg filter_data;
-	typedef struct flight_state_output_msg fs_data;
-	fs_data *state = fjalar->ptr_state;
-	filter_data *pos_kf = fjalar->ptr_pos_kf;
-
 	//lora->LORA_READY_INITIATE_FJALAR = true; // for testing without tracker DO NOT FORGET TO REMOVE
 	//lora->LORA_READY_LAUNCH_FJALAR = true;
 
 	while (true){
-		// gps
-		fjalar_message_t msg_gps = {
-			.time = k_uptime_get_32(),
-			.has_data = true,
-			.data = {
-				.which_data = FJALAR_DATA_GNSS_POSITION_TAG,
-				.data.gnss_position = {
-					.latitude = pos_kf->raw_gps[0],
-					.longitude = pos_kf->raw_gps[1],
-					.altitude = pos_kf->raw_gps[2],
+		struct filter_output_msg filter_msg;
+		struct flight_state_output_msg fs_msg;
+
+		int ret1 = k_msgq_get(&filter_output_msgq, &filter_msg, K_NO_WAIT);
+		int ret2 = k_msgq_get(&flight_state_output_msgq, &fs_msg, K_NO_WAIT);
+		if (ret1 == 0 && ret2 == 0) {
+			// gps
+			fjalar_message_t msg_gps = {
+				.time = k_uptime_get_32(),
+				.has_data = true,
+				.data = {
+					.which_data = FJALAR_DATA_GNSS_POSITION_TAG,
+					.data.gnss_position = {
+						.latitude = filter_msg.raw_gps[0],
+						.longitude = filter_msg.raw_gps[1],
+						.altitude = filter_msg.raw_gps[2],
+					},
 				},
-			},
-		};
-		lora_msg_enqueue(&msg_gps);
+			};
+			lora_msg_enqueue(&msg_gps);
 
-		// FlightState
-		fjalar_message_t msg_flight_state = {
-			.time = k_uptime_get_32(),
-			.has_data = true,
-			.data = {
-				.which_data = FJALAR_DATA_FLIGHT_STATE_TAG,
-				.data.flight_state = state->flight_state
-			},
-		};
-		lora_msg_enqueue(&msg_flight_state);
-
+			// FlightState
+			fjalar_message_t msg_flight_state = {
+				.time = k_uptime_get_32(),
+				.has_data = true,
+				.data = {
+					.which_data = FJALAR_DATA_FLIGHT_STATE_TAG,
+					.data.flight_state = fs_msg.flight_state
+				},
+			};
+			lora_msg_enqueue(&msg_flight_state);
+		}
 		k_msleep(5000);
 	}
 }

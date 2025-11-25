@@ -7,15 +7,15 @@
 
 typedef struct fjalar fjalar_t;
 //typedef struct init init_t;
-typedef struct state state_t;
+//typedef struct state state_t;
 
-struct aerodynamics_msg_matrix {
+typedef struct aerodynamics_msg_matrix {
     float data[3];  // 3x1 vector
     size_t sz_rows;
     size_t sz_cols;
-};
+} aerodynamics_msg_matrix;
 
-struct aerodynamics_output_msg {
+typedef struct aerodynamics_output_msg {
     uint32_t timestamp;
     float drag_data[3]; // acceleration, not force
     struct aerodynamics_msg_matrix drag; // drag induced acceleration in local frame

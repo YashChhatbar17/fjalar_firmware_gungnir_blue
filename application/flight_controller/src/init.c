@@ -52,7 +52,7 @@ static void init_finish(init_t *init){
 
     double mean_ax, mean_ay, mean_az;
     double mean_gx, mean_gy, mean_gz;
-    double mean_lon, mean_lat, mean_alt;
+    double mean_lon = 0, mean_lat = 0, mean_alt = 0;
     double mean_p;
 
     double diff_ax  = 0, diff_ay  = 0, diff_az  = 0;
@@ -62,7 +62,7 @@ static void init_finish(init_t *init){
 
     double var_ax, var_ay, var_az;
     double var_gx, var_gy, var_gz;
-    double var_lon, var_lat, var_alt;
+    double var_lon = 0, var_lat = 0, var_alt = 0;
     double var_p;
 
     // Calculate variance: summarize deviation from mean squared, divide by N -> variance

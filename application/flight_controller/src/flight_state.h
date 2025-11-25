@@ -32,7 +32,7 @@ enum fjalar_velocity_class {
 #define COAST_ACCEL_THRESHOLD 5.0
 
 // Flight state output message for message queue
-struct flight_state_output_msg {
+typedef struct flight_state_output_msg {
     uint32_t timestamp;
     enum fjalar_flight_state flight_state;
     enum fjalar_velocity_class velocity_class;

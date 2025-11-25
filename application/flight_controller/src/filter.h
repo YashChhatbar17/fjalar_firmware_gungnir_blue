@@ -16,8 +16,8 @@ typedef struct filter_output_msg {
     float attitude[3];     // roll, pitch, yaw
     float v_norm;
     float a_norm;
-    //float raw_imu[6];     // ax, ay, az, gx, gy, gz
-    //float raw_baro_p;
+    float raw_imu[6];     // ax, ay, az, gx, gy, gz
+    float raw_baro_p;
     float raw_gps[3];     // lat, lon, alt
 }filter_output_msg;
 
