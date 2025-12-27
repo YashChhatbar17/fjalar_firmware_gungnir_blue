@@ -37,6 +37,11 @@ target_sources(app PRIVATE
     src/aerodynamics.c
     src/init.c
     src/control.c
+    src/test_state_machine.c
+    src/lora_test.c
+    #src/test_can.c
+    src/test_telem.c
+    src/test_nvs.c
     src/external_communication/com_master.c
     src/external_communication/com_can.c
     src/external_communication/com_flash.c

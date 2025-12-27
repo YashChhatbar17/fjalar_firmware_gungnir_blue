@@ -62,7 +62,7 @@ void init_flight_state(fjalar_t *fjalar) {
 }
 
 // fix the information logic
-static void deploy_drogue(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf) { 
+static void deploy_drogue(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf) {
     set_pyro(fjalar, 1, true); // Blowing pyro charge, [1 = Drouge]
     LOG_WRN("drogue deployed at %.2f m %.2f s", pos_kf->X_data[2], (state->apogee_time - state->liftoff_time) / 1000.0f);
 }
@@ -80,7 +80,7 @@ static void start_pyro_camera(fjalar_t *fjalar){
 }
 */
 
-static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf, aerodynamics_t *aerodynamics, lora_t *lora) {
+void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf, aerodynamics_t *aerodynamics, lora_t *lora) {
     float az = pos_kf->X_data[8];
     float vz = pos_kf->X_data[5];
     float z  = pos_kf->X_data[2];
@@ -118,7 +118,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
         }
 
         // adding velocity as a requirement here will not work due to the velocity zeroing logic i filter.c
-        if (v_norm > BOOST_SPEED_THRESHOLD){ 
+        if (v_norm > BOOST_SPEED_THRESHOLD){
             state->flight_state = STATE_BOOST;
             state->event_launch = true;
             state->liftoff_time = k_uptime_get_32();
@@ -133,7 +133,6 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
         }
         break;
     case STATE_COAST:
-        
         if (vz < 0) {
             state->apogee_time = k_uptime_get_32();
             deploy_drogue(fjalar, init, state, pos_kf);
@@ -150,7 +149,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init, state_t *state, posit
         }
         break;
     case STATE_MAIN_DESCENT:
-        if (a_norm > init->g_accelerometer-2 && a_norm<init->g_accelerometer+2){
+        if (a_norm > init->g_accelerometer-2 && a_norm < init->g_accelerometer+2){
             state->flight_state = STATE_LANDED;
             state->event_landed = true;
             LOG_WRN("State transitioned from STATE_MAIN_DESCENT to STATE_LANDED due to acceleration");
@@ -217,6 +216,6 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
         evaluate_state(fjalar, init, state, pos_kf, aerodynamics, lora);
         evaluate_event(fjalar, state, pos_kf);
         evaluate_velocity(aerodynamics, state);
-        k_msleep(10); 
+        k_msleep(10);
     }
 }

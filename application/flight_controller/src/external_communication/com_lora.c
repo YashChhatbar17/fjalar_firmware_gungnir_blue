@@ -30,6 +30,7 @@ k_tid_t lora_thread_id;
 K_THREAD_STACK_DEFINE(lora_msg_enqueue_thread_stack, LORA_MSG_ENQUEUE_THREAD_STACK_SIZE);
 struct k_thread lora_msg_enqueue_thread_data;
 k_tid_t lora_msg_enqueue_thread_id;
+extern const struct device *lora_dev;
 
 void lora_thread(fjalar_t *fjalar, void *p2, void *p3);
 void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3);
@@ -78,6 +79,50 @@ int lora_configure(const struct device *dev, bool transmit) {
 	current_mode = transmit;
 	return ret;
 }
+
+
+void lora_send_ack(uint8_t cmd, bool success)
+{
+    lora_ack_t ack = {
+        .cmd    = cmd,
+        .status = success ? 1 : 0
+    };
+
+    /* No need to wait on TX completion for ACKs */
+    int ret = lora_send_async(lora_dev,
+                              (uint8_t *)&ack,
+                              sizeof(ack),
+                              NULL);
+
+    if (ret < 0) {
+        LOG_ERR("LoRa ACK send failed (err=%d)", ret);
+    } else {
+        LOG_INF("LoRa ACK queued (cmd=0x%02X status=%d)", cmd, ack.status);
+    }
+}
+
+
+// In com_lora.c
+void lora_command_handler(uint8_t cmd) {
+	switch (cmd) {
+	case LORA_CMD_INIT:
+		fjalar_god.ptr_lora->LORA_READY_INITIATE_FJALAR = true;
+		lora_send_ack(LORA_CMD_INIT, true);
+		LOG_INF("LoRa INIT command acknowledged");
+		break;
+
+	case LORA_CMD_LAUNCH:
+		fjalar_god.ptr_lora->LORA_READY_LAUNCH_FJALAR = true;
+		lora_send_ack(LORA_CMD_LAUNCH, true);
+		LOG_INF("LoRa LAUNCH command acknowledged");
+		break;
+
+	default:
+		LOG_WRN("Unknown LoRa command: 0x%02X", cmd);
+		break;
+	}
+}
+
 
 struct lora_rx {
 	uint8_t buf[PROTOCOL_BUFFER_LENGTH];
