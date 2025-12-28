@@ -57,7 +57,7 @@ void init_com_lora(fjalar_t *fjalar){
 } 
 
 int lora_configure(const struct device *dev, bool transmit) {
-	static uint8_t current_mode = -1;
+	static int8_t current_mode = -1;
 	if (current_mode == transmit) {
 		LOG_DBG("Mode already configured");
 		return 0;

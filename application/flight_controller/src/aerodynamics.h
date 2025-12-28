@@ -4,6 +4,9 @@
 #include <zephyr/kernel.h>
 #include "filter.h"
 #include "flight_state.h"
+#include <zephyr/zbus/zbus.h>
+
+ZBUS_CHAN_DECLARE(aero_chan);
 
 typedef struct fjalar fjalar_t;
 //typedef struct init init_t;
@@ -30,7 +33,6 @@ typedef struct aerodynamics_output_msg {
     float mach_number;
 } aerodynamics_output_msg;
 
-extern struct k_msgq aerodynamics_output_msgq;
 
 /*
 typedef struct aerodynamics {

@@ -24,7 +24,13 @@ LOG_MODULE_REGISTER(aerodynamics, LOG_LEVEL_INF);
 #define AERODYNAMICS_THREAD_STACK_SIZE 4096
 
 void aerodynamics_thread(fjalar_t *fjalar, void *p2, void *p1);
-K_MSGQ_DEFINE(aerodynamics_output_msgq, sizeof(struct aerodynamics_output_msg), 10, 4);
+ZBUS_CHAN_DEFINE(aero_chan,                          /* Name */
+                 struct aerodynamics_output_msg,     /* Message type */
+                 NULL,                               /* Validator */
+                 NULL,                               /* User Data */
+                 ZBUS_OBS_DECLARE(),                 /* Observers (can be empty if using read) */
+                 ZBUS_MSG_INIT(0)                    /* Initial Value */
+);
 K_THREAD_STACK_DEFINE(aerodynamics_thread_stack, AERODYNAMICS_THREAD_STACK_SIZE);
 struct k_thread aerodynamics_thread_data;
 k_tid_t aerodynamics_thread_id;
@@ -211,9 +217,8 @@ void update_mach_number(struct filter_output_msg *filter_data, struct aerodynami
 
 void aerodynamics_thread(fjalar_t *fjalar, void *p2, void *p1) {
     struct k_msgq *filter_out_q = (struct k_msgq *)p2;
-    // init_t            *init  = fjalar->ptr_init; unused
 	struct filter_output_msg filter_data;
-    struct flight_state_output_msg state_data = {0};
+	struct flight_state_output_msg state_data = { .flight_state = STATE_IDLE }; // Initialize with default
 
     // Initialize aerodynamics message with constants
     struct aerodynamics_output_msg aero_msg = {
@@ -230,32 +235,29 @@ void aerodynamics_thread(fjalar_t *fjalar, void *p2, void *p1) {
     };
 
     drag_init(&aero_msg);
-
     while (true){
-        if (k_msgq_get(&flight_state_output_msgq, &state_data, K_NO_WAIT) != 0) {
-            // No new state data, reuse last state_data
-        }
 
-		if (k_msgq_get(filter_out_q, &filter_data, K_NO_WAIT) == 0) {
+		if (k_msgq_get(filter_out_q, &filter_data, K_FOREVER) == 0) {
+			k_msgq_get(&flight_state_output_msgq, &state_data, K_NO_WAIT);
     		// got new data
 			aero_msg.timestamp = k_uptime_get_32();
+
+        	update_mach_number(&filter_data, &aero_msg);
+
         	drag_update(&filter_data, &aero_msg); // needs to be updated at all states due to logic in update_thrust
+
 			if (state_data.flight_state != STATE_IDLE && state_data.flight_state != STATE_AWAITING_INIT){
             	update_thrust(&filter_data, &aero_msg, state_data);
         	}
         	if (state_data.flight_state == STATE_COAST){ // only run when thrust is not active
             	update_apogee_estimate(&filter_data, &aero_msg);
         	} else{aero_msg.expected_apogee = 0.0f;}
-        	update_mach_number(&filter_data, &aero_msg);
-			// Publish aerodynamics data to message queue
-        	if (k_msgq_put(&aerodynamics_output_msgq, &aero_msg, K_NO_WAIT) != 0) {
-            	LOG_WRN("Aerodynamics output queue full, dropping message");
-        	}
-		} else {
-    		// no new data — maybe reuse last filter_data or skip updates
-			LOG_INF("No new data coming from the filter");
+        	// update_mach_number(&filter_data, &aero_msg);
+			// After all calculations (drag_update, update_thrust, etc.)
+			zbus_chan_pub(&aero_chan, &aero_msg, K_MSEC(10));
 		}
+        //zbus_chan_pub(&aero_chan, &aero_msg, K_MSEC(10));
 
-        k_msleep(10); // 100 Hz
+        //k_msleep(10); // 100 Hz
     }
 }

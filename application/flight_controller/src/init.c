@@ -21,7 +21,7 @@ It is important that the rocket remains stationary while the initialization thre
 #include "control.h"
 
 LOG_MODULE_REGISTER(init, LOG_LEVEL_INF);
-
+K_SEM_DEFINE(init_done_sem, 0, 1);
 #define INIT_THREAD_PRIORITY 7
 #define INIT_THREAD_STACK_SIZE 4096
 
@@ -198,8 +198,6 @@ static void init_finish(init_t *init){
     init->pitch0 = atan2f(-new_ax, sqrtf(new_ay*new_ay + new_az*new_az));
     init->yaw0 = 0.0f;
 
-    // add beep when init finish
-    init->init_completed = true;
 }
 
 static inline bool init_ready(const init_t *init)
@@ -305,5 +303,8 @@ void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
     init_control(&fjalar_god);
     LOG_INF("Init phase completed, started Kalman Filters.");
     // add BEEP from buzzer
+
+    // Signal completion
+    k_sem_give(&init_complete_sem);
 }
 

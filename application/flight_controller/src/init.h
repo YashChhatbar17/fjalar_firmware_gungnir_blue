@@ -9,6 +9,7 @@ typedef struct position_filter position_filter_t;
 typedef struct attitude_filter attitude_filter_t;
 typedef struct aerodynamics aerodynamics_t;
 typedef struct state state_t;
+extern struct k_sem init_complete_sem;
 
 typedef struct init{
     // arrays

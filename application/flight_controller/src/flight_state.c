@@ -90,7 +90,7 @@ static void evaluate_state(fjalar_t *fjalar, init_t *init,  struct flight_state_
         }
         break;
     case STATE_AWAITING_INIT:
-        if (init->init_completed){
+        if (k_sem_take(&init_complete_sem, K_NO_WAIT) == 0){
             state_data->flight_state = STATE_INITIATED;
             LOG_WRN("State transitioned from STATE_AWAITING_INIT to STATE_INITIATED due to completed initialization");
         } // change for lora struct
@@ -198,8 +198,6 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
     struct k_msgq *filter_out_q = (struct k_msgq *)p2;
     init_t            *init  = fjalar->ptr_init;
     lora_t            *lora = fjalar->ptr_lora;
-    //position_filter_t *pos_kf = fjalar->ptr_pos_kf;
-    //attitude_filter_t *att_kf = fjalar->ptr_att_kf;
 	struct filter_output_msg filter_data;
     struct aerodynamics_output_msg aero_data = {0};
 
@@ -223,27 +221,20 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
     while (true) {
 		// get latest filter data
 		if (k_msgq_get(filter_out_q, &filter_data, K_NO_WAIT) != 0) {
-			LOG_INF("No new data coming from the filter");
-            k_msleep(10);
-            continue;
-		}
 
-        // get latest aerodynamics data
-        if (k_msgq_get(&aerodynamics_output_msgq, &aero_data, K_NO_WAIT) != 0) {
-            // no new aero data, could reuse last aero_data
+        	zbus_chan_read(&aero_chan, &aero_data, K_NO_WAIT);
+        	// Update timestamp
+        	state_msg.timestamp = k_uptime_get_32();
+        	// update flight state
+        	evaluate_state(fjalar, init, &state_msg, &filter_data, &aero_data, lora);
+        	evaluate_event(fjalar, &state_msg, &filter_data);
+        	evaluate_velocity(&aero_data, &state_msg);
+
+        	// Publish state to message queue
+        	if (k_msgq_put(&flight_state_output_msgq, &state_msg, K_NO_WAIT) != 0) {
+        	    LOG_WRN("Flight state output queue full, dropping message");
+        	}
+
         }
-        // Update timestamp
-        state_msg.timestamp = k_uptime_get_32();
-        // update flight state
-        evaluate_state(fjalar, init, &state_msg, &filter_data, &aero_data, lora);
-        evaluate_event(fjalar, &state_msg, &filter_data);
-        evaluate_velocity(&aero_data, &state_msg);
-
-        // Publish state to message queue
-        if (k_msgq_put(&flight_state_output_msgq, &state_msg, K_NO_WAIT) != 0) {
-            LOG_WRN("Flight state output queue full, dropping message");
-        }
-
-        k_msleep(10); 
     }
 }
