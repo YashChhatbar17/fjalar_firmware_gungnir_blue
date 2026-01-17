@@ -62,8 +62,9 @@ void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
     		velocity_class = fs_data.velocity_class;
     	}
     	// Try to get latest aerodynamics data (non-blocking)
-    	zbus_chan_read(&aero_chan, &aero_data, K_NO_WAIT);
-        last_predicted_apogee = aero_data.expected_apogee;
+    	if (zbus_chan_read(&aero_chan, &aero_data, K_NO_WAIT) == 0) {
+    		last_predicted_apogee = aero_data.expected_apogee;
+    	}
 
         if (flight_state == STATE_COAST && altitude_AGL > 1500.0f) {
             float predicted_apogee = last_predicted_apogee;

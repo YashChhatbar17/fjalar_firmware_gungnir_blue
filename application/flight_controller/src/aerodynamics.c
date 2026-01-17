@@ -66,10 +66,13 @@ float pressure_to_AGL(position_filter_t *pos_kf, aerodynamics_t *aerodynamics, f
 
 void drag_init(struct aerodynamics_output_msg *aerodynamics){
     float drag_init[3] = {0,0,0};
+    // First initialize drag_data to zeros
+    memcpy(aerodynamics->drag_data, drag_init, sizeof(drag_init));
+    // Then copy from drag_data to drag.data (both are arrays)
     memcpy(aerodynamics->drag.data, aerodynamics->drag_data, sizeof(aerodynamics->drag_data));
+    // Set the matrix dimensions
     aerodynamics->drag.sz_rows = 3;
     aerodynamics->drag.sz_cols = 1;
-    memcpy(aerodynamics->drag_data, drag_init, sizeof(drag_init));
 }
 
 void drag_update(struct filter_output_msg *filter_data, struct aerodynamics_output_msg *aerodynamics){

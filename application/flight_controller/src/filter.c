@@ -908,10 +908,10 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             .acceleration = {pos_kf->X_data[6], pos_kf->X_data[7], pos_kf->X_data[8]},
             .attitude = {att_kf->X_data[0], att_kf->X_data[1], att_kf->X_data[2]},
             .v_norm = pos_kf->v_norm,
-            .a_norm = pos_kf->a_norm
-            //.raw_imu = {pos_kf->raw_imu_ax, pos_kf->raw_imu_ay, pos_kf->raw_imu_az, att_kf->raw_imu_gx, att_kf->raw_imu_gy, att_kf->raw_imu_gz},
-            //.raw_baro_p = pos_kf->raw_baro_p,
-            //.raw_gps = {pos_kf->raw_gps_lat, pos_kf->raw_gps_lon, pos_kf->raw_gps_alt}
+            .a_norm = pos_kf->a_norm,
+            .raw_imu = {pos_kf->raw_imu_ax, pos_kf->raw_imu_ay, pos_kf->raw_imu_az, att_kf->raw_imu_gx, att_kf->raw_imu_gy, att_kf->raw_imu_gz},
+            .raw_baro_p = pos_kf->raw_baro_p,
+            .raw_gps = {pos_kf->raw_gps_lat, pos_kf->raw_gps_lon, pos_kf->raw_gps_alt}
         };
 
         // Non-blocking publish - don't want to stall filter if channel is busy
