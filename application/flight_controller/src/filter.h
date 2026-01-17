@@ -1,5 +1,6 @@
 #pragma once
 
+#include <zephyr/zbus/zbus.h>
 #include <zsl/matrices.h>
 #include "fjalar.h"
 #include "flight_state.h"
@@ -21,7 +22,7 @@ typedef struct filter_output_msg {
     float raw_gps[3];     // lat, lon, alt
 }filter_output_msg;
 
-extern struct k_msgq filter_output_msgq;
+ZBUS_CHAN_DECLARE(filter_output_zchan);
 
 typedef struct position_filter {
     zsl_real_t P_data[81];

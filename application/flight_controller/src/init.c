@@ -8,6 +8,7 @@ It is important that the rocket remains stationary while the initialization thre
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/zbus/zbus.h>
 #include <math.h>
 #include <pla.h>
 
@@ -212,20 +213,6 @@ static inline bool init_ready(const init_t *init)
 void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
     init_t            *init  = fjalar->ptr_init;
 
-    // call things before loop
-	struct k_poll_event events[2] = {
-	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-									K_POLL_MODE_NOTIFY_ONLY,
-									&pressure_msgq),
-	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-									K_POLL_MODE_NOTIFY_ONLY,
-									&imu_msgq),
-    };
-
-	// k_poll(&events[0], 1, K_FOREVER);
-    // k_poll(&events[1], 1, K_FOREVER);
-    events[0].state = K_POLL_STATE_NOT_READY;
-    events[1].state = K_POLL_STATE_NOT_READY;
 
     struct imu_queue_entry imu;
     struct pressure_queue_entry pressure;
@@ -237,8 +224,7 @@ void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
     
     while (!init_ready(init)) {
 
-		if (k_msgq_get(&imu_msgq, &imu, K_NO_WAIT) == 0) {
-            events[1].state = K_POLL_STATE_NOT_READY;
+		if (zbus_chan_read(&imu_zchan, &imu, K_NO_WAIT) == 0) {
             LOG_INF("IMU N: %d", init->n_imu);
 
             // init mode
@@ -253,8 +239,7 @@ void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
             }
         }
         
-		if (k_msgq_get(&pressure_msgq, &pressure, K_NO_WAIT) == 0) {
-            events[0].state = K_POLL_STATE_NOT_READY;
+		if (zbus_chan_read(&pressure_zchan, &pressure, K_NO_WAIT) == 0) {
             LOG_INF("BARO N: %d", init->n_baro);
 
             // init
@@ -268,7 +253,7 @@ void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
 		 #if DT_ALIAS_EXISTS(gps_uart)
         {
             struct gps_queue_entry gps;
-            if (k_msgq_get(&gps_msgq, &gps, K_NO_WAIT) == 0) {
+            if (zbus_chan_read(&gps_zchan, &gps, K_NO_WAIT) == 0) {
 
                 // Reject frames that contain NaN or Inf in ANY field
                 if (isfinite(gps.lat) &&

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <zephyr/zbus/zbus.h>
 #include "fjalar.h"
 #include "filter.h"
 #include "aerodynamics.h"
@@ -49,8 +50,7 @@ typedef struct flight_state_output_msg {
     bool event_landed;
 } flight_state_output_msg;
 
-// Declare the message queue (defined in flight_state.c)
-extern struct k_msgq flight_state_output_msgq;
+ZBUS_CHAN_DECLARE(flight_state_output_zchan);
 
 void init_flight_state(fjalar_t *fjalar);
 

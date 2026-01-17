@@ -9,6 +9,7 @@ The aerodynamic constants are rocket specific, it is critical that these are loo
 #include <zephyr/drivers/sensor.h>
 #include <pla.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/zbus/zbus.h>
 #include <math.h>
 
 #include "fjalar.h"
@@ -42,7 +43,7 @@ void init_aerodynamics(fjalar_t *fjalar) {
 		aerodynamics_thread_stack,
 		K_THREAD_STACK_SIZEOF(aerodynamics_thread_stack),
 		(k_thread_entry_t) aerodynamics_thread,
-		fjalar,  &filter_output_msgq, NULL, // works from filter.h declaration
+		fjalar, NULL, NULL,
 		AERODYNAMICS_THREAD_PRIORITY, 0, K_NO_WAIT
 	);
 	k_thread_name_set(aerodynamics_thread_id, "aerodynamics");
@@ -216,7 +217,6 @@ void update_mach_number(struct filter_output_msg *filter_data, struct aerodynami
 
 
 void aerodynamics_thread(fjalar_t *fjalar, void *p2, void *p1) {
-    struct k_msgq *filter_out_q = (struct k_msgq *)p2;
 	struct filter_output_msg filter_data;
 	struct flight_state_output_msg state_data = { .flight_state = STATE_IDLE }; // Initialize with default
 
@@ -237,8 +237,8 @@ void aerodynamics_thread(fjalar_t *fjalar, void *p2, void *p1) {
     drag_init(&aero_msg);
     while (true){
 
-		if (k_msgq_get(filter_out_q, &filter_data, K_FOREVER) == 0) {
-			k_msgq_get(&flight_state_output_msgq, &state_data, K_NO_WAIT);
+		if (zbus_chan_read(&filter_output_zchan, &filter_data, K_FOREVER) == 0) {
+			zbus_chan_read(&flight_state_output_zchan, &state_data, K_NO_WAIT);
     		// got new data
 			aero_msg.timestamp = k_uptime_get_32();
 

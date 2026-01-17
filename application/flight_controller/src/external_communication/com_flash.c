@@ -2,6 +2,7 @@
 #include <protocol.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/flash.h>
+#include <zephyr/zbus/zbus.h>
 
 #include "init.h"
 #include "filter.h"
@@ -146,7 +147,7 @@ void flash_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 	
 	while (true){
 		struct filter_output_msg filter_msg;
-		int rer = k_msgq_get(&filter_output_msgq, &filter_msg, K_NO_WAIT);
+		int rer = zbus_chan_read(&filter_output_zchan, &filter_msg, K_NO_WAIT);
 		if (rer == 0) {
 			// imu
 			fjalar_message_t msg_imu = {
@@ -220,7 +221,7 @@ void flash_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 			flash_msg_enqueue(&msg_state_estimate);
 		}
 		struct flight_state_output_msg fs_msg;
-		int ret = k_msgq_get(&flight_state_output_msgq, &fs_msg, K_NO_WAIT);
+		int ret = zbus_chan_read(&flight_state_output_zchan, &fs_msg, K_NO_WAIT);
 
 		if (ret == 0) {
 			// Flight State

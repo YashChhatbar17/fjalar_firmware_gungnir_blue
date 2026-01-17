@@ -1,6 +1,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/zbus/zbus.h>
 #include <math.h>
 #include <pla.h>
 
@@ -31,14 +32,14 @@ void init_control(fjalar_t *fjalar) {
 		control_thread_stack,
 		K_THREAD_STACK_SIZEOF(control_thread_stack),
 		(k_thread_entry_t) control_thread,
-		fjalar, &filter_output_msgq, NULL,
+		fjalar, NULL, NULL,
 		CONTROL_THREAD_PRIORITY, 0, K_NO_WAIT
 	);
 	k_thread_name_set(control_thread_id, "control");
 }
 
 void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
-	struct k_msgq *filter_out_q = (struct k_msgq *)p2;
+	struct filter_output_msg filter_data;
 	struct aerodynamics_output_msg aero_data;
 	struct flight_state_output_msg fs_data;
 	enum fjalar_flight_state flight_state = STATE_INITIATED;
@@ -46,34 +47,17 @@ void control_thread(fjalar_t *fjalar, void *p2, void *p1) {
 	static float last_predicted_apogee = 0.0f;
 	static float altitude_AGL = 0.0f; // Remember last valid altitude
 
-	// Try to get latest filter data (non-blocking)
-	if (k_msgq_get(filter_out_q, &filter_data, K_NO_WAIT) == 0) {
-    	altitude_AGL = filter_data.position[2];
-	} else {
-    	// No new data this cycle, use cached value
-    	// This is fine since both threads run at 100 Hz
-	}
-	zbus_chan_read(&aero_chan, &aero_data, K_NO_WAIT)
-    // Successfully got latest data
-    last_predicted_apogee = aero_data.expected_apogee;
-
-	// Update flight state if new messages exist
-	while (k_msgq_get(&flight_state_output_msgq, &fs_data, K_NO_WAIT) == 0) {
-		flight_state = fs_data.flight_state;
-		velocity_class = fs_data.velocity_class;
-	}
-
     control_t         *control = fjalar->ptr_control;
 
     static float integral = 0.0f;
     static float last_error = 0.0f;
     while (true){
         // Try to get latest filter data (non-blocking)
-		if (k_msgq_get(filter_out_q, &filter_data, K_NO_WAIT) == 0) {
+		if (zbus_chan_read(&filter_output_zchan, &filter_data, K_NO_WAIT) == 0) {
     		altitude_AGL = filter_data.position[2];
 		}
     	// Update flight state if new messages exist
-    	while (k_msgq_get(&flight_state_output_msgq, &fs_data, K_NO_WAIT) == 0) {
+    	while (zbus_chan_read(&flight_state_output_zchan, &fs_data, K_NO_WAIT) == 0) {
     		flight_state = fs_data.flight_state;
     		velocity_class = fs_data.velocity_class;
     	}

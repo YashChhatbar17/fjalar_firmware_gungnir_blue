@@ -6,6 +6,7 @@ This is the actuation script, its purpose is to:
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pwm.h>
+#include <zephyr/zbus/zbus.h>
 #include <math.h>
 #include <stdlib.h>
 
@@ -203,9 +204,8 @@ void buzzer_thread(fjalar_t *fjalar, void *p2, void *p3) {
     struct flight_state_output_msg state_data = {0};
 
     while (true) {
-        if (k_msgq_get(&flight_state_output_msgq, &state_data, K_NO_WAIT) != 0) {
-            // No new state data, reuse last state_data
-        }
+        zbus_chan_read(&flight_state_output_zchan, &state_data, K_NO_WAIT);
+        // If read fails, reuse last state_data
         if (fjalar->sudo) {
                 play_song(&buzzer_dt, doom_melody, sizeof(doom_melody), doom_tempo);
                 k_msleep(1000);

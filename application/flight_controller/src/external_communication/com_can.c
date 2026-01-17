@@ -2,6 +2,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/zbus/zbus.h>
 #include <math.h>
 #include <pla.h>
 #include <zephyr/init.h>
@@ -190,7 +191,7 @@ void can_thread(fjalar_t *fjalar, void *p2, void *p1) {
     struct flight_state_output_msg fs_msg;
 
     while (true) {
-        ret = k_msgq_get(&flight_state_output_msgq, &fs_msg, K_NO_WAIT);
+        ret = zbus_chan_read(&flight_state_output_zchan, &fs_msg, K_NO_WAIT);
         #if DT_ALIAS_EXISTS(canbus)
         if (ret == 0) {
             // Use fs_msg to populate CAN messages

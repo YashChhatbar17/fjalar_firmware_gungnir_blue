@@ -2,6 +2,7 @@
 #include <protocol.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/lora.h>
+#include <zephyr/zbus/zbus.h>
 
 #include "init.h"
 #include "filter.h"
@@ -176,8 +177,8 @@ void lora_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 		struct filter_output_msg filter_msg;
 		struct flight_state_output_msg fs_msg;
 
-		int ret1 = k_msgq_get(&filter_output_msgq, &filter_msg, K_NO_WAIT);
-		int ret2 = k_msgq_get(&flight_state_output_msgq, &fs_msg, K_NO_WAIT);
+		int ret1 = zbus_chan_read(&filter_output_zchan, &filter_msg, K_NO_WAIT);
+		int ret2 = zbus_chan_read(&flight_state_output_zchan, &fs_msg, K_NO_WAIT);
 		if (ret1 == 0 && ret2 == 0) {
 			// gps
 			fjalar_message_t msg_gps = {

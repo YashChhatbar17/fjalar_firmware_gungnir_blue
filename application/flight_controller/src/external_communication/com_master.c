@@ -10,6 +10,7 @@ sensor information via usb/uart.
 #include <zephyr/console/tty.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/zbus/zbus.h>
 #include <protocol.h>
 #include <zephyr/drivers/flash.h>
 
@@ -20,6 +21,7 @@ sensor information via usb/uart.
 #include "com_lora.h"
 #include "com_uart.h"
 #include "com_usb.h"
+#include "flight_state.h"
 #include "hilsensor.h"
 
 LOG_MODULE_REGISTER(com_master, LOG_LEVEL_INF);
@@ -220,7 +222,7 @@ void send_message(fjalar_t *fjalar, state_t *state, fjalar_message_t *msg, enum 
 	switch(prio) {
 		case MSG_PRIO_LOW:
 			struct flight_state_output_msg fs_msg;
-			int ret = k_msgq_get(&flight_state_output_msgq, &fs_msg, K_NO_WAIT);
+			int ret = zbus_chan_read(&flight_state_output_zchan, &fs_msg, K_NO_WAIT);
 			if (ret != 0) {
 				LOG_DBG("No flight state message available, skipping low-prio send");
 				return;

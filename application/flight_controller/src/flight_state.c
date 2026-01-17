@@ -6,6 +6,7 @@ The flight state script serves the following purpose:
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/zbus/zbus.h>
 #include <math.h>
 #include <pla.h>
 
@@ -29,7 +30,13 @@ LOG_MODULE_REGISTER(flight, LOG_LEVEL_INF);
 
 
 void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1);
-K_MSGQ_DEFINE(flight_state_output_msgq, sizeof(struct flight_state_output_msg), 10, 4);
+ZBUS_CHAN_DEFINE(flight_state_output_zchan, /* Name */
+		struct flight_state_output_msg, /* Message type */
+		NULL, /* Validator */
+		NULL, /* User Data */
+		ZBUS_OBSERVERS_EMPTY, /* observers */
+		ZBUS_MSG_INIT(.timestamp = 0, .flight_state = STATE_IDLE, .velocity_class = VELOCITY_SUBSONIC) /* Initial value */
+);
 K_THREAD_STACK_DEFINE(flight_thread_stack, FLIGHT_THREAD_STACK_SIZE);
 struct k_thread flight_thread_data;
 k_tid_t flight_thread_id;
@@ -47,7 +54,7 @@ void init_flight_state(fjalar_t *fjalar) {
 		flight_thread_stack,
 		K_THREAD_STACK_SIZEOF(flight_thread_stack),
 		(k_thread_entry_t) flight_state_thread,
-		fjalar, &filter_output_msgq, NULL,
+		fjalar, NULL, NULL,
 		FLIGHT_THREAD_PRIORITY, 0, K_NO_WAIT
 	);
 	k_thread_name_set(flight_thread_id, "flight state");
@@ -195,7 +202,6 @@ static void evaluate_velocity(struct aerodynamics_output_msg *aerodynamics, stru
 }
 
 void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
-    struct k_msgq *filter_out_q = (struct k_msgq *)p2;
     init_t            *init  = fjalar->ptr_init;
     lora_t            *lora = fjalar->ptr_lora;
 	struct filter_output_msg filter_data;
@@ -220,8 +226,7 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
 
     while (true) {
 		// get latest filter data
-		if (k_msgq_get(filter_out_q, &filter_data, K_NO_WAIT) != 0) {
-
+		if (zbus_chan_read(&filter_output_zchan, &filter_data, K_NO_WAIT) == 0) {
         	zbus_chan_read(&aero_chan, &aero_data, K_NO_WAIT);
         	// Update timestamp
         	state_msg.timestamp = k_uptime_get_32();
@@ -230,11 +235,10 @@ void flight_state_thread(fjalar_t *fjalar, void *p2, void *p1) {
         	evaluate_event(fjalar, &state_msg, &filter_data);
         	evaluate_velocity(&aero_data, &state_msg);
 
-        	// Publish state to message queue
-        	if (k_msgq_put(&flight_state_output_msgq, &state_msg, K_NO_WAIT) != 0) {
-        	    LOG_WRN("Flight state output queue full, dropping message");
+        	// Publish state to zbus
+        	if (zbus_chan_pub(&flight_state_output_zchan, &state_msg, K_NO_WAIT) != 0) {
+        	    LOG_WRN("Flight state output zbus channel busy, dropping message");
         	}
-
         }
     }
 }

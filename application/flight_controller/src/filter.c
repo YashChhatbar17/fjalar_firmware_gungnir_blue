@@ -13,6 +13,7 @@ For this we use the linear Kalman filter (KF) and the nonlinear extended Kalman 
 #include <zsl/statistics.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/zbus/zbus.h>
 
 #include "fjalar.h"
 #include "sensors.h"
@@ -27,7 +28,13 @@ LOG_MODULE_REGISTER(filter, LOG_LEVEL_INF);
 #define FILTER_THREAD_STACK_SIZE 4096
 
 void filter_thread(fjalar_t *fjalar, void *p2, void *p1);
-K_MSGQ_DEFINE(filter_output_msgq, sizeof(struct filter_output_msg), 10, 4);
+ZBUS_CHAN_DEFINE(filter_output_zchan, /* Name */
+		struct filter_output_msg, /* Message type */
+		NULL, /* Validator */
+		NULL, /* User Data */
+		ZBUS_OBSERVERS_EMPTY, /* observers */
+		ZBUS_MSG_INIT(.timestamp = 0) /* Initial value */
+);
 K_THREAD_STACK_DEFINE(filter_thread_stack, FILTER_THREAD_STACK_SIZE);
 struct k_thread filter_thread_data;
 k_tid_t filter_thread_id;
@@ -784,21 +791,6 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
     position_filter_t *pos_kf = &pos_kf_l;
     attitude_filter_t *att_kf = &att_kf_l;
     
-    // call things before loop
-    struct k_poll_event events[2] = {
-    K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-                                    K_POLL_MODE_NOTIFY_ONLY,
-                                    &pressure_msgq),
-    K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_MSGQ_DATA_AVAILABLE,
-                                    K_POLL_MODE_NOTIFY_ONLY,
-                                    &imu_msgq),
-    };
-
-    // k_poll(&events[0], 1, K_FOREVER);
-    // k_poll(&events[1], 1, K_FOREVER);
-    events[0].state = K_POLL_STATE_NOT_READY;
-    events[1].state = K_POLL_STATE_NOT_READY;
-
     struct imu_queue_entry imu;
     struct pressure_queue_entry pressure;
     // struct gps_queue_entry gps; unused
@@ -811,21 +803,13 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
     enum fjalar_velocity_class velocity_class = VELOCITY_SUBSONIC;
 
     while (true) {
-        if (k_poll(events, 2, K_MSEC(1000))) {
-			// this blocks the filter thread until new data arrives in IMU or Pressure message queue (DATA_AVAILABLE)
-			// or a 1 second timeout occurs
-            LOG_ERR("Stopped receiving measurements");
-            continue;
-        }
-
         // Update flight state if new messages exist
-        while (k_msgq_get(&flight_state_output_msgq, &fs_msg, K_NO_WAIT) == 0) {
+        while (zbus_chan_read(&flight_state_output_zchan, &fs_msg, K_NO_WAIT) == 0) {
             flight_state = fs_msg.flight_state;
             velocity_class = fs_msg.velocity_class;
         }
 
-        if (k_msgq_get(&imu_msgq, &imu, K_NO_WAIT) == 0) { // gets IMU data if available
-            events[1].state = K_POLL_STATE_NOT_READY;
+        if (zbus_chan_read(&imu_zchan, &imu, K_NO_WAIT) == 0) { // gets IMU data if available
             // for external communication
             pos_kf->raw_imu_ax = imu.ax;
             pos_kf->raw_imu_ay = imu.ay;
@@ -859,8 +843,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             }
         }
 
-        if (k_msgq_get(&pressure_msgq, &pressure, K_NO_WAIT) == 0) {
-            events[0].state = K_POLL_STATE_NOT_READY;            
+        if (zbus_chan_read(&pressure_zchan, &pressure, K_NO_WAIT) == 0) {            
             pos_kf->raw_baro_p = pressure.pressure*1000;
             // use state machine
             if (velocity_class == VELOCITY_SUBSONIC){ // baro bad in native
@@ -872,7 +855,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
         #if DT_ALIAS_EXISTS(gps_uart)
         {
             struct gps_queue_entry gps;
-            if (k_msgq_get(&gps_msgq, &gps, K_NO_WAIT) == 0 && !isnan(gps.lat) && !isnan(gps.lon) && !isnan(gps.alt)) {
+            if (zbus_chan_read(&gps_zchan, &gps, K_NO_WAIT) == 0 && !isnan(gps.lat) && !isnan(gps.lon) && !isnan(gps.alt)) {
                 pos_kf->raw_gps_lat = gps.lat;
                 pos_kf->raw_gps_lon = gps.lon;
                 pos_kf->raw_gps_alt = gps.alt;
@@ -931,16 +914,15 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
             //.raw_gps = {pos_kf->raw_gps_lat, pos_kf->raw_gps_lon, pos_kf->raw_gps_alt}
         };
 
-        // Non-blocking send - don't want to stall filter if queue is full
-        if (k_msgq_put(&filter_output_msgq, &msg, K_NO_WAIT) != 0) {
-            // Queue full - this means consumers are too slow
-            LOG_WRN("Filter output queue full, dropping message");
-            // Could also purge oldest message: k_msgq_purge(&filter_output_msgq);
+        // Non-blocking publish - don't want to stall filter if channel is busy
+        if (zbus_chan_pub(&filter_output_zchan, &msg, K_NO_WAIT) != 0) {
+            // Channel busy - this means consumers are too slow
+            LOG_WRN("Filter output zbus channel busy, dropping message");
         } else {
             static int pub_counter = 0;
             if (pub_counter % 100 == 0) {  // Log every 1 second (100Hz loop)
-                LOG_INF("Published: alt=%.2f, v_norm=%.2f, queue_used=%d",
-                        msg.position[2], msg.v_norm, k_msgq_num_used_get(&filter_output_msgq));
+                LOG_INF("Published: alt=%.2f, v_norm=%.2f",
+                        msg.position[2], msg.v_norm);
             }
             pub_counter++;
         }
