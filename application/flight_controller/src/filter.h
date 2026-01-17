@@ -1,5 +1,6 @@
 #pragma once
 
+#include <zephyr/kernel.h>
 #include <zephyr/zbus/zbus.h>
 #include <zsl/matrices.h>
 #include "fjalar.h"
