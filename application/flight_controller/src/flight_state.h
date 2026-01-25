@@ -42,7 +42,7 @@ typedef struct state {
 
     bool event_launch;
     bool event_burnout;
-    bool event_above_acs_threshold;
+    //bool event_above_acs_threshold;
     bool event_apogee;
     bool event_drogue_deployed;
     bool event_main_deployed;

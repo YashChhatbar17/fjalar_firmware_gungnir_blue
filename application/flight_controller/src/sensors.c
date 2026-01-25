@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(sensors, LOG_LEVEL_INF);
 #define GPS_THREAD_PRIORITY 7
 #define GPS_THREAD_STACK_SIZE 2048
 
+//Forward declarations
 void barometer_thread(fjalar_t *fjalar, void *p2, void *p3);
 void imu_thread(fjalar_t *fjalar, void *p2, void *p3);
 void gps_thread(fjalar_t *fjalar, void *p2, void *p3);
@@ -52,6 +53,7 @@ ZBUS_CHAN_DEFINE(imu_zchan, /* Name */
 		ZBUS_MSG_INIT() /* Initial value */
 );
 
+//Message queue definitions. 
 K_MSGQ_DEFINE(pressure_msgq, sizeof(struct pressure_queue_entry), 3, 4);
 K_MSGQ_DEFINE(imu_msgq, sizeof(struct imu_queue_entry), 3, 4);
 K_MSGQ_DEFINE(gps_msgq, sizeof(struct gps_queue_entry), 3, 4);
@@ -121,7 +123,10 @@ void init_sensors(fjalar_t *fjalar) {
 }
 
 void imu_thread(fjalar_t *fjalar, void *p2, void *p3) {
+	//imu_dev is a const pointer pointing to a const struct called device
     const struct device *const imu_dev = DEVICE_DT_GET(DT_ALIAS(imu));
+	
+	//Tests
     if (!device_is_ready(imu_dev)) {
 		LOG_ERR("imu is not ready");
 		return;
@@ -143,6 +148,7 @@ void imu_thread(fjalar_t *fjalar, void *p2, void *p3) {
 		struct sensor_value gy;
 		struct sensor_value gz;
 
+		//This could be a bug. The if-statement only checks for the last assignment. We should check for all. 
 		ret = sensor_channel_get(imu_dev, SENSOR_CHAN_ACCEL_X, &ax);
 		ret = sensor_channel_get(imu_dev, SENSOR_CHAN_ACCEL_Y, &ay);
 		ret = sensor_channel_get(imu_dev, SENSOR_CHAN_ACCEL_Z, &az);
@@ -167,12 +173,12 @@ void imu_thread(fjalar_t *fjalar, void *p2, void *p3) {
 		};
 		ret = k_msgq_put(&imu_msgq, &q_entry, K_NO_WAIT);
 		if (ret != 0) {
-			//LOG_ERR("Could not write to imu msgq %d", ret);
+			//LOG_ERR("Could not write to imu msgq %d", ret); <-- Why is this commented out??
 			continue;
 		} 
 
-		
-		fjalar_message_t msg; // move this to com_lora
+		//Telemetry, using LoRa to send data to ground station. 
+		fjalar_message_t msg; // move this to com_lora <-- Why?
 		msg.time = k_uptime_get_32();
 		msg.has_data = true;
 		msg.data.which_data = FJALAR_DATA_IMU_READING_TAG;
@@ -196,6 +202,12 @@ void barometer_thread(fjalar_t *fjalar, void *p2, void *p3) {
 	struct sensor_value osr;
 	osr.val1 = 2048;
 	osr.val2 = 0;
+
+	/*sensor_attr_set(const struct device *dev, enum sensor_channel chan, 
+	enum sensor_attribute attr, const struct sensor_value *val). These parameters are the sensor, 
+	concerned channels, concerned property and sample rate. 
+	*/
+
 	ret = sensor_attr_set(baro_dev, SENSOR_CHAN_ALL, SENSOR_ATTR_OVERSAMPLING, &osr);
 	if (ret != 0) {
 		LOG_ERR("Could not set barometer oversample");
@@ -209,25 +221,35 @@ void barometer_thread(fjalar_t *fjalar, void *p2, void *p3) {
 			continue;
 		}
 		struct sensor_value pressure;
+		//int sensor_channel_get(const struct device *	dev, enum sensor_channel chan,struct sensor_value *val)
 		ret = sensor_channel_get(baro_dev, SENSOR_CHAN_PRESS, &pressure);
 		if (ret != 0) {
 			LOG_ERR("Could not get barometer pressure");
 			continue;
 		}
-		//LOG_WRN("read pressure: %f", sensor_value_to_float(&pressure));
+		//LOG_WRN("read pressure: %f", sensor_value_to_float(&pressure)); <-- For debugging
 		struct pressure_queue_entry q_entry;
 		q_entry.t = k_uptime_get_32();
-		q_entry.pressure = sensor_value_to_float(&pressure);
+		q_entry.pressure = sensor_value_to_float(&pressure); //Check this to guard against early parachute deployment
 
 		ret = k_msgq_put(&pressure_msgq, &q_entry, K_NO_WAIT);
 		if (ret != 0) {
-			//LOG_ERR("Could not write to pressure msgq");
+			//LOG_ERR("Could not write to pressure msgq"); <-- Why is this commented?
 		}
+
+		/*
+		
+		int zbus_chan_pub(const struct zbus_channel *chan, const void *msg, k_timeout_t	timeout).
+		Arguments are concerned channels, message where the publish function copies the channel's message data from
+		(the contents of q_entry are copied and published in the channel)
+		and waiting period to publish the channel. 
+		*/
 		ret = zbus_chan_pub(&pressure_zchan, &q_entry, K_MSEC(100));
 		if (ret != 0) {
 			LOG_ERR("Could not publish pressure to zbus");
 		}
 
+		//Telemetry, using LoRa to send data to ground station.
 		fjalar_message_t msg;
 		msg.time = k_uptime_get_32();
 		msg.has_data = true;
@@ -291,17 +313,20 @@ void gps_uart_cb(const struct device *dev, void *user_data) {
 	static uint8_t nmea_buf[255];
 	static int nmea_index = 0;
 
+	//Start processing interrupts in ISR (Interrupt Service Routine: Code to be executed during interrupts).
 	if (!uart_irq_update(dev)) {
 		return;
 	}
 
+	//Check if UART RX buffer has a received char.
 	if (!uart_irq_rx_ready(dev)) {
 		return;
 	}
 
 	while (true) {
 		uint8_t fifo_buf[255];
-		int fifo_len = uart_fifo_read(dev, fifo_buf, sizeof(fifo_buf));
+		int fifo_len = uart_fifo_read(dev, fifo_buf, sizeof(fifo_buf)); //Read data from FIFO. Returns # of bytes read. 
+		//This function is expected to be called from UART interrupt handler (ISR), if uart_irq_rx_ready() returns true.
 		if (fifo_len <= 0) {
 			break;
 		}
@@ -314,7 +339,7 @@ void gps_uart_cb(const struct device *dev, void *user_data) {
 			if (byte == '\n' || byte == '\r') {
 				if (nmea_index != 0) {
 					nmea_buf[nmea_index] = '\0';
-					handle_nmea(&fjalar_god, nmea_buf, nmea_index); // TODO: don't use fjalar god
+					handle_nmea(&fjalar_god, nmea_buf, nmea_index); // TODO: don't use fjalar god <-- Why?
 				}
 				nmea_index = 0;
 				continue;
@@ -329,6 +354,7 @@ void gps_uart_cb(const struct device *dev, void *user_data) {
 	}
 }
 
+//This function simply sets up the GPS UART interface 
 void gps_thread(fjalar_t *fjalar, void *p2, void *p3) {
     const struct device *const gps_dev = DEVICE_DT_GET(DT_ALIAS(gps_uart));
     if (!device_is_ready(gps_dev)) {
@@ -343,9 +369,9 @@ void gps_thread(fjalar_t *fjalar, void *p2, void *p3) {
 		.parity = UART_CFG_PARITY_NONE,
 		.stop_bits = UART_CFG_STOP_BITS_1
 	};
-	ret = uart_configure(gps_dev, &uart_config);
-	uart_irq_callback_set(gps_dev, gps_uart_cb);
-	uart_irq_rx_enable(gps_dev);
+	ret = uart_configure(gps_dev, &uart_config); //sets gps_uart_cb() as the function to be called whenever a UART interrupt happens
+	uart_irq_callback_set(gps_dev, gps_uart_cb); //allows RX interrupts to happen. Incoming GPS bytes will trigger interrupts and gps_uart_cb() gets called
+	uart_irq_rx_enable(gps_dev); // ret doesn't have to be checked for the other two functions as they return void
 
 	const char pulse_msg[] = "$PMTK285,2,100*3E\r\n"; // blink
 	for (int i = 0; i < strlen(pulse_msg); i++) {
@@ -359,7 +385,7 @@ void gps_thread(fjalar_t *fjalar, void *p2, void *p3) {
 }
 #endif
 
-//WTF IS THIS I JUST WANT TO READ AN ADC CHANNEL
+//WTF IS THIS I JUST WANT TO READ AN ADC CHANNEL <-- So does this function work then???
 #if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
 void vbat_thread(fjalar_t *fjalar, void *p2, void *p3) {
 	#define DT_SPEC_AND_COMMA(node_id, prop, idx) \

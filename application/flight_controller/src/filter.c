@@ -275,10 +275,15 @@ void position_filter_accelerometer(init_t *init, position_filter_t *pos_kf, atti
 
 // Correction with barometer
 void position_filter_barometer(init_t *init, position_filter_t *pos_kf, float pressure_kpa, uint32_t time){
+    if (fabsf(az)> 30 || fabsf(vz) > 50)
+    {
+        return;
+    }
     // z matrix
     zsl_real_t z_data[1] = {
         pressure_kpa * 1000 // kPa to Pa
     };
+
     struct zsl_mtx z = {
         .sz_rows = 1,
         .sz_cols = 1,
