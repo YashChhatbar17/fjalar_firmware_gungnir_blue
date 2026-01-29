@@ -277,6 +277,7 @@ void position_filter_accelerometer(init_t *init, position_filter_t *pos_kf, atti
 void position_filter_barometer(init_t *init, position_filter_t *pos_kf, float pressure_kpa, uint32_t time){
     if (fabsf(az)> 30 || fabsf(vz) > 50)
     {
+        LOG_WRN("Velocity too high for filter measurements");
         return;
     }
     // z matrix
@@ -788,7 +789,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
     attitude_filter_t *att_kf = fjalar->ptr_att_kf;
     aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
     state_t           *state = fjalar->ptr_state;
-    control_t         *control = fjalar->ptr_control;
+    control_t         *control = fjalar->ptr_control; //Delete
     
     // call things before loop
     struct k_poll_event events[2] = {
