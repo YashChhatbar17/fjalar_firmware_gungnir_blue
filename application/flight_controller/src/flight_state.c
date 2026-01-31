@@ -224,7 +224,7 @@ static void evaluate_state(
         if (vz < 0) {
             state->apogee_time = k_uptime_get_32();
             deploy_drogue(fjalar, init, state, pos_kf); //Should probably change to deploy_main
-            state->flight_state = STATE_MAIN_DESCENT;
+            state->flight_state = STATE_DROGUE_DESCENT;
             state->event_apogee = true;
 
             LOG_WRN("State: COAST → DROGUE_DESCENT (apogee detected)");
