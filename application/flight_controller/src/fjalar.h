@@ -6,7 +6,7 @@ typedef struct position_filter position_filter_t;
 typedef struct attitude_filter attitude_filter_t;
 typedef struct aerodynamics aerodynamics_t;
 typedef struct state state_t;
-typedef struct control control_t;
+typedef struct control control_t; //Delete
 typedef struct can can_t;
 typedef struct lora lora_t;
 
@@ -29,7 +29,7 @@ typedef struct fjalar { // used in [comes from]
     attitude_filter_t *ptr_att_kf;
     aerodynamics_t    *ptr_aerodynamics;
     state_t           *ptr_state;
-    control_t         *ptr_control;
+    control_t         *ptr_control; //Delete
     can_t             *ptr_can;
     lora_t            *ptr_lora;
 } fjalar_t;

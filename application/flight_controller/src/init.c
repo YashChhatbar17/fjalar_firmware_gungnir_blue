@@ -306,7 +306,7 @@ void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
     //k_msleep(1000);
     init_filter(fjalar);
     init_aerodynamics(&fjalar_god);
-    init_control(&fjalar_god);
+    init_control(&fjalar_god); //Delete
     LOG_INF("Init phase completed, started Kalman Filters.");
     // add BEEP from buzzer
 }
