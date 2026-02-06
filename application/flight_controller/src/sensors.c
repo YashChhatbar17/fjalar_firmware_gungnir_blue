@@ -150,15 +150,34 @@ void imu_thread(fjalar_t *fjalar, void *p2, void *p3) {
 
 		//This could be a bug. The if-statement only checks for the last assignment. We should check for all. 
 		ret = sensor_channel_get(imu_dev, SENSOR_CHAN_ACCEL_X, &ax);
+		if (ret != 0) {
+			LOG_ERR("Couldn't get accel x values");
+			continue;
+		}
 		ret = sensor_channel_get(imu_dev, SENSOR_CHAN_ACCEL_Y, &ay);
+		if (ret != 0) {
+			LOG_ERR("Couldn't get accel y values");
+			continue;
+		}
 		ret = sensor_channel_get(imu_dev, SENSOR_CHAN_ACCEL_Z, &az);
+		if (ret != 0) {
+			LOG_ERR("Couldn't get accel z values");
+			continue;
+		}
 
 		ret = sensor_channel_get(imu_dev, SENSOR_CHAN_GYRO_X, &gx);
-		ret = sensor_channel_get(imu_dev, SENSOR_CHAN_GYRO_Y, &gy);
-		ret = sensor_channel_get(imu_dev, SENSOR_CHAN_GYRO_Z, &gz);
-
 		if (ret != 0) {
-			LOG_ERR("Could get imu values");
+			LOG_ERR("Couldn't get gyro x values");
+			continue;
+		}
+		ret = sensor_channel_get(imu_dev, SENSOR_CHAN_GYRO_Y, &gy);
+		if (ret != 0) {
+			LOG_ERR("Couldn't get gyro y values");
+			continue;
+		}
+		ret = sensor_channel_get(imu_dev, SENSOR_CHAN_GYRO_Z, &gz);
+		if (ret != 0) {
+			LOG_ERR("Couldn't get gyro z values");
 			continue;
 		}
 			
