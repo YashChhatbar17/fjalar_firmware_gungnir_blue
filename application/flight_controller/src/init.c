@@ -18,7 +18,7 @@ It is important that the rocket remains stationary while the initialization thre
 #include "aerodynamics.h"
 #include "flight_state.h"
 #include "com_master.h"
-#include "control.h"
+//#include "control.h"
 
 LOG_MODULE_REGISTER(init, LOG_LEVEL_INF);
 
@@ -306,7 +306,7 @@ void init_thread(fjalar_t *fjalar, void *p2, void *p1) {
     //k_msleep(1000);
     init_filter(fjalar);
     init_aerodynamics(&fjalar_god);
-    init_control(&fjalar_god); //Delete
+    //init_control(&fjalar_god); Delete
     LOG_INF("Init phase completed, started Kalman Filters.");
     // add BEEP from buzzer
 }

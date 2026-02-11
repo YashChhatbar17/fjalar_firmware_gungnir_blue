@@ -20,7 +20,7 @@ For this we use the linear Kalman filter (KF) and the nonlinear extended Kalman 
 #include "filter.h"
 #include "aerodynamics.h"
 #include "flight_state.h"
-#include "control.h"
+//#include "control.h"
 
 LOG_MODULE_REGISTER(filter, LOG_LEVEL_INF);
 
@@ -275,7 +275,7 @@ void position_filter_accelerometer(init_t *init, position_filter_t *pos_kf, atti
 
 // Correction with barometer
 void position_filter_barometer(init_t *init, position_filter_t *pos_kf, float pressure_kpa, uint32_t time){
-    if (fabsf(az)> 30 || fabsf(vz) > 50)
+    if (fabsf(pos_kf->X_data[8])> 30 || fabsf(pos_kf->X_data[5]) > 50)
     {
         LOG_WRN("Velocity too high for filter measurements");
         return;
@@ -789,7 +789,7 @@ void filter_thread(fjalar_t *fjalar, void *p2, void *p1) {
     attitude_filter_t *att_kf = fjalar->ptr_att_kf;
     aerodynamics_t    *aerodynamics = fjalar->ptr_aerodynamics;
     state_t           *state = fjalar->ptr_state;
-    control_t         *control = fjalar->ptr_control; //Delete
+    //control_t         *control = fjalar->ptr_control; Delete
     
     // call things before loop
     struct k_poll_event events[2] = {

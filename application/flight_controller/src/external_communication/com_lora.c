@@ -7,7 +7,6 @@
 #include "filter.h"
 #include "aerodynamics.h"
 #include "flight_state.h"
-#include "control.h"
 #include "com_can.h"
 #include "com_master.h"
 #include "com_lora.h"

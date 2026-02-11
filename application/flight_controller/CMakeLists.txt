@@ -36,7 +36,6 @@ target_sources(app PRIVATE
     src/filter.c
     src/aerodynamics.c
     src/init.c
-    src/control.c
     src/external_communication/com_master.c
     src/external_communication/com_can.c
     src/external_communication/com_flash.c

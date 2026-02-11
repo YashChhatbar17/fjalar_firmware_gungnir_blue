@@ -15,7 +15,6 @@
 #include "flight_state.h"
 #include "actuation.h"
 #include "com_can.h"
-#include "control.h"
 
 LOG_MODULE_REGISTER(can_com, LOG_LEVEL_INF);
 
@@ -74,19 +73,20 @@ void can_tx_loki(const struct device *can_dev, state_t *state, control_t *contro
         LOG_ERR("state out of range");
     }
 
-    uint8_t ev = (state->event_above_acs_threshold) ? 0xA : 0x5; // choose 0xA (1010) or 0x5 (0101)
+    uint8_t ev = 0x5; // choose 0xA (1010) or 0x5 (0101)
     
     data[0] = (ev << 4) | (st & 0x0F);
 
     // byte 1: event marker 
-    data[1] = (state->event_above_acs_threshold && state->flight_state == STATE_COAST) ? 0xAA : 0x55;
+    data[1] = 0x55;
 
-    // bytes 2–3: angle ×100 
+    /* bytes 2–3: angle ×100 
     float  airbrake_angle = control->airbrakes_angle; // from control script (PID algo)
     if (airbrake_angle < 0.0f || airbrake_angle > 360.0f) {LOG_ERR("angle invalid");}
     uint16_t raw_angle = (uint16_t)roundf(airbrake_angle * 100.0f);
     data[2] = (raw_angle >> 8) & 0xFF;
     data[3] = raw_angle & 0xFF;
+    */
 
     struct can_frame frame = {
         .flags = 0,

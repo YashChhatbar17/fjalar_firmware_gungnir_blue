@@ -7,7 +7,6 @@
 #include "filter.h"
 #include "aerodynamics.h"
 #include "flight_state.h"
-#include "control.h"
 #include "com_can.h"
 #include "com_master.h"
 #include "com_flash.h"
@@ -246,7 +245,6 @@ void flash_msg_enqueue_thread(fjalar_t *fjalar, void *p2, void *p3){
 					.drogue_deploy       = state->event_drogue_deployed,
 					.main_deploy         = state->event_main_deployed,
 					.landed              = state->event_landed,
-					.above_acs_threshold = state->event_above_acs_threshold,
 				},
 			},
 		};
