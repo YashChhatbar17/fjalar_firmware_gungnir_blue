@@ -30,9 +30,9 @@ void init_aerodynamics(fjalar_t *fjalar);
 #define AERODYNAMICS_H
 
 // change these values to Freyja values
-#define MASS_DRY  9 //38 // Freyja
+#define MASS_DRY  3.5 //38 // Freyja
 #define GRAVITY 9.81
-#define AREA 0.008 // 0.022 // Freyja
+#define AREA 0.00866 // 0.022 // Freyja
 
 static const struct zsl_interp_xy cd_tbl[] = {
     {3.43, 0.445392077},
