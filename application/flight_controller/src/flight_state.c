@@ -83,7 +83,7 @@ Deploy the DROGUE parachute at apogee.
 This fires pyro channel 1. The logic for triggering the actual hardware
 is handled inside actuation.c via set_pyro().
 */
-static void deploy_drogue(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf) { 
+static void deploy_reefed(fjalar_t *fjalar, init_t *init, state_t *state, position_filter_t *pos_kf) { 
     set_pyro(fjalar, 1, true);  // 1 = drogue chute pyro channel
     LOG_WRN("Drogue deployed at %.2f m %.2f s",
             pos_kf->X_data[2],                                  // altitude
@@ -223,28 +223,28 @@ static void evaluate_state(
         */
         if (vz < 0) {
             state->apogee_time = k_uptime_get_32();
-            deploy_drogue(fjalar, init, state, pos_kf); //Should probably change to deploy_main
-            state->flight_state = STATE_DROGUE_DESCENT;
+            deploy_main(fjalar, init, state, pos_kf); //Should probably change to deploy_main
+            state->flight_state = STATE_MAIN_DESCENT;
             state->event_apogee = true;
 
-            LOG_WRN("State: COAST → DROGUE_DESCENT (apogee detected)");
+            LOG_WRN("State: COAST → MAIN_DESCENT (apogee detected)");
         }
         break;
 
     /* --------------------------- STATE_DROGUE_DESCENT -------------------- */
-    case STATE_DROGUE_DESCENT:
+    case STATE_MAIN_DESCENT:
         /*
         Deploy main parachute at a safe low altitude threshold.
         */
         if (z < 200) {
-            deploy_main(fjalar, init, state, pos_kf);
-            state->flight_state = STATE_MAIN_DESCENT;
-            LOG_WRN("State: DROGUE_DESCENT → MAIN_DESCENT (200 m AGL)");
+            deploy_reefed(fjalar, init, state, pos_kf);
+            state->flight_state = STATE_REEFED_DESCENT;
+            LOG_WRN("State: MAIN_DESCENT → REEFED_DESCENT (200 m AGL)");
         }
         break;
 
     /* --------------------------- STATE_MAIN_DESCENT ---------------------- */
-    case STATE_MAIN_DESCENT:
+    case STATE_REEFED_DESCENT:
         /*
         Detect landing by checking if acceleration ~ 1 g and movement is minimal.
         This is approximate but usually reliable with filtered acceleration.

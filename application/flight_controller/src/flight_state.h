@@ -16,8 +16,8 @@ enum fjalar_flight_state { // code these in to state machine
     STATE_AWAITING_LAUNCH,
     STATE_BOOST,
     STATE_COAST,
-    STATE_DROGUE_DESCENT,
-    STATE_MAIN_DESCENT,
+    STATE_MAIN_DESCENT, //Switched from drogue to main
+    STATE_REEFED_DESCENT, //Changed from main to reefed
     STATE_LANDED,
 };
 
